@@ -348,6 +348,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private ActionBarMenuSubItem muteItem;
     private View muteItemGap;
     private ChatNotificationsPopupWrapper chatNotificationsPopupWrapper;
+    private ActionBarMenuSubItem hideTitleItem;
     private float pagedownButtonEnterProgress;
     private float mentionsButtonEnterProgress;
     private float reactionsMentionButtonEnterProgress;
@@ -1293,6 +1294,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private final static int bot_settings = 31;
     private final static int call = 32;
     private final static int video_call = 33;
+    private final static int hideTitle = 34;
 
     private final static int attach_photo = 0;
     private final static int attach_gallery = 1;
@@ -2453,6 +2455,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                 } else if (id == change_colors) {
                     showChatThemeBottomSheet();
+                } else if (id == hideTitle) {
+                    SharedConfig.hideTitleDialog = !SharedConfig.hideTitleDialog;
+                    updateTitle();
+                    checkAndUpdateAvatar();
+                    if (hideTitleItem != null) {
+                        if (SharedConfig.hideTitleDialog) {
+                            hideTitleItem.setText(LocaleController.getString("ShowTitle", R.string.ShowTitle));
+                        } else {
+                            hideTitleItem.setText(LocaleController.getString("HideTitle", R.string.HideTitle));
+                        }
+                    }
+
+                    SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+                    preferences.edit().putBoolean("hideTitle", SharedConfig.hideTitleDialog).commit();
                 }
             }
         });
@@ -2899,6 +2915,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 headerItem.addSubItem(bot_help, R.drawable.msg_help, LocaleController.getString("BotHelp", R.string.BotHelp), themeDelegate);
                 updateBotButtons();
             }
+
+            String hideTitleString = "";
+            if (SharedConfig.hideTitleDialog) {
+                hideTitleString = LocaleController.getString("ShowTitle", R.string.ShowTitle);
+            } else {
+                hideTitleString = LocaleController.getString("HideTitle", R.string.HideTitle);
+            }
+            hideTitleItem = headerItem.addSubItem(hideTitle, R.drawable.hide_title, hideTitleString, themeDelegate);
 
             if (currentUser != null) {
                 headerItem.addSubItem(call, R.drawable.msg_callback, LocaleController.getString("Call", R.string.Call), themeDelegate);
