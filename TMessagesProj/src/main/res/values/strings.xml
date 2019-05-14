@@ -5540,4 +5540,6 @@
     <string name="Unlock">Unlock</string>
     <string name="Restore">Restore</string>
     <string name="PremiumPreviewEmojiPack">This emoji pack is available only to subscribers of **Telegram Premium.**</string>
+    <!--FORK CLIENT-->
+    <string name="BottomDialogs">Tap here to start a new chat.</string>
 </resources>
