@@ -6384,4 +6384,6 @@
     <string name="SdCardError">SD Card Error</string>
     <string name="SdCardErrorDescription">Telegram is unable to save data on your SD card.</string>
     <string name="DoNotUseSDCard">Do not use SD card</string>
+    <!--FORK CLIENT-->
+    <string name="BottomDialogs">Tap here to start a new chat.</string>
 </resources>
