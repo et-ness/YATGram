@@ -5914,4 +5914,6 @@
     <string name="SelectChatsForDisableAutoDelete2_many">will remove the self-destruct timer</string>
     <string name="SelectChatsForDisableAutoDelete2_other">will remove the self-destruct timer</string>
     <string name="DisableAutoDeleteTimer">Disable Auto-Delete</string>
+    <!--FORK CLIENT-->
+    <string name="BottomDialogs">Tap here to start a new chat.</string>
 </resources>
