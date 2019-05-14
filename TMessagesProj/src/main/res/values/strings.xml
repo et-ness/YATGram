@@ -7705,4 +7705,6 @@ list of viewers.</string>
     <string name="UserColorApplied">Your name color has been updated!</string>
     <string name="ChannelColorApplied">Your channel color has been updated!</string>
     <string name="CopyCode">Copy Code</string>
+    <!--FORK CLIENT-->
+    <string name="BottomDialogs">Tap here to start a new chat.</string>
 </resources>
