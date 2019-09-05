@@ -11638,11 +11638,13 @@ public class MessagesController extends BaseController implements NotificationCe
                     newTaskId = taskId;
                 }
 
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-                    if (newTaskId != 0) {
-                        getMessagesStorage().removePendingTask(newTaskId);
-                    }
-                });
+                if (mainPreferences.getBoolean("syncPins", true)) {
+                    getConnectionsManager().sendRequest(req, (response, error) -> {
+                        if (newTaskId != 0) {
+                            getMessagesStorage().removePendingTask(newTaskId);
+                        }
+                    });
+                }
             }
         }
         getMessagesStorage().setDialogPinned(dialogId, dialog.pinnedNum);
@@ -11650,6 +11652,9 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void loadPinnedDialogs(final int folderId, long newDialogId, ArrayList<Long> order) {
+        if (!mainPreferences.getBoolean("syncPins", true)) {
+            return;
+        }
         if (loadingPinnedDialogs.indexOfKey(folderId) >= 0 || getUserConfig().isPinnedDialogsLoaded(folderId)) {
             return;
         }
