@@ -7731,4 +7731,5 @@ list of viewers.</string>
     <string name="PinDialogsOrder">Pin Dialogs Order</string>
     <string name="RearVideoMessages">Rear camera in Video Messages</string>
     <string name="ReplaceForward">Replace original Forward</string>
+    <string name="HideSensitiveData">Hide Sensitive Data</string>
 </resources>
