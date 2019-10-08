@@ -7734,4 +7734,5 @@ list of viewers.</string>
     <string name="HideSensitiveData">Hide Sensitive Data</string>
     <string name="SystemCamera">Use System Camera for Photo</string>
     <string name="SystemCameraInfo">Only in Attachment Dialog</string>
+    <string name="MentionByName">Mention User by Name</string>
 </resources>
