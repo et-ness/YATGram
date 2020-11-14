@@ -1426,10 +1426,19 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void processForwardFromMyName(MessageObject messageObject, long did) {
+        processForwardFromMyName(messageObject, did, null);
+    }
+
+    public void processForwardFromMyName(MessageObject messageObject, long did, String overwriteText) {
         if (messageObject == null) {
             return;
         }
-        String messageOwnerMessage = messageObject.messageOwner.message;
+        String messageOwnerMessage = (overwriteText == null)
+            ? messageObject.messageOwner.message
+            : overwriteText;
+        ArrayList<TLRPC.MessageEntity> messageOwnerEntities = (overwriteText == null)
+            ? messageObject.messageOwner.entities
+            : new ArrayList<TLRPC.MessageEntity>();
 
         // Don't reply to message from previous chat.
         MessageObject emptyReplyMessageObject = null;
@@ -1457,9 +1466,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 params.put("parentObject", "sent_" + messageObject.messageOwner.peer_id.channel_id + "_" + messageObject.getId());
             }
             if (messageObject.messageOwner.media.photo instanceof TLRPC.TL_photo) {
-                sendMessage((TLRPC.TL_photo) messageObject.messageOwner.media.photo, null, did, emptyReplyMessageObject, null, messageOwnerMessage, messageObject.messageOwner.entities, null, params, true, 0, messageObject.messageOwner.media.ttl_seconds, messageObject);
+                sendMessage((TLRPC.TL_photo) messageObject.messageOwner.media.photo, null, did, emptyReplyMessageObject, null, messageOwnerMessage, messageOwnerEntities, null, params, true, 0, messageObject.messageOwner.media.ttl_seconds, messageObject);
             } else if (messageObject.messageOwner.media.document instanceof TLRPC.TL_document) {
-                sendMessage((TLRPC.TL_document) messageObject.messageOwner.media.document, null, messageObject.messageOwner.attachPath, did, emptyReplyMessageObject, null, messageOwnerMessage, messageObject.messageOwner.entities, null, params, true, 0, messageObject.messageOwner.media.ttl_seconds, messageObject, null);
+                sendMessage((TLRPC.TL_document) messageObject.messageOwner.media.document, null, messageObject.messageOwner.attachPath, did, emptyReplyMessageObject, null, messageOwnerMessage, messageOwnerEntities, null, params, true, 0, messageObject.messageOwner.media.ttl_seconds, messageObject, null);
             } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaVenue || messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGeo) {
                 sendMessage(messageObject.messageOwner.media, did, emptyReplyMessageObject, null, null, null, true, 0);
             } else if (messageObject.messageOwner.media.phone_number != null) {
