@@ -88,6 +88,7 @@ android {
         buildConfigField 'String', 'APP_HASH', getStringForConfig(APP_HASH)
         buildConfigField 'int', 'USER_ID_OWNER', USER_ID_OWNER
         buildConfigField 'String', 'USER_REPO', getStringForConfig(USER_REPO)
+        buildConfigField 'int', 'CHECK_UPDATES', CHECK_UPDATES
 
         vectorDrawables.generatedDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi']
 
@@ -112,7 +113,6 @@ android {
             shrinkResources false
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
         }
 
         HA {
@@ -121,7 +121,6 @@ android {
             minifyEnabled true
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
         }
 
         standalone {
@@ -130,7 +129,6 @@ android {
             minifyEnabled true
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
         }
 
         release {
@@ -140,7 +138,6 @@ android {
             shrinkResources false
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
         }
     }
 }
