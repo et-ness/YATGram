@@ -94,6 +94,7 @@ android {
         buildConfigField 'String', 'APP_HASH', getStringForConfig(APP_HASH)
         buildConfigField 'int', 'USER_ID_OWNER', USER_ID_OWNER
         buildConfigField 'String', 'USER_REPO', getStringForConfig(USER_REPO)
+        buildConfigField 'int', 'CHECK_UPDATES', CHECK_UPDATES
 
         vectorDrawables.generatedDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi']
 
@@ -118,7 +119,6 @@ android {
             shrinkResources false
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "APP_CENTER_HASH", "\"\""
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
@@ -131,7 +131,6 @@ android {
             minifyEnabled true
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "APP_CENTER_HASH", "\"" + getProps("APP_CENTER_HASH_PRIVATE") + "\""
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "true"
@@ -144,7 +143,6 @@ android {
             minifyEnabled true
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "APP_CENTER_HASH", "\"" + getProps("APP_CENTER_HASH_PUBLIC") + "\""
             buildConfigField "boolean", "DEBUG_VERSION", "true"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
@@ -157,7 +155,6 @@ android {
             minifyEnabled true
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "APP_CENTER_HASH", "\"\""
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
@@ -171,7 +168,6 @@ android {
             shrinkResources false
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
             buildConfigField "String", "APP_CENTER_HASH", "\"\""
             buildConfigField "boolean", "DEBUG_VERSION", "false"
             buildConfigField "boolean", "DEBUG_PRIVATE_VERSION", "false"
