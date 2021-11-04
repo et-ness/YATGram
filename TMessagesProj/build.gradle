@@ -44,7 +44,7 @@ def getStringForConfig(String s) {
 
 android {
     compileSdkVersion 31
-    buildToolsVersion '31.0.0'
+    buildToolsVersion '32.0.0'
     ndkVersion "21.4.7075529"
 
     sourceSets.main.jniLibs.srcDirs = ['./jni/']
@@ -61,15 +61,22 @@ android {
         disable 'BlockedPrivateApi'
     }
 
-    dexOptions {
-        jumboMode = true
-    }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
 
         coreLibraryDesugaringEnabled true
+    }
+
+    task buildNativeDeps(type: Exec, description: 'Build native dependencies.') {
+        def ndkDir = android.ndkDirectory
+        println ndkDir
+        workingDir "${projectDir}/jni"
+        commandLine 'python3', 'prepare.py', 'silent', 'ndk=' + ndkDir, 'arm', 'arm64'
+    }
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn buildNativeDeps
     }
 
     defaultConfig.versionCode = Integer.parseInt(Utils['getVersionCode']())
