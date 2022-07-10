@@ -2673,7 +2673,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     "   float d = length(coord - gl_FragCoord.xy) - radius;\n" +
                     "   float t = clamp(d, 0.0, 1.0);\n" +
                     "   vec3 color = mix(textColor.rgb, vec3(1, 1, 1), t);\n" +
-                    "   gl_FragColor = vec4(color * alpha, alpha);\n" +
+                    "   gl_FragColor = vec4(texture2D(sTexture, vTextureCoord).rgb * alpha, alpha);\n" +
                     "}\n";
         }
         //apply box blur
@@ -2687,23 +2687,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
 
                 "uniform samplerExternalOES sTexture;\n" +
                 "void main() {\n" +
-                "   float pixelSizeX = 1.0 / preview.x;\n" +
-                "   float pixelSizeY = 1.0 / preview.y;\n" +
-                "   vec3 accumulation = vec3(0);\n" +
-                "   vec3 weightsum = vec3(0);\n" +
-                "   for (float x = -kernel; x < kernel; x++){\n" +
-                "       for (float y = -kernel; y < kernel; y++){\n" +
-                "           accumulation += texture2D(sTexture, vTextureCoord + vec2(x * pixelSizeX, y * pixelSizeY)).xyz;\n" +
-                "           weightsum += 1.0;\n" +
-                "       }\n" +
-                "   }\n" +
-                "   vec4 textColor = vec4(accumulation / weightsum, 1.0);\n" +
-                "   vec2 coord = resolution * 0.5;\n" +
-                "   float radius = 0.51 * resolution.x;\n" +
-                "   float d = length(coord - gl_FragCoord.xy) - radius;\n" +
-                "   float t = clamp(d, 0.0, 1.0);\n" +
-                "   vec3 color = mix(textColor.rgb, vec3(1, 1, 1), t);\n" +
-                "   gl_FragColor = vec4(color * alpha, alpha);\n" +
+                "   gl_FragColor = vec4(texture2D(sTexture, vTextureCoord).rgb * alpha, alpha);\n" +
                 "}\n";
     }
 
