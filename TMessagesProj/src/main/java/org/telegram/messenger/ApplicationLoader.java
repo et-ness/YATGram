@@ -78,6 +78,7 @@ public class ApplicationLoader extends Application {
         MultiDex.install(this);
     }
 
+/*
     public static ILocationServiceProvider getLocationServiceProvider() {
         if (locationServiceProvider == null) {
             locationServiceProvider = applicationLoaderInstance.onCreateLocationServiceProvider();
@@ -111,6 +112,7 @@ public class ApplicationLoader extends Application {
     protected PushListenerController.IPushListenerServiceProvider onCreatePushProvider() {
         return PushListenerController.GooglePushListenerServiceProvider.INSTANCE;
     }
+*/
 
     public static String getApplicationId() {
         return applicationLoaderInstance.onGetApplicationId();
