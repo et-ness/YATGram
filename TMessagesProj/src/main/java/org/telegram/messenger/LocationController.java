@@ -49,10 +49,10 @@ public class LocationController extends BaseController implements NotificationCe
     private GpsLocationListener passiveLocationListener = new GpsLocationListener();
     private Location lastKnownLocation;
     private long lastLocationSendTime;
-    private boolean locationSentSinceLastMapUpdate = true;
+    private boolean locationSentSinceLastGoogleMapUpdate = true;
     private long lastLocationStartTime;
     private boolean started;
-    private boolean lastLocationByMaps;
+    private boolean lastLocationByGoogleMaps;
     private SparseIntArray requests = new SparseIntArray();
     private LongSparseArray<Boolean> cacheRequests = new LongSparseArray<>();
     private long locationEndWatchTime;
@@ -397,9 +397,9 @@ public class LocationController extends BaseController implements NotificationCe
         }
         if (started) {
             long newTime = SystemClock.elapsedRealtime();
-            if (lastLocationByMaps || Math.abs(lastLocationStartTime - newTime) > LOCATION_ACQUIRE_TIME || shouldSendLocationNow()) {
-                lastLocationByMaps = false;
-                locationSentSinceLastMapUpdate = true;
+            if (lastLocationByGoogleMaps || Math.abs(lastLocationStartTime - newTime) > LOCATION_ACQUIRE_TIME || shouldSendLocationNow()) {
+                lastLocationByGoogleMaps = false;
+                locationSentSinceLastGoogleMapUpdate = true;
                 boolean cancelAll = (SystemClock.elapsedRealtime() - lastLocationSendTime) > 2 * 1000;
                 lastLocationStartTime = newTime;
                 lastLocationSendTime = SystemClock.elapsedRealtime();
@@ -724,17 +724,17 @@ public class LocationController extends BaseController implements NotificationCe
         });
     }
 
-    public void setMapLocation(Location location, boolean first) {
+    public void setGoogleMapLocation(Location location, boolean first) {
         if (location == null) {
             return;
         }
-        lastLocationByMaps = true;
+        lastLocationByGoogleMaps = true;
         if (first || lastKnownLocation != null && lastKnownLocation.distanceTo(location) >= 20) {
             lastLocationSendTime = SystemClock.elapsedRealtime() - BACKGROUD_UPDATE_TIME;
-            locationSentSinceLastMapUpdate = false;
-        } else if (locationSentSinceLastMapUpdate) {
+            locationSentSinceLastGoogleMapUpdate = false;
+        } else if (locationSentSinceLastGoogleMapUpdate) {
             lastLocationSendTime = SystemClock.elapsedRealtime() - BACKGROUD_UPDATE_TIME + FOREGROUND_UPDATE_TIME;
-            locationSentSinceLastMapUpdate = false;
+            locationSentSinceLastGoogleMapUpdate = false;
         }
         setLastKnownLocation(location);
     }
