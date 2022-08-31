@@ -3292,6 +3292,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 (AndroidUtilities.isTabletInternal() && BuildVars.DEBUG_PRIVATE_VERSION) ? (SharedConfig.forceDisableTabletMode ? "Enable tablet mode" : "Disable tablet mode") : null,
                                 LocaleController.getString(SharedConfig.useLNavigation ? R.string.AltNavigationDisable : R.string.AltNavigationEnable),
                                 BuildVars.DEBUG_PRIVATE_VERSION ? LocaleController.getString(SharedConfig.isFloatingDebugActive ? R.string.FloatingDebugDisable : R.string.FloatingDebugEnable) : null,
+                                "Switch Backend"
                         };
 
                         builder.setItems(items, (dialog, which) -> {
@@ -3387,6 +3388,22 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 getParentActivity().recreate();
                             } else if (which == 22) {
                                 FloatingDebugController.setActive((LaunchActivity) getParentActivity(), !FloatingDebugController.isActive());
+
+                            } else if (which == 23) {
+                                if (getParentActivity() == null) {
+                                    return;
+                                }
+                                AlertDialog.Builder builder1 = new AlertDialog.Builder(getParentActivity());
+                                builder1.setMessage(LocaleController.getString("AreYouSure", R.string.AreYouSure));
+                                builder1.setTitle(LocaleController.getString("AppName", R.string.AppName));
+                                builder1.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+                                    SharedConfig.pushAuthKey = null;
+                                    SharedConfig.pushAuthKeyId = null;
+                                    SharedConfig.saveConfig();
+                                    getConnectionsManager().switchBackend(true);
+                                });
+                                builder1.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+                                showDialog(builder1.create());
                             }
                         });
                         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
