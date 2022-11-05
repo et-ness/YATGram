@@ -118,7 +118,7 @@ public class FileLoader extends BaseController {
     private final FileLoaderPriorityQueue imagesQueue = new FileLoaderPriorityQueue("imagesQueue queue", 6);
     private final FileLoaderPriorityQueue audioQueue = new FileLoaderPriorityQueue("audioQueue queue", 3);
 
-    public final static long DEFAULT_MAX_FILE_SIZE = 1024L * 1024L * 2000L;
+    public final static long DEFAULT_MAX_FILE_SIZE = 1024L * 1024L * 2001L;
     public final static long DEFAULT_MAX_FILE_SIZE_PREMIUM = DEFAULT_MAX_FILE_SIZE * 2L;
 
     public final static int PRELOAD_CACHE_TYPE = 11;
