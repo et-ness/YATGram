@@ -1106,7 +1106,7 @@ public class SharedConfig {
                         data.readString(false),
                         data.readString(false),
                         data.readString(false));
-                proxyList.add(info);
+                proxyList.add(0, info);
                 if (currentProxy == null && !TextUtils.isEmpty(proxyAddress)) {
                     if (proxyAddress.equals(info.address) && proxyPort == info.port && proxyUsername.equals(info.username) && proxyPassword.equals(info.password)) {
                         currentProxy = info;
@@ -1125,7 +1125,7 @@ public class SharedConfig {
         SerializedData serializedData = new SerializedData();
         int count = proxyList.size();
         serializedData.writeInt32(count);
-        for (int a = 0; a < count; a++) {
+        for (int a = count - 1; a >= 0; a--) {
             ProxyInfo info = proxyList.get(a);
             serializedData.writeString(info.address != null ? info.address : "");
             serializedData.writeInt32(info.port);
@@ -1147,7 +1147,7 @@ public class SharedConfig {
                 return info;
             }
         }
-        proxyList.add(proxyInfo);
+        proxyList.add(0, proxyInfo);
         saveProxyList();
         return proxyInfo;
     }
