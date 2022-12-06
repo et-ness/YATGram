@@ -95,7 +95,10 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
 
     public EmojiTabsStrip(Context context, Theme.ResourcesProvider resourcesProvider, boolean includeStandard, boolean includeAnimated, int type, Runnable onSettingsOpen) {
         super(context);
-        this.includeAnimated = includeAnimated;
+        final boolean disableLockedAnimatedEmoji = true
+            && org.telegram.messenger.MessagesController.getGlobalMainSettings().getBoolean("disableLockedAnimatedEmoji", false)
+            && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
+        this.includeAnimated = includeAnimated && !disableLockedAnimatedEmoji;
         this.resourcesProvider = resourcesProvider;
         this.onSettingsOpenRunnable = onSettingsOpen;
 
@@ -106,7 +109,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
             @Override
             protected void onLayout(boolean changed, int l, int t, int r, int b) {
                 int cy = (b - t) / 2;
-                if (includeAnimated) {
+                if (includeAnimated && !disableLockedAnimatedEmoji) {
                     int x = getPaddingLeft() - (!recentIsShown ? AndroidUtilities.dp(30 + 3) : 0);
                     for (int i = 0; i < getChildCount(); ++i) {
                         View child = getChildAt(i);
@@ -174,7 +177,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                         width += child.getMeasuredWidth() + (i + 1 < getChildCount() ? AndroidUtilities.dp(3) : 0);
                     }
                 }
-                if (!includeAnimated) {
+                if (!includeAnimated || disableLockedAnimatedEmoji) {
                     setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.getSize(heightMeasureSpec));
                     return;
                 }
@@ -259,13 +262,13 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
         }
         contentView.addView(recentTab = new EmojiTabButton(context, recentDrawableId, false, false));
         recentTab.id = "recent".hashCode();
-        if (!includeAnimated) {
+        if (!includeAnimated || disableLockedAnimatedEmoji) {
             for (int i = 0; i < emojiTabsDrawableIds.length; ++i) {
                 contentView.addView(new EmojiTabButton(context, emojiTabsDrawableIds[i], false, i == 0));
             }
             updateClickListeners();
         } else {
-            if (includeStandard) {
+            if (includeStandard || disableLockedAnimatedEmoji) {
                 contentView.addView(emojiTabs = new EmojiTabsView(context));
                 emojiTabs.id = "tabs".hashCode();
             }
