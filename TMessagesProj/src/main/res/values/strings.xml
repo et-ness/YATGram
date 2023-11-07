@@ -7762,4 +7762,5 @@ list of viewers.</string>
     <string name="AddDeleteAllUnpinnedMessages">Add "Delete all unpinned messages" to menu</string>
     <string name="AddDeleteAllUnpinnedMessagesInfo">EXPERIMENTAL.</string>
     <string name="NewMyStory">New Story</string>
+    <string name="LargePhoto">2560px for sending photos</string>
 </resources>
