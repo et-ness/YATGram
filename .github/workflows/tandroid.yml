@@ -6,41 +6,31 @@ jobs:
   linux:
     name: Build
     runs-on: ubuntu-latest
+    environment: release
     strategy:
       matrix:
-        type: [debug, release]
+#        type: [debug, release]
+        type: [release]
         include:
-          - type: debug
-            afat: assembleAfatDebug
-            name: ""
-            updates: 1
+#          - type: debug
+#            afat: assembleAfatDebug
+#            name: ""
+#            updates: 1
           - type: release
             afat: assembleAfatRelease
             name: " compressed"
             updates: 0
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Prepare additional build number.
-        env:
-          ADDITIONAL_BUILD: ${{ secrets.ADDITIONAL_BUILD_NUMBER }}
         run: |
           result=$((ADDITIONAL_BUILD / 10000))
           echo "ADDITIONAL_BUILD_NUMBER = $result should be between 0 and 10!"
           echo "ADDITIONAL_BUILD_NUMBER=$result" >> $GITHUB_ENV
           echo "USER_REPO=$GITHUB_REPOSITORY" >> $GITHUB_ENV
           echo "CHECK_UPDATES=${{ matrix.updates }}" >> $GITHUB_ENV
-      - name: Add language.
-        env:
-          URL_LANG: ${{ secrets.URL_LANG }}
-        run: |
-          wget -q -O strings.xml $URL_LANG
-          ls
-          lang_code=$(grep 'LanguageCode' strings.xml | awk -F">" '{print $2}' | awk -F"<" '{print $1}')
-          folder=TMessagesProj/src/main/res/values-$lang_code
-          mkdir $folder
-          mv strings.xml $folder/strings.xml
       - name: Build.
         run: |
           ### https://github.com/actions/runner-images/issues/5930
@@ -55,17 +45,17 @@ jobs:
           ###
           vars=gradle.properties
 
+          echo ${{ secrets.KEY_STORE }} | base64 --decode > TMessagesProj/config/release.keystore
           echo "DUMMY_CONST=0" >> $vars
           echo "org.gradle.workers.max=1" >> $vars
           echo "APP_ID=${{ secrets.APP_ID }}" >> $vars
           echo "APP_HASH=${{ secrets.APP_HASH }}" >> $vars
-          echo "RELEASE_KEY_PASSWORD=${{ secrets.ALIAS_PASS }}" >> $vars
-          echo "RELEASE_KEY_ALIAS=${{ secrets.ALIAS_NAME }}" >> $vars
-          echo "RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASS }}" >> $vars
+          echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> $vars
+          echo "RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> $vars
+          echo "RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}" >> $vars
           echo "ADDITIONAL_BUILD_NUMBER=$ADDITIONAL_BUILD_NUMBER" >> $vars
           echo "USER_REPO=$USER_REPO" >> $vars
           echo "CHECK_UPDATES=${{ matrix.updates }}" >> $vars
-          echo "USER_ID_OWNER=${{ secrets.USER_ID_OWNER }}" >> $vars
 
           ###
           echo $ADDITIONAL_BUILD_NUMBER
@@ -87,17 +77,17 @@ jobs:
           tempVer=$(cat ver.txt)
           tempVer=${tempVer::-2}
           echo "NEW_OFFICIAL_TAG_TEXT=$tempVer" >> $GITHUB_ENV
-      - name: Draft release.
-        uses: softprops/action-gh-release@v0.1.15
-        if: ${{ matrix.type == 'debug' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-        with:
-          draft: true
-          files: tag_asset/*
-          tag_name: ${{ env.NEW_TAG_TEXT }}
-          name: "ForkClient ${{ env.NEW_TAG_TEXT }}"
-          body: "— Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram."
+#      - name: Draft release.
+#        uses: softprops/action-gh-release@v0.1.15
+#        if: ${{ matrix.type == 'debug' }}
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+#        with:
+#          draft: true
+#          files: tag_asset/*
+#          tag_name: ${{ env.NEW_TAG_TEXT }}
+#          name: "ForkClient ${{ env.NEW_TAG_TEXT }}"
+#          body: "— Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram."
       - uses: actions/upload-artifact@master
         name: Upload artifact.
         with:
