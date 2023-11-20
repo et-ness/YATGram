@@ -82,6 +82,7 @@
 
     <application
         android:name="org.telegram.messenger.ApplicationLoader"
+        android:label="@string/AppName"
         android:allowBackup="true"
         android:restoreAnyVersion="true"
         android:backupAgent=".BackupAgent"
