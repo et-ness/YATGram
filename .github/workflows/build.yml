@@ -1,6 +1,12 @@
-name: Fork Client
+name: YATGram
 
-on: [push]
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    tags: [ v* ]
+  pull_request:
+  merge_group:
 
 jobs:
   linux:
@@ -18,7 +24,7 @@ jobs:
 #            updates: 1
           - type: release
             afat: assembleAfatRelease
-            name: " compressed"
+            name: ""
             updates: 0
     steps:
       - uses: actions/checkout@v4
@@ -63,14 +69,13 @@ jobs:
           sudo apt install openjdk-17-jdk openjdk-17-jre ninja-build
           ./gradlew :TMessagesProj_AppFork:${{ matrix.afat }}
 
-          #grep BUILD_VERSION_STRING TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java | cut -d'"' -f 2 > ver.txt
           grep VERSION_NAME TMessagesProj/build/generated/source/buildConfig/${{ matrix.type }}/org/telegram/messenger/BuildConfig.java | cut -d'"' -f 2 > ver.txt
 
           mkdir artifact
           mv TMessagesProj_AppFork/build/outputs/apk/afat/${{ matrix.type }}/app.apk app.apk
-          cp app.apk "artifact/ForkClient $(cat ver.txt)${{ matrix.name }}.apk"
+          cp app.apk "artifact/YATGram_$(cat ver.txt)${{ matrix.name }}.apk"
           mkdir tag_asset
-          cp app.apk "tag_asset/ForkClient_$(cat ver.txt)${{ matrix.name }}.apk"
+          cp app.apk "tag_asset/YATGram_$(cat ver.txt)${{ matrix.name }}.apk"
 
           echo "NEW_TAG_TEXT=$(cat ver.txt)" >> $GITHUB_ENV
 
@@ -86,10 +91,10 @@ jobs:
 #          draft: true
 #          files: tag_asset/*
 #          tag_name: ${{ env.NEW_TAG_TEXT }}
-#          name: "ForkClient ${{ env.NEW_TAG_TEXT }}"
+#          name: "YATGram ${{ env.NEW_TAG_TEXT }}"
 #          body: "— Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram."
       - uses: actions/upload-artifact@master
         name: Upload artifact.
         with:
-          name: ForkClient-${{ matrix.type }}
+          name: YATGram-${{ matrix.type }}
           path: artifact/
