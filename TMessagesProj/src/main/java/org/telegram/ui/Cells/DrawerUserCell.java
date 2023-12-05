@@ -136,7 +136,7 @@ public class DrawerUserCell extends FrameLayout implements NotificationCenter.No
         if (user == null) {
             return;
         }
-        avatarDrawable.setInfo(user);
+        avatarDrawable.setInfo(account, user);
         CharSequence text;
         if (SharedConfig.hideSensitiveData()) {
             text = "...";
