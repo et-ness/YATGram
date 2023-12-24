@@ -165,10 +165,6 @@ public class ApplicationLoader extends Application {
                         ConnectionsManager.getInstance(a).checkConnection();
                         FileLoader.getInstance(a).onNetworkChanged(isSlow);
                     }
-                    if (SharedConfig.loginingAccount != -1) {
-                        ConnectionsManager.getInstance(SharedConfig.loginingAccount).checkConnection();
-                        FileLoader.getInstance(SharedConfig.loginingAccount).onNetworkChanged(isSlow);
-                    }
                 }
             };
             IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);

@@ -345,7 +345,6 @@ public class SharedConfig {
     public static boolean translateChats = true;
 
     public static CopyOnWriteArraySet<Integer> activeAccounts;
-    public static int loginingAccount = -1;
 
     public static boolean isFloatingDebugActive;
     public static LiteMode liteMode;

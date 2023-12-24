@@ -450,7 +450,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 AndroidUtilities.cancelRunOnUIThread(callback);
             }
         }
-        SharedConfig.loginingAccount = -1;
         getNotificationCenter().removeObserver(this, NotificationCenter.didUpdateConnectionState);
     }
 
@@ -8277,22 +8276,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     }
 
     private int currentConnectionState;
-/*
-    @Override
-    public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.updateLoginToken) {
-            regenerateLoginToken(false);
-        }
-    }
 
-    @Override
-    public boolean onFragmentCreate() {
-        SharedConfig.loginingAccount = currentAccount;
-        ApplicationLoader.loadAccount(currentAccount);
-        getNotificationCenter().addObserver(this, NotificationCenter.didUpdateConnectionState);
-        return true;
-    }
-*/
     private void updateProxyButton(boolean animated, boolean force) {
         if (proxyDrawable == null) {
             return;
