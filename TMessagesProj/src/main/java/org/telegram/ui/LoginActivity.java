@@ -5236,8 +5236,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
         private TextView titleView;
         private TextView subtitleView;
-        private TextView signInWithGoogleView;
-        private LoginOrView loginOrView;
         private RLottieImageView inboxImageView;
 
         private Bundle currentParams;
@@ -5302,71 +5300,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             });
 
             addView(emailOutlineView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 58, 16, 24, 16, 0));
-
-            signInWithGoogleView = new TextView(context);
-            loginOrView = new LoginOrView(context);
-            /* Google Account.
-            signInWithGoogleView.setGravity(Gravity.LEFT);
-            signInWithGoogleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            signInWithGoogleView.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
-            signInWithGoogleView.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16));
-            signInWithGoogleView.setMaxLines(2);
-
-            SpannableStringBuilder str = new SpannableStringBuilder("d ");
-            Drawable dr = ContextCompat.getDrawable(context, R.drawable.googleg_standard_color_18);
-            dr.setBounds(0, AndroidUtilities.dp(9), AndroidUtilities.dp(18), AndroidUtilities.dp(18 + 9));
-            str.setSpan(new ImageSpan(dr, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.setSpan(new ReplacementSpan() {
-                @Override
-                public int getSize(@NonNull Paint paint, CharSequence text, int start, int end, @Nullable Paint.FontMetricsInt fm) {
-                    return AndroidUtilities.dp(12);
-                }
-
-                @Override
-                public void draw(@NonNull Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, @NonNull Paint paint) {}
-            }, 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.append(LocaleController.getString(R.string.SignInWithGoogle));
-            signInWithGoogleView.setText(str);
-
-            loginOrView = new LoginOrView(context);
-
-            Space space = new Space(context);
-            addView(space, LayoutHelper.createLinear(0, 0, 1f));
-
-            FrameLayout bottomContainer = new FrameLayout(context);
-            bottomContainer.addView(signInWithGoogleView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.LEFT, 0, 0, 0, 24));
-            bottomContainer.addView(loginOrView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 16, Gravity.BOTTOM | Gravity.LEFT, 0, 0, 0, 70));
-            loginOrView.setMeasureAfter(signInWithGoogleView);
-            addView(bottomContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-            VerticalPositionAutoAnimator.attach(bottomContainer);
-
-            bottomContainer.setOnClickListener(view -> {
-                NotificationCenter.getGlobalInstance().addObserver(new NotificationCenter.NotificationCenterDelegate() {
-                    @Override
-                    public void didReceivedNotification(int id, int account, Object... args) {
-                        int request = (int) args[0];
-                        int result = (int) args[1];
-                        Intent data = (Intent) args[2];
-                        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.onActivityResultReceived);
-
-                        if (request == BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE) {
-                            try {
-                                googleAccount = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException.class);
-                                onNextPressed(null);
-                            } catch (ApiException e) {
-                                FileLog.e(e);
-                            }
-                        }
-                    }
-                }, NotificationCenter.onActivityResultReceived);
-
-                GoogleSignInClient googleClient = GoogleSignIn.getClient(getContext(), new GoogleSignInOptions.Builder()
-                        .requestIdToken(BuildVars.GOOGLE_AUTH_CLIENT_ID)
-                        .requestEmail()
-                        .build());
-                googleClient.signOut().addOnCompleteListener(command -> getParentActivity().startActivityForResult(googleClient.getSignInIntent(), BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE));
-            });
-            */
         }
 
         @Override
@@ -5374,8 +5307,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
             emailField.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-            signInWithGoogleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
-            loginOrView.updateColors();
 
             emailOutlineView.invalidate();
         }
@@ -5401,10 +5332,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             emailPhone = currentParams.getString("ephone");
             requestPhone = currentParams.getString("phoneFormated");
             phoneHash = currentParams.getString("phoneHash");
-
-            int v = params.getBoolean("googleSignInAllowed") && PushListenerController.GooglePushListenerServiceProvider.INSTANCE.hasServices() ? VISIBLE : GONE;
-            loginOrView.setVisibility(v);
-            signInWithGoogleView.setVisibility(v);
 
             showKeyboard(emailField);
             emailField.requestFocus();
@@ -5566,7 +5493,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private CodeFieldContainer codeFieldContainer;
         private TextView titleView;
         private TextView confirmTextView;
-        private TextView signInWithGoogleView;
         private FrameLayout resendFrameLayout;
         private TextView resendCodeView;
         private FrameLayout cantAccessEmailFrameLayout;
@@ -5645,63 +5571,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             };
 
             addView(codeFieldContainer, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 42, Gravity.CENTER_HORIZONTAL, 0, setup ? 48 : 32, 0, 0));
-
-            signInWithGoogleView = new TextView(context);
-            /* Google Account
-            signInWithGoogleView.setGravity(Gravity.CENTER);
-            signInWithGoogleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            signInWithGoogleView.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
-            signInWithGoogleView.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16));
-            signInWithGoogleView.setMaxLines(2);
-
-            SpannableStringBuilder str = new SpannableStringBuilder("d ");
-            Drawable dr = ContextCompat.getDrawable(context, R.drawable.googleg_standard_color_18);
-            dr.setBounds(0, AndroidUtilities.dp(9), AndroidUtilities.dp(18), AndroidUtilities.dp(18 + 9));
-            str.setSpan(new ImageSpan(dr, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.setSpan(new ReplacementSpan() {
-                @Override
-                public int getSize(@NonNull Paint paint, CharSequence text, int start, int end, @Nullable Paint.FontMetricsInt fm) {
-                    return AndroidUtilities.dp(12);
-                }
-
-                @Override
-                public void draw(@NonNull Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, @NonNull Paint paint) {}
-            }, 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.append(LocaleController.getString(R.string.SignInWithGoogle));
-            signInWithGoogleView.setText(str);
-
-            signInWithGoogleView.setOnClickListener(view -> {
-                NotificationCenter.getGlobalInstance().addObserver(new NotificationCenter.NotificationCenterDelegate() {
-                    @Override
-                    public void didReceivedNotification(int id, int account, Object... args) {
-                        int request = (int) args[0];
-                        int result = (int) args[1];
-                        Intent data = (Intent) args[2];
-                        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.onActivityResultReceived);
-
-                        if (request == BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE) {
-                            try {
-                                googleAccount = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException.class);
-                                onNextPressed(null);
-                            } catch (ApiException e) {
-                                FileLog.e(e);
-                            }
-                        }
-                    }
-                }, NotificationCenter.onActivityResultReceived);
-
-                GoogleSignInClient googleClient = GoogleSignIn.getClient(getContext(), new GoogleSignInOptions.Builder()
-                                .requestIdToken(BuildVars.GOOGLE_AUTH_CLIENT_ID)
-                                .requestEmail()
-                                .build());
-                googleClient.signOut().addOnCompleteListener(command -> {
-                    if (getParentActivity() == null) {
-                        return;
-                    }
-                    getParentActivity().startActivityForResult(googleClient.getSignInIntent(), BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE);
-                });
-            });
-            */
 
             cantAccessEmailFrameLayout = new FrameLayout(context);
             AndroidUtilities.updateViewVisibilityAnimated(cantAccessEmailFrameLayout, activityMode != MODE_CHANGE_LOGIN_EMAIL && !isSetup, 1f, false);
@@ -5851,8 +5720,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             } else {
                 bottomContainer.addView(errorViewSwitcher, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
                 bottomContainer.addView(cantAccessEmailFrameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
-                bottomContainer.addView(loginOrView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 16, Gravity.CENTER, 0, 0, 0, 16));
-                bottomContainer.addView(signInWithGoogleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 0, 0, 0, 16));
             }
             addView(bottomContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 0, 1f));
         }
@@ -5902,8 +5769,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         public void updateColors() {
             titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             confirmTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
-            signInWithGoogleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
-            loginOrView.updateColors();
             resendCodeView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
             cantAccessEmailView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
             emailResetInView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
@@ -5923,10 +5788,10 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             AndroidUtilities.updateViewVisibilityAnimated(resendCodeView, show);
             AndroidUtilities.updateViewVisibilityAnimated(cantAccessEmailFrameLayout, !show && activityMode != MODE_CHANGE_LOGIN_EMAIL && !isSetup);
 
-            if (loginOrView.getVisibility() != GONE) {
+            /*if (loginOrView.getVisibility() != GONE) {
                 loginOrView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 16, Gravity.CENTER, 0, 0, 0, show ? 8 : 16));
                 loginOrView.requestLayout();
-            }
+            }*/
         }
 
         @Override
@@ -6018,10 +5883,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
                 confirmTextView.setText(AndroidUtilities.formatSpannable(LocaleController.getString(R.string.CheckYourEmailSubtitle), confirmText));
             }
-
-            int v = params.getBoolean("googleSignInAllowed") && PushListenerController.GooglePushListenerServiceProvider.INSTANCE.hasServices() ? VISIBLE : GONE;
-            loginOrView.setVisibility(v);
-            signInWithGoogleView.setVisibility(v);
 
             showKeyboard(codeFieldContainer.codeField[0]);
             codeFieldContainer.requestFocus();
