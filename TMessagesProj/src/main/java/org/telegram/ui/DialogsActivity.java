@@ -442,19 +442,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private ArrayList<View> actionModeViews = new ArrayList<>();
     private ActionBarMenuItem deleteItem;
     private ActionBarMenuItem pinItem;
-    private ActionBarMenuItem muteItem;
+    private ActionBarMenuItem readItem;
     private ActionBarMenuItem archive2Item;
     private ActionBarMenuSubItem pin2Item;
     private ActionBarMenuSubItem addToFolderItem;
     private ActionBarMenuSubItem removeFromFolderItem;
     private ActionBarMenuSubItem archiveItem;
     private ActionBarMenuSubItem clearItem;
-    private ActionBarMenuSubItem readItem;
+    private ActionBarMenuSubItem muteItem;
     private ActionBarMenuSubItem blockItem;
     private ActionBarMenuSubItem profileInfoItem;
 
-    private ActionBarMenuItem forkItemRead;
-    private ActionBarMenuSubItem forkItemDelete;
+    //private ActionBarMenuItem forkItemRead;
+    //private ActionBarMenuSubItem forkItemDelete;
 
     private float additionalFloatingTranslation;
     private float additionalFloatingTranslation2;
@@ -6197,17 +6197,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         selectedDialogsCountTextView.setOnTouchListener((v, event) -> true);
 
         pinItem = actionMode.addItemWithWidth(pin, R.drawable.msg_pin, AndroidUtilities.dp(54));
-        muteItem = actionMode.addItemWithWidth(mute, R.drawable.msg_mute, AndroidUtilities.dp(54));
+        //muteItem = actionMode.addItemWithWidth(mute, R.drawable.msg_mute, AndroidUtilities.dp(54));
+        readItem = actionMode.addItemWithWidth(read, R.drawable.msg_markread, AndroidUtilities.dp(54));
         archive2Item = actionMode.addItemWithWidth(archive2, R.drawable.msg_archive, AndroidUtilities.dp(54));
-        // deleteItem = actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString("Delete", R.string.Delete));
-        forkItemRead = actionMode.addItemWithWidth(read, R.drawable.msg_markread, AndroidUtilities.dp(54), LocaleController.getString("MarkAsRead", R.string.MarkAsRead));
+        deleteItem = actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString("Delete", R.string.Delete));
+        //forkItemRead = actionMode.addItemWithWidth(read, R.drawable.msg_markread, AndroidUtilities.dp(54), LocaleController.getString("MarkAsRead", R.string.MarkAsRead));
         ActionBarMenuItem otherItem = actionMode.addItemWithWidth(0, R.drawable.ic_ab_other, AndroidUtilities.dp(54), LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
         archiveItem = otherItem.addSubItem(archive, R.drawable.msg_archive, LocaleController.getString("Archive", R.string.Archive));
         pin2Item = otherItem.addSubItem(pin2, R.drawable.msg_pin, LocaleController.getString("DialogPin", R.string.DialogPin));
         addToFolderItem = otherItem.addSubItem(add_to_folder, R.drawable.msg_addfolder, LocaleController.getString("FilterAddTo", R.string.FilterAddTo));
         removeFromFolderItem = otherItem.addSubItem(remove_from_folder, R.drawable.msg_removefolder, LocaleController.getString("FilterRemoveFrom", R.string.FilterRemoveFrom));
+        muteItem = otherItem.addSubItem(mute, R.drawable.msg_removefolder, LocaleController.getString("ChatsMute", R.string.MuteNotifications));
         // readItem = otherItem.addSubItem(read, R.drawable.msg_markread, LocaleController.getString("MarkAsRead", R.string.MarkAsRead));
-        forkItemDelete = otherItem.addSubItem(delete, R.drawable.msg_delete, LocaleController.getString("Delete", R.string.Delete));
+        // forkItemDelete = otherItem.addSubItem(delete, R.drawable.msg_delete, LocaleController.getString("Delete", R.string.Delete));
         clearItem = otherItem.addSubItem(clear, R.drawable.msg_clear, LocaleController.getString("ClearHistory", R.string.ClearHistory));
         blockItem = otherItem.addSubItem(block, R.drawable.msg_block, LocaleController.getString("BlockUser", R.string.BlockUser));
         profileInfoItem = otherItem.addSubItem(profileInfo, R.drawable.msg_message, LocaleController.getString("Info", R.string.Info));
@@ -6219,9 +6221,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         actionModeViews.add(pinItem);
         actionModeViews.add(archive2Item);
-        actionModeViews.add(muteItem);
-        // actionModeViews.add(deleteItem);
-        actionModeViews.add(forkItemRead);
+        actionModeViews.add(readItem);
+        actionModeViews.add(deleteItem);
         actionModeViews.add(otherItem);
 
         if (tag == null) {
@@ -9337,11 +9338,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 //            TransitionManager.beginDelayedTransition(actionBar.getActionMode(), transition);
 //        }
         if (deleteItem != null) {
-        if (canDeleteCount != count) {
-            deleteItem.setVisibility(View.GONE);
-        } else {
-            deleteItem.setVisibility(View.VISIBLE);
-        }
+            deleteItem.setVisibility(canDeleteCount != count ? View.GONE : View.VISIBLE);
         }
         if (canClearCacheCount != 0 && canClearCacheCount != count || canClearHistoryCount != 0 && canClearHistoryCount != count) {
             clearItem.setVisibility(View.GONE);
@@ -9417,24 +9414,30 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             addToFolderItem.setVisibility(View.GONE);
         }
         if (canUnmuteCount != 0) {
-            muteItem.setIcon(R.drawable.msg_unmute);
-            muteItem.setContentDescription(LocaleController.getString("ChatsUnmute", R.string.ChatsUnmute));
+            muteItem.setTextAndIcon(LocaleController.getString("ChatsUnmute", R.string.ChatsUnmute), R.drawable.msg_unmute);
+            /*muteItem.setIcon(R.drawable.msg_unmute);
+            muteItem.setContentDescription(LocaleController.getString("ChatsUnmute", R.string.ChatsUnmute));*/
         } else {
-            muteItem.setIcon(R.drawable.msg_mute);
-            muteItem.setContentDescription(LocaleController.getString("ChatsMute", R.string.ChatsMute));
+            muteItem.setTextAndIcon(LocaleController.getString("ChatsMute", R.string.ChatsMute), R.drawable.msg_mute);
+            /*muteItem.setIcon(R.drawable.msg_mute);
+            muteItem.setContentDescription(LocaleController.getString("ChatsMute", R.string.ChatsMute));*/
         }
         if (readItem != null) {
-        if (canReadCount != 0) {
-            readItem.setTextAndIcon(LocaleController.getString("MarkAsRead", R.string.MarkAsRead), R.drawable.msg_markread);
-            readItem.setVisibility(View.VISIBLE);
-        } else {
-            if (forumCount == 0) {
-                readItem.setTextAndIcon(LocaleController.getString("MarkAsUnread", R.string.MarkAsUnread), R.drawable.msg_markunread);
+            if (canReadCount != 0) {
+                readItem.setIcon(R.drawable.msg_markread);
+                readItem.setContentDescription(LocaleController.getString("MarkAsRead", R.string.MarkAsRead));
+                //readItem.setTextAndIcon(LocaleController.getString("MarkAsRead", R.string.MarkAsRead), R.drawable.msg_markread);
                 readItem.setVisibility(View.VISIBLE);
             } else {
-                readItem.setVisibility(View.GONE);
+                if (forumCount == 0) {
+                    readItem.setIcon(R.drawable.msg_markunread);
+                    readItem.setContentDescription(LocaleController.getString("MarkAsUnread", R.string.MarkAsUnread));
+                    //readItem.setTextAndIcon(LocaleController.getString("MarkAsUnread", R.string.MarkAsUnread), R.drawable.msg_markunread);
+                    readItem.setVisibility(View.VISIBLE);
+                } else {
+                    readItem.setVisibility(View.GONE);
+                }
             }
-        }
         }
         if (canPinCount != 0) {
             pinItem.setIcon(R.drawable.msg_pin);
@@ -9446,13 +9449,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             pin2Item.setText(LocaleController.getString("DialogUnpin", R.string.DialogUnpin));
         }
         profileInfoItem.setVisibility(count > 1 ? View.GONE : View.VISIBLE);
-
-        forkItemRead.setIcon((canReadCount != 0)
-            ? R.drawable.msg_markread
-            : R.drawable.msg_markunread);
-        forkItemDelete.setVisibility((canDeleteCount != count)
-            ? View.GONE
-            : View.VISIBLE);
     }
 
     private boolean validateSlowModeDialog(long dialogId) {
