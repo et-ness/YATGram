@@ -25,7 +25,6 @@
         android:supportsRtl="false"
         android:requestLegacyExternalStorage="true"
         tools:replace="android:supportsRtl">
-<<<<<<< HEAD
 
         <activity-alias
             android:enabled="false"
