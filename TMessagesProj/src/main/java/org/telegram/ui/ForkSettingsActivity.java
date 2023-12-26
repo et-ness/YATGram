@@ -161,6 +161,7 @@ public class ForkSettingsActivity extends BaseFragment {
     private int lockPremium;
     private int addItemToDeleteAllUnpinnedMessages;
     private int largePhoto;
+    private int hideAds;
 
     private int stickerSizeRow;
 
@@ -205,6 +206,7 @@ public class ForkSettingsActivity extends BaseFragment {
         showNotificationContent = rowCount++;
         hideBottomButton = SharedConfig.isUserOwner() ? rowCount++ : -1;
         lockPremium = rowCount++;
+        hideAds = rowCount++;
     
         emptyRows.add(rowCount++);
         sectionRows.add(rowCount++);
@@ -339,6 +341,8 @@ public class ForkSettingsActivity extends BaseFragment {
                 toggleGlobalMainSetting("largePhoto", view, false);
             } else if (position == lockPremium) {
                 toggleGlobalMainSetting("lockPremium", view, false);
+            } else if (position == hideAds) {
+                toggleGlobalMainSetting("hideAds", view, true);
             } else if (position == replaceForward) {
                 toggleGlobalMainSetting("replaceForward", view, true);
             } else if (position == mentionByName) {
@@ -481,6 +485,9 @@ public class ForkSettingsActivity extends BaseFragment {
                         String t = LocaleController.getString("LockPremium", R.string.LockPremium);
                         String info = LocaleController.getString("SquareAvatarsInfo", R.string.SquareAvatarsInfo);
                         textCell.setTextAndValueAndCheck(t, info, preferences.getBoolean("lockPremium", false), true, false);
+                    } else if (position == hideAds) {
+                        String t = LocaleController.getString("hideAds", R.string.hideAds);
+                        textCell.setTextAndCheck(t, preferences.getBoolean("hideAds", true), false);
                     } else if (position == replaceForward) {
                         String t = LocaleController.getString("ReplaceForward", R.string.ReplaceForward);
                         textCell.setTextAndCheck(t, preferences.getBoolean("replaceForward", true), false);
@@ -545,6 +552,7 @@ public class ForkSettingsActivity extends BaseFragment {
                         || position == addItemToDeleteAllUnpinnedMessages
                         || position == largePhoto
                         || position == lockPremium
+                        || position == hideAds
                         || position == replaceForward
                         || position == mentionByName
                         || position == openArchiveOnPull
@@ -611,6 +619,7 @@ public class ForkSettingsActivity extends BaseFragment {
                 || position == addItemToDeleteAllUnpinnedMessages
                 || position == largePhoto
                 || position == lockPremium
+                || position == hideAds
                 || position == replaceForward
                 || position == mentionByName
                 || position == openArchiveOnPull

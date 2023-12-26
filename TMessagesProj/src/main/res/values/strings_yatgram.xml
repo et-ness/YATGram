@@ -6,4 +6,5 @@
     <string name="BotLogin">Bot Login</string>
     <string name="NoQrFound">No QR Code found</string>
     <string name="ShareQRCode">QR Code</string>
+    <string name="hideAds">Hide ads</string>
 </resources>

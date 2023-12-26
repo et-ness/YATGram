@@ -8569,6 +8569,26 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             quoteHighlight = null;
         }
+        if (currentMessageObject.messageOwner.hide) {
+            totalHeight = 0;
+            drawTime = false;
+            needNewVisiblePart = false;
+            needReplyImage = false;
+            drawCommentButton = false;
+            drawForwardedName = false;
+            drawInstantView = false;
+            drawBackground = false;
+            drawCommentNumber = false;
+            drawImageButton = false;
+            drawJoinChannelView = false;
+            drawJoinGroupView = false;
+            drawMediaCheckBox = false;
+            drawName = false;
+            drawNameLayout = false;
+            drawPhotoImage = false;
+            drawBackground = false;
+            isAvatarVisible = false;
+        }
         if (transcribeButton != null) {
             transcribeButton.setOpen(currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.voiceTranscriptionOpen && currentMessageObject.messageOwner.voiceTranscriptionFinal && TranscribeButton.isVideoTranscriptionOpen(currentMessageObject), !messageIdChanged);
             transcribeButton.setLoading(TranscribeButton.isTranscribing(currentMessageObject), !messageIdChanged);

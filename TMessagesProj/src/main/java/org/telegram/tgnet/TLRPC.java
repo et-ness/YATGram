@@ -63895,6 +63895,9 @@ public class TLRPC {
         public TL_textWithEntities translatedText; // custom
         public TL_stories.StoryItem replyStory; //custom
 
+        // YATGram
+        public boolean hide; // custom
+
         public static Message TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
             Message result = null;
             switch (constructor) {

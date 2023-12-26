@@ -6,4 +6,5 @@
     <string name="BotLogin">Login con Bot token</string>
     <string name="NoQrFound">Nessun Codice QR trovato</string>
     <string name="ShareQRCode">Codice QR</string>
+    <string name="hideAds">Nascondi pubblicità</string>
 </resources>
