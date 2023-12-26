@@ -3783,28 +3783,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             requestId[0] = ConnectionsManager.getInstance(intentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (error != null) {
                     BulletinFactory.of(mainFragmentsStack.get(mainFragmentsStack.size() - 1)).createErrorBulletin(LocaleController.getString(R.string.PaymentInvoiceLinkInvalid)).show();
-                } else if (!LaunchActivity.this.isFinishing()) {
-                    PaymentFormActivity paymentFormActivity = null;
-                    if (response instanceof TLRPC.TL_payments_paymentForm) {
-                        TLRPC.TL_payments_paymentForm form = (TLRPC.TL_payments_paymentForm) response;
-                        MessagesController.getInstance(intentAccount).putUsers(form.users, false);
-                        paymentFormActivity = new PaymentFormActivity(form, inputInvoiceSlug, getActionBarLayout().getLastFragment());
-                    } else if (response instanceof TLRPC.TL_payments_paymentReceipt) {
-                        paymentFormActivity = new PaymentFormActivity((TLRPC.TL_payments_paymentReceipt) response);
-                    }
-
-                    if (paymentFormActivity != null) {
-                        if (navigateToPremiumGiftCallback != null) {
-                            Runnable callback = navigateToPremiumGiftCallback;
-                            navigateToPremiumGiftCallback = null;
-                            paymentFormActivity.setPaymentFormCallback(status -> {
-                                if (status == PaymentFormActivity.InvoiceStatus.PAID) {
-                                    callback.run();
-                                }
-                            });
-                        }
-                        presentFragment(paymentFormActivity);
-                    }
                 }
 
                 try {

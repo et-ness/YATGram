@@ -295,6 +295,25 @@ public class TextCell extends FrameLayout {
         setWillNotDraw(!needDivider);
     }
 
+    public void setTextAndIcon(CharSequence text, int resId, boolean divider) {
+        imageLeft = 21;
+        offsetFromImage = getOffsetFromImage(false);
+        textView.setText(text);
+        valueTextView.setText(valueText = null, false);
+        if (resId != 0) {
+            imageView.setImageResource(resId);
+            imageView.setVisibility(VISIBLE);
+            imageView.setPadding(0, AndroidUtilities.dp(7), 0, 0);
+        } else {
+            imageView.setVisibility(GONE);
+        }
+        valueTextView.setVisibility(GONE);
+        valueSpoilersTextView.setVisibility(GONE);
+        valueImageView.setVisibility(GONE);
+        needDivider = divider;
+        setWillNotDraw(!needDivider);
+    }
+
     public void setTextAndIcon(String text, int resId, boolean divider) {
         imageLeft = 21;
         offsetFromImage = getOffsetFromImage(false);

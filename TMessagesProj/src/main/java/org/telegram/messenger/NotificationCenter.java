@@ -303,6 +303,8 @@ public class NotificationCenter {
 
     public static boolean alreadyLogged;
 
+    public static final int updateLoginToken = totalEvents++;
+
     private SparseArray<ArrayList<NotificationCenterDelegate>> observers = new SparseArray<>();
     private SparseArray<ArrayList<NotificationCenterDelegate>> removeAfterBroadcast = new SparseArray<>();
     private SparseArray<ArrayList<NotificationCenterDelegate>> addAfterBroadcast = new SparseArray<>();

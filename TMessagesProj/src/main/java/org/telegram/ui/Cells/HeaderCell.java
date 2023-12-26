@@ -85,6 +85,15 @@ public class HeaderCell extends FrameLayout {
         ViewCompat.setAccessibilityHeading(this, true);
     }
 
+    public HeaderCell setBigTitle(boolean enabled) {
+        if (enabled) {
+            textView.setTypeface(AndroidUtilities.getTypeface("fonts/mw_bold.ttf"));
+        } else {
+            textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        }
+        return this;
+    }
+
     public void setHeight(int value) {
         textView.setMinHeight(AndroidUtilities.dp(height = value) - ((LayoutParams) textView.getLayoutParams()).topMargin);
     }

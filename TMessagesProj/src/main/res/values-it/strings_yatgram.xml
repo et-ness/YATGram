@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ImportLogin">Login QR</string>
+    <string name="QRLoginNotice">Questo codice QR / link consente a qualcuno di accedere al tuo account Telegram. Questa è una tua operazione\?</string>
+    <string name="QRLoginConfirm">Conferma Login</string>
+    <string name="BotLogin">Login con Bot token</string>
+    <string name="NoQrFound">Nessun Codice QR trovato</string>
+    <string name="ShareQRCode">Codice QR</string>
+</resources>

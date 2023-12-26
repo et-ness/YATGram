@@ -42,7 +42,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.telephony.PhoneNumberUtils;
-//import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Layout;
@@ -118,6 +117,7 @@ import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -171,6 +171,8 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.telegram.messenger.yatgram.Util;
 
 @SuppressLint("HardwareIds")
 public class LoginActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
@@ -331,6 +333,17 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     private boolean[] postedEditDoneCallback = new boolean[2];
 
     private boolean forceDisableSafetyNet;
+
+    private ActionBarMenuItem menu = null;
+
+    private static final int menu_proxy = 2;
+    private static final int menu_language = 3;
+    private static final int menu_bot_login = 4;
+    private static final int menu_qr_login = 8;
+
+    TLRPC.TL_auth_exportLoginToken exportLoginTokenRequest = null;
+    AlertDialog exportLoginTokenProgress = null;
+    android.app.AlertDialog exportLoginTokenDialog = null;
 
     private static class ProgressView extends View {
 
@@ -504,6 +517,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 marginLayoutParams = (MarginLayoutParams) radialProgressView.getLayoutParams();
                 marginLayoutParams.topMargin = AndroidUtilities.dp(16) + statusBarHeight;
 
+                marginLayoutParams = (MarginLayoutParams) menu.getLayoutParams();
+                marginLayoutParams.topMargin = AndroidUtilities.dp(16) + statusBarHeight;
+
                 if (measureKeyboardHeight() > AndroidUtilities.dp(20) && keyboardView.getVisibility() != GONE && !isCustomKeyboardForceDisabled() && !customKeyboardWasVisible) {
                     if (keyboardAnimator != null) {
                         keyboardAnimator.cancel();
@@ -663,6 +679,40 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         int padding = AndroidUtilities.dp(4);
         backButtonView.setPadding(padding, padding, padding, padding);
         sizeNotifierFrameLayout.addView(backButtonView, LayoutHelper.createFrame(32, 32, Gravity.LEFT | Gravity.TOP, 16, 16, 0, 0));
+
+        menu = new ActionBarMenuItem(context, null, 0, Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
+        menu.setIcon(R.drawable.ic_ab_other);
+        menu.setSubMenuOpenSide(1);
+        menu.setBackground(Theme.createSelectorDrawable(Theme.getColor(Theme.key_listSelector)));
+
+        menu.addSubItem(menu_proxy, R.drawable.msg2_proxy_on, LocaleController.getString("Proxy", R.string.Proxy))
+                .setContentDescription(LocaleController.getString("Proxy", R.string.Proxy));
+        menu.addSubItem(menu_language, R.drawable.ic_translate, LocaleController.getString("Language", R.string.Language))
+                .setContentDescription(LocaleController.getString("Language", R.string.Language));
+        menu.addSubItem(menu_bot_login, R.drawable.list_bot, LocaleController.getString("BotLogin", R.string.BotLogin))
+                .setContentDescription(LocaleController.getString("BotLogin", R.string.BotLogin));
+        menu.addSubItem(menu_qr_login, R.drawable.msg_qrcode, LocaleController.getString("ImportLogin", R.string.ImportLogin))
+                .setContentDescription(LocaleController.getString("ImportLogin", R.string.ImportLogin));
+
+        menu.setOnClickListener(v -> {
+            menu.toggleSubMenu();
+        });
+        menu.setDelegate((id) -> {
+            if (id == menu_proxy){
+                presentFragment(new ProxyListActivity());
+            } else if (id == menu_language) {
+                presentFragment(new LanguageSelectActivity());
+            } else if (id == menu_bot_login) {
+                //doBotLogin(context);
+            } else if (id == menu_qr_login) {
+                getConnectionsManager().cleanup(false);
+                regenerateLoginToken(false);
+            }
+        });
+        menu.setContentDescription(LocaleController.getString(R.string.items_other));
+        padding = AndroidUtilities.dp(4);
+        menu.setPadding(padding, padding, padding, padding);
+        sizeNotifierFrameLayout.addView(menu, LayoutHelper.createFrame(32, 32, Gravity.RIGHT | Gravity.TOP, 0, 16, 16, 0));
 
         proxyButtonView = new ImageView(context);
         proxyButtonView.setImageDrawable(proxyDrawable = new ProxyDrawable(context));
@@ -8047,7 +8097,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             showProxyButton(false, animated);
         }
     }
-    
+
     private boolean proxyButtonVisible;
     private Runnable showProxyButtonDelayed;
     private void showProxyButtonDelayed() {
@@ -8091,6 +8141,123 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.didUpdateConnectionState) {
             updateProxyButton(true, false);
+        } else if (id == NotificationCenter.updateLoginToken) {
+            regenerateLoginToken(false);
+        }
+    }
+
+    // copy from cn.hutool.core.codec.Base64
+    public static String encodeUrlSafe(byte[] source) {
+        if (source == null) {
+            return null;
+        }
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(source);
+    }
+
+    private void regenerateLoginToken(Boolean refresh) {
+        getNotificationCenter().removeObserver(this, NotificationCenter.updateLoginToken);
+        if (getParentActivity() == null || isFinished) return;
+        if (exportLoginTokenDialog != null && exportLoginTokenDialog.isShowing()) {
+            exportLoginTokenDialog.dismiss();
+        } else if (refresh) return;
+        exportLoginTokenProgress = new AlertDialog(getParentActivity(), 3);
+        exportLoginTokenProgress.setCanCancel(false);
+        exportLoginTokenProgress.show();
+        if (exportLoginTokenRequest == null) {
+            exportLoginTokenRequest = new TLRPC.TL_auth_exportLoginToken();
+            exportLoginTokenRequest.api_id = BuildVars.APP_ID;
+            exportLoginTokenRequest.api_hash = BuildVars.APP_HASH;
+            exportLoginTokenRequest.except_ids = new ArrayList<>();
+            for (int a : SharedConfig.activeAccounts) {
+                UserConfig userConfig = UserConfig.getInstance(a);
+                if (!userConfig.isClientActivated()) {
+                    continue;
+                }
+                exportLoginTokenRequest.except_ids.add(userConfig.clientUserId);
+            }
+        }
+        getNotificationCenter().addObserver(this, NotificationCenter.updateLoginToken);
+        getConnectionsManager().sendRequest(exportLoginTokenRequest, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            if (getParentActivity() == null) return;
+            try {
+                exportLoginTokenProgress.dismiss();
+            } catch (Exception ignore) {
+            }
+            if (response instanceof TLRPC.TL_auth_loginToken) {
+                exportLoginTokenDialog = Util.showQrDialog(getParentActivity(), "tg://login?token=" + encodeUrlSafe(((TLRPC.TL_auth_loginToken) response).token));
+                int delay = (int) (((TLRPC.TL_auth_loginToken) response).expires - System.currentTimeMillis() / 1000);
+                if (delay < 0 || delay > 20) delay = 20;
+                if (BuildVars.DEBUG_VERSION) {
+                    Util.showToast("Refresh after " + delay + "s");
+                }
+                AndroidUtilities.runOnUIThread(() -> regenerateLoginToken(true), delay * 1000L);
+            } else if (response instanceof TLRPC.TL_auth_loginTokenMigrateTo) {
+                checkMigrateTo((TLRPC.TL_auth_loginTokenMigrateTo) response);
+            } else if (response instanceof TLRPC.TL_auth_loginTokenSuccess) {
+                processLoginByTokenFinish((TLRPC.TL_auth_loginTokenSuccess) response);
+            } else {
+                processError(error);
+            }
+        }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin | ConnectionsManager.RequestFlagTryDifferentDc | ConnectionsManager.RequestFlagEnableUnauthorized);
+    }
+
+    private void checkMigrateTo(TLRPC.TL_auth_loginTokenMigrateTo response) {
+        getNotificationCenter().removeObserver(this, NotificationCenter.updateLoginToken);
+        ConnectionsManager.native_moveToDatacenter(currentAccount, response.dc_id);
+        exportLoginTokenProgress.show();
+        TLRPC.TL_auth_importLoginToken request = new TLRPC.TL_auth_importLoginToken();
+        request.token = response.token;
+        getConnectionsManager().sendRequest(request, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
+            exportLoginTokenProgress.dismiss();
+            if (error1 != null) {
+                processError(error1);
+            } else if (response1 instanceof TLRPC.TL_auth_loginTokenSuccess) {
+                processLoginByTokenFinish((TLRPC.TL_auth_loginTokenSuccess) response1);
+            }
+        }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin | ConnectionsManager.RequestFlagTryDifferentDc | ConnectionsManager.RequestFlagEnableUnauthorized);
+    }
+
+    private void processError(TLRPC.TL_error error) {
+        if (error.text.contains("SESSION_PASSWORD_NEEDED")) {
+            exportLoginTokenProgress.show();
+            TLRPC.TL_account_getPassword req2 = new TLRPC.TL_account_getPassword();
+            ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
+                exportLoginTokenProgress.dismiss();
+                showDoneButton(false, true);
+                if (error1 == null) {
+                    TLRPC.TL_account_password password = (TLRPC.TL_account_password) response1;
+                    if (!TwoStepVerificationActivity.canHandleCurrentPassword(password, true)) {
+                        AlertsCreator.showUpdateAppAlert(getParentActivity(), LocaleController.getString("UpdateAppAlert", R.string.UpdateAppAlert), true);
+                        return;
+                    }
+                    Bundle bundle = new Bundle();
+                    SerializedData data = new SerializedData(password.getObjectSize());
+                    password.serializeToStream(data);
+                    bundle.putString("password", Utilities.bytesToHex(data.toByteArray()));
+                    setPage(LoginActivity.VIEW_PASSWORD, true, bundle, false);
+                } else {
+                    needShowAlert(LocaleController.getString("AppName", R.string.AppName), error1.text);
+                }
+            }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
+        } else {
+            Util.showToast(error);
+            exportLoginTokenRequest = null;
+            if (!error.text.contains("CONNECTION_NOT_INITED"))
+                regenerateLoginToken(false);
+        }
+    }
+
+    private void processLoginByTokenFinish(TLRPC.TL_auth_loginTokenSuccess authLoginTokenSuccess) {
+        getNotificationCenter().removeObserver(this, NotificationCenter.updateLoginToken);
+        TLRPC.auth_Authorization authorization = authLoginTokenSuccess.authorization;
+        if (authorization instanceof TLRPC.TL_auth_authorizationSignUpRequired) {
+            TLRPC.TL_auth_authorizationSignUpRequired authorizationI = (TLRPC.TL_auth_authorizationSignUpRequired) authorization;
+            if (authorizationI.terms_of_service != null) {
+                currentTermsOfService = authorizationI.terms_of_service;
+            }
+            setPage(VIEW_REGISTER, true, new Bundle(), false);
+        } else {
+            onAuthSuccess((TLRPC.TL_auth_authorization) authorization);
         }
     }
 }

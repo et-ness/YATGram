@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ImportLogin">QR Login</string>
+    <string name="QRLoginNotice">This QR code / link allows someone to log in to your Telegram account. Is this your own operation?</string>
+    <string name="QRLoginConfirm">Confirm Login</string>
+    <string name="BotLogin">Bot Login</string>
+    <string name="NoQrFound">No QR Code found</string>
+    <string name="ShareQRCode">QR Code</string>
+</resources>

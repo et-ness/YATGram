@@ -23,6 +23,7 @@ public class ThemeColors {
         defaultColors[key_dialogTextBlack] = 0xff222222;
         defaultColors[key_dialogTextLink] = 0xff2678b6;
         defaultColors[key_dialogLinkSelection] = 0x3362a9e3;
+        defaultColors[key_dialogTextRed] = 0xffcd5a5a;
         defaultColors[key_dialogTextBlue] = 0xff2f8cc9;
         defaultColors[key_dialogTextBlue2] = 0xff3a95d5;
         defaultColors[key_dialogTextBlue4] = 0xff19a7e8;
@@ -793,6 +794,7 @@ public class ThemeColors {
         colorKeysMap.put(key_dialogTextBlack, "dialogTextBlack");
         colorKeysMap.put(key_dialogTextLink, "dialogTextLink");
         colorKeysMap.put(key_dialogLinkSelection, "dialogLinkSelection");
+        colorKeysMap.put(key_dialogTextRed, "dialogTextRed");
         colorKeysMap.put(key_dialogTextBlue, "dialogTextBlue");
         colorKeysMap.put(key_dialogTextBlue2, "dialogTextBlue2");
         colorKeysMap.put(key_dialogTextBlue4, "dialogTextBlue4");

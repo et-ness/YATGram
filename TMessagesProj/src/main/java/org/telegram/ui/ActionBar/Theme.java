@@ -3353,6 +3353,7 @@ public class Theme {
     public static final int key_dialogTextBlack = colorsCount++;
     public static final int key_dialogTextLink = colorsCount++;
     public static final int key_dialogLinkSelection = colorsCount++;
+    public static final int key_dialogTextRed = colorsCount++;
     public static final int key_dialogTextBlue = colorsCount++;
     public static final int key_dialogTextBlue2 = colorsCount++;
     public static final int key_dialogTextBlue4 = colorsCount++;
