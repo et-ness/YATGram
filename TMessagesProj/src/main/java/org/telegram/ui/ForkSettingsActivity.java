@@ -360,17 +360,17 @@ public class ForkSettingsActivity extends BaseFragment {
             } else if (position == hideSensitiveDataRow) {
                 toggleGlobalMainSetting("hideSensitiveData", view, false);
             } else if (position == customTitleRow) {
-                final String defaultValue = "Fork Client";
+                final String defaultValue = "YATGram";
                 org.telegram.messenger.forkgram.ForkDialogs.CreateFieldAlert(
                     context,
                     LocaleController.getString("EditAdminRank", R.string.EditAdminRank),
-                    MessagesController.getGlobalMainSettings().getString("forkCustomTitle", defaultValue),
+                    MessagesController.getGlobalMainSettings().getString("CustomTitle", defaultValue),
                     (result) -> {
                         if (result.isEmpty()) {
                             result = defaultValue;
                         }
                         SharedPreferences.Editor editor = MessagesController.getGlobalMainSettings().edit();
-                        editor.putString("forkCustomTitle", result);
+                        editor.putString("CustomTitle", result);
                         editor.commit();
                         if (view instanceof TextSettingsCell) {
                             ((TextSettingsCell) view).getValueTextView().setText(result);
@@ -418,7 +418,7 @@ public class ForkSettingsActivity extends BaseFragment {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
                     if (position == customTitleRow) {
                         String t = LocaleController.getString("EditAdminRank", R.string.EditAdminRank);
-                        final String v = MessagesController.getGlobalMainSettings().getString("forkCustomTitle", "Fork Client");
+                        final String v = MessagesController.getGlobalMainSettings().getString("CustomTitle", "YATGram");
                         textCell.setTextAndValue(t, v, false);
                     }
                     break;

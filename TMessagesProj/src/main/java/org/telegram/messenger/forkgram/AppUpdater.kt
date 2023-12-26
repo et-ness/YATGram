@@ -37,7 +37,7 @@ object AppUpdater {
         }
         val apks = f.listFiles { f -> (f.name.startsWith(title) && f.name.endsWith(".apk")) } ?: return;
         for (apk in apks) {
-            android.util.Log.i("Fork Client", "File was removed. Path: " + apk.absolutePath);
+            android.util.Log.i("YATGram", "File was removed. Path: " + apk.absolutePath);
             apk.delete();
         }
     }
