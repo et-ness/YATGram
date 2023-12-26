@@ -3159,7 +3159,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             }
             if (delegate.getSendAsPeers() != null) {
                 try {
-                    v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignored) {
                 }
                 if (senderSelectPopupWindow != null) {
@@ -3328,7 +3328,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                                                 if (!performedHapticFeedback && value >= endY) {
                                                     performedHapticFeedback = true;
                                                     try {
-                                                        avatar.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                                        avatar.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                                                     } catch (Exception ignored) {
                                                     }
                                                 }
@@ -3446,7 +3446,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             boolean open = !botCommandsMenuButton.isOpened();
             botCommandsMenuButton.setOpened(open);
             try {
-                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
             }
             if (hasBotWebView()) {
@@ -3586,7 +3586,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
 
     private void startLockTransition() {
         AnimatorSet animatorSet = new AnimatorSet();
-        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
 
         ObjectAnimator translate = ObjectAnimator.ofFloat(recordCircle, "lockAnimatedTranslation", recordCircle.startTranslation);
         translate.setStartDelay(100);
@@ -3807,7 +3807,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         sendPopupWindow.dimBehind();
         sendButton.invalidate();
         try {
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         } catch (Exception ignore) {}
 
         return false;
@@ -5943,7 +5943,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             if (captionLimitView != null) {
                 AndroidUtilities.shakeViewSpring(captionLimitView, 3.5f);
                 try {
-                    captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignored) {}
             }
 

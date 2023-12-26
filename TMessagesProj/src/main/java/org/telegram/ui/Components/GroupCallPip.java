@@ -130,7 +130,7 @@ public class GroupCallPip implements NotificationCenter.NotificationCenterDelega
                             return;
                         }
                         AndroidUtilities.runOnUIThread(micRunnable, 90);
-                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                         pressed = true;
                     }
                 }
@@ -254,7 +254,7 @@ public class GroupCallPip implements NotificationCenter.NotificationCenterDelega
                         if (pressed) {
                             if (VoIPService.getSharedInstance() != null) {
                                 VoIPService.getSharedInstance().setMicMute(true, false, false);
-                                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                             }
                             pressed = false;
                         } else if (event.getAction() == MotionEvent.ACTION_UP && !moving) {
@@ -321,7 +321,7 @@ public class GroupCallPip implements NotificationCenter.NotificationCenterDelega
             private void onTap() {
                 if (VoIPService.getSharedInstance() != null) {
                     showAlert(!showAlert);
-                    //performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);x
+                    //performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);x
                 }
             }
         };
@@ -889,7 +889,7 @@ public class GroupCallPip implements NotificationCenter.NotificationCenterDelega
                 iconView.playAnimation();
             }
             if (prepare) {
-                button.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                button.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             }
         }
         button.prepareToRemove(prepare);

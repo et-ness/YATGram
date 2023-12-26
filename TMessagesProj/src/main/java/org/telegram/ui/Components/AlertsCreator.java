@@ -2980,7 +2980,7 @@ public class AlertsCreator {
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
 /*
             try {
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }
@@ -3168,7 +3168,7 @@ public class AlertsCreator {
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
 /*
             try {
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }
@@ -3357,7 +3357,7 @@ public class AlertsCreator {
         });
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
             try {
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }
@@ -3557,7 +3557,7 @@ public class AlertsCreator {
                 } else {
                     buttonTextView.setText(LocaleController.getString("SetAutoDeleteTimer", R.string.SetAutoDeleteTimer));
                 }
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }
@@ -3696,7 +3696,7 @@ public class AlertsCreator {
 
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
             try {
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }
@@ -3848,7 +3848,7 @@ public class AlertsCreator {
         linearLayout.addView(numberPicker, LayoutHelper.createLinear(0, 54 * 5, 1f));
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
             try {
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }
@@ -4024,7 +4024,7 @@ public class AlertsCreator {
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
 /*
             try {
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }

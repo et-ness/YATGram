@@ -3075,7 +3075,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             drawRevealBackground = Math.abs(translationX) >= getMeasuredWidth() * 0.45f;
             if (prevValue != drawRevealBackground && archiveHidden == SharedConfig.archiveHidden) {
                 try {
-                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignore) {}
             }
         }

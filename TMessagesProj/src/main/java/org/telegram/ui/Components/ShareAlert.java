@@ -2188,7 +2188,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
         }
         sendPopupWindow.showAtLocation(view, Gravity.LEFT | Gravity.TOP, location[0] + view.getMeasuredWidth() - layout.getMeasuredWidth() + AndroidUtilities.dp(8), y);
         sendPopupWindow.dimBehind();
-        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
 
         return true;
     }

@@ -1128,7 +1128,7 @@ public class UndoView extends FrameLayout {
             leftImageView.playAnimation();
             if (hapticDelay > 0) {
                 leftImageView.postDelayed(() -> {
-                    leftImageView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    leftImageView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 }, hapticDelay);
             }
         } else if (currentAction == ACTION_PROXIMITY_SET || currentAction == ACTION_PROXIMITY_REMOVED) {

@@ -4345,7 +4345,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (Math.abs(dx) >= AndroidUtilities.dp(50)) {
                             if (!wasTrackingVibrate) {
                                 try {
-                                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                                 } catch (Exception ignore) {
 
                                 }
@@ -6247,7 +6247,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     chatActivityEnterView.getEditField().setAllowDrawCursor(true);
                 }
             });
-            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
             return true;
         });
 
@@ -6668,7 +6668,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     chatActivityEnterView.getEditField().setAllowDrawCursor(true);
                 }
             });
-            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
             return false;
         });
         reactionsMentiondownButton.setVisibility(View.INVISIBLE);
@@ -10629,7 +10629,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
 
         try {
-            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         } catch (Exception e) {
             FileLog.e(e);
         }
@@ -18700,7 +18700,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         for (int a = 0, N = results.results.size(); a < N; a++) {
                             TLRPC.TL_pollAnswerVoters voters = results.results.get(a);
                             if (voters.chosen) {
-                                pollView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                pollView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                                 if (voters.correct) {
                                     fireworksOverlay.start();
                                 } else {
@@ -27529,7 +27529,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     bulletin.show();
                     View view = bulletin.getLayout();
                     view.postDelayed(() -> {
-                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                     }, 550);
                 });
                 builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
@@ -31299,7 +31299,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     getMessagesController().pressTranscribeButton();
                 });
                 try {
-                    topUndoView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    topUndoView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignored) {}
             } else if (type == 1) {
                 String until = LocaleController.formatDateTime(getMessagesController().transcribeAudioTrialCooldownUntil);
@@ -31308,7 +31308,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     AndroidUtilities.replaceTags(LocaleController.formatPluralString("TranscriptionTrialLeft", TranscribeButton.getTranscribeTrialCount(currentAccount)));
                 BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.transcribe, text, 6).show(true);
                 try {
-                    fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignored) {}
             } else if (type == 2 || type == 3) {
                 String until = LocaleController.formatDateTime(getMessagesController().transcribeAudioTrialCooldownUntil);
@@ -32300,7 +32300,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 return;
             }
             fireworksOverlay.start();
-            fireworksOverlay.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            fireworksOverlay.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         }
 
         @Override

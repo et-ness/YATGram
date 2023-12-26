@@ -287,7 +287,7 @@ public class BoostDialogs {
         });
         final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
             try {
-                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {
 
             }

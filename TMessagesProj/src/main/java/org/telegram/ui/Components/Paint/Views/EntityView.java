@@ -450,7 +450,7 @@ public class EntityView extends FrameLayout {
             runStickyXAnimator(1, 0);
         } else {
             try {
-                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignored) {}
             runStickyXAnimator(0, 1);
         }
@@ -472,7 +472,7 @@ public class EntityView extends FrameLayout {
             runStickyYAnimator(1, 0);
         } else {
             try {
-                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignored) {}
             runStickyYAnimator(0, 1);
         }
@@ -627,7 +627,7 @@ public class EntityView extends FrameLayout {
                             currentStickyAngle = stickyAngle;
                             hasStickyAngle = true;
                             try {
-                                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                             } catch (Exception ignored) {}
 
                             if (angleAnimator != null) {

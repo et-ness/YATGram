@@ -6763,7 +6763,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                 int maxVote = 0;
                 if (!animatePollAnswer && pollVoteInProgress && vibrateOnPollVote) {
-                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 }
                 animatePollAnswerAlpha = animatePollAnswer = attachedToWindow && (pollVoteInProgress || pollUnvoteInProgress);
                 ArrayList<PollButton> previousPollButtons = null;

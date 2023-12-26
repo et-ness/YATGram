@@ -213,7 +213,7 @@ public class BackButtonMenu {
         scrimPopupWindow.showAtLocation(fragmentView, Gravity.LEFT | Gravity.TOP, popupX, popupY);
 
 //        try {
-//            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+//            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
 //        } catch (Exception ignore) {}
 
         return scrimPopupWindow;

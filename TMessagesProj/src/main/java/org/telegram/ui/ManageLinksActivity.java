@@ -643,7 +643,7 @@ public class ManageLinksActivity extends BaseFragment {
             if ((position >= linksStartRow && position < linksEndRow) || (position >= revokedLinksStartRow && position < revokedLinksEndRow)) {
                 LinkCell cell = (LinkCell) view;
                 cell.optionsView.callOnClick();
-                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                 return true;
             }
             return false;

@@ -1386,7 +1386,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 state[0] = 3;
                 if (!lastNameAvailable) {
                     AndroidUtilities.shakeView(editText);
-                    editText.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    editText.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 }
                 AndroidUtilities.hideKeyboard(editText);
                 SendMessagesHelper.getInstance(currentAccount).prepareImportStickers(setTitle, lastCheckName, importingSoftware, importingStickersPaths, (param) -> {

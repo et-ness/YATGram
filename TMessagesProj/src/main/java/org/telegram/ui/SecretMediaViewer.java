@@ -1343,7 +1343,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
 //        bottomSheet.scrollNavBar = true;
 //        bottomSheet.show();
 //        try {
-//            containerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+//            containerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
 //        } catch (Exception ignore) {}
 //        bottomSheet.setItemColor(0,0xffffffff, 0xffffffff);
 //        bottomSheet.setItemColor(1,0xffffffff, 0xffffffff);

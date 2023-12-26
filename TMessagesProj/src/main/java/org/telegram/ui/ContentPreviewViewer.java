@@ -1046,7 +1046,7 @@ public class ContentPreviewViewer {
                         }
                     }
                     if (opened) {
-                        currentPreviewCell.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        currentPreviewCell.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                         if (delegate != null) {
                             delegate.resetTouch();
                         }

@@ -803,7 +803,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                     }
                     if (fragment.getParentActivity() instanceof LaunchActivity) {
                         try {
-                            fragment.getFragmentView().performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                            fragment.getFragmentView().performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                         } catch (Exception ignored) {
                         }
                         ((LaunchActivity) fragment.getParentActivity()).getFireworksOverlay().start();

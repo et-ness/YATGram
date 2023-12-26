@@ -387,7 +387,7 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
             if (MessagesController.getInstance(currentAccount).getCaptionMaxLengthLimit() - codePointCount < 0) {
                 AndroidUtilities.shakeView(captionLimitView);
                 try {
-                    captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignored) {}
 
                 if (!MessagesController.getInstance(currentAccount).premiumLocked && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > codePointCount) {

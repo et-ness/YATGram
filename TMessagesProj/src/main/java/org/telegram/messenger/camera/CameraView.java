@@ -1014,7 +1014,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             vibrator.cancel();
             vibrator.vibrate(vibrationEffect);
         } else {
-            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         }
     }
 

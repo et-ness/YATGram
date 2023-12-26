@@ -351,7 +351,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             } else if (position == voicesRow) {
                 if (!getUserConfig().isPremium()) {
                     try {
-                        fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                     } catch (Exception e) {
                         FileLog.e(e);
                     }
@@ -387,7 +387,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                             Bulletin.make(PrivacySettingsActivity.this, layout, duration).show();
 
                             try {
-                                fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                             } catch (Exception ignored) {}
 
                             loadPasswordSettings();

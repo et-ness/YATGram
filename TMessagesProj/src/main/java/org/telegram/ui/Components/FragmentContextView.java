@@ -534,7 +534,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 isMuted = false;
 
                 AndroidUtilities.runOnUIThread(toggleMicRunnable, 90);
-                muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             };
 
 
@@ -569,7 +569,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                             muteButton.playAnimation();
                             if (VoIPService.getSharedInstance() != null) {
                                 VoIPService.getSharedInstance().setMicMute(true, true, false);
-                                muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                             }
                             pressed = false;
                             Theme.getFragmentContextViewWavesDrawable().updateState(true);
@@ -626,7 +626,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             }
             muteButton.playAnimation();
             Theme.getFragmentContextViewWavesDrawable().updateState(true);
-            muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         });
 
         closeButton = new ImageView(context);

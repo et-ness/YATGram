@@ -1134,7 +1134,7 @@ public class TwoStepVerificationActivity extends BaseFragment implements Notific
             return;
         }
         try {
-            field.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            field.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         } catch (Exception ignored) {}
         if (clear) {
             field.setText("");

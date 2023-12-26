@@ -210,7 +210,7 @@ public class ChatPullingDownDrawable implements NotificationCenter.NotificationC
         if ((progress >= 1f && lastProgress < 1f) || (progress < 1f && lastProgress == 1f)) {
             long time = System.currentTimeMillis();
             if (time - lastHapticTime > 100) {
-                parent.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                parent.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 lastHapticTime = time;
             }
             lastProgress = progress;

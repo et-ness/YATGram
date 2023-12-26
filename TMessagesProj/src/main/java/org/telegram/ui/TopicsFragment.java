@@ -1035,7 +1035,7 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
                         if (canShowHiddenArchive != canShowInternal) {
                             canShowHiddenArchive = canShowInternal;
                             if (pullViewState == ARCHIVE_ITEM_STATE_HIDDEN) {
-                                recyclerListView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                recyclerListView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                                 if (pullForegroundDrawable != null) {
                                     pullForegroundDrawable.colorize(canShowInternal);
                                 }
@@ -1702,7 +1702,7 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
                                 }
                                 if (!canShowHiddenArchive) {
                                     canShowHiddenArchive = true;
-                                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                                     if (pullForegroundDrawable != null) {
                                         pullForegroundDrawable.colorize(true);
                                     }

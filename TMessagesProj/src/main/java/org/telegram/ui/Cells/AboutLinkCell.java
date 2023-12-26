@@ -389,7 +389,7 @@ public class AboutLinkCell extends FrameLayout {
                 }
 
                 try {
-                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                 } catch (Exception ignore) {}
 
                 final Layout layout = pressedLinkLayout;

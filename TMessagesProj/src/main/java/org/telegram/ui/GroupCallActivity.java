@@ -428,7 +428,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         if (call == null || !scheduled || VoIPService.getSharedInstance() == null) {
             return;
         }
-        muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+        muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         updateMuteButton(MUTE_BUTTON_STATE_MUTE, true);
         AndroidUtilities.runOnUIThread(unmuteRunnable, 80);
         scheduled = false;
@@ -2066,7 +2066,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                                 ignoreTextChange = true;
                                 s.delete(40, s.length());
                                 AndroidUtilities.shakeView(editText);
-                                editText.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                editText.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                                 ignoreTextChange = false;
                             }
                         }
@@ -4172,7 +4172,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         updateMuteButton(MUTE_BUTTON_STATE_UNMUTE, true);
                         if (VoIPService.getSharedInstance() != null) {
                             VoIPService.getSharedInstance().setMicMute(true, true, false);
-                            muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                            muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                         }
                         attachedRenderersTmp.clear();
                         attachedRenderersTmp.addAll(attachedRenderers);
@@ -4253,7 +4253,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                     if (startingGroupCall) {
                         return;
                     }
-                    v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                     startingGroupCall = true;
                     TLRPC.TL_phone_startScheduledGroupCall req = new TLRPC.TL_phone_startScheduledGroupCall();
                     req.call = call.getInputGroupCall();
@@ -4288,7 +4288,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         }
                         playingHandAnimation = true;
                         AndroidUtilities.shakeView(muteLabel[0]);
-                        v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                         int num = Utilities.random.nextInt(100);
                         int endFrame;
                         int startFrame;
@@ -4328,11 +4328,11 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                     } else if (muteButtonState == MUTE_BUTTON_STATE_UNMUTE) {
                         updateMuteButton(MUTE_BUTTON_STATE_MUTE, true);
                         VoIPService.getSharedInstance().setMicMute(false, false, true);
-                        muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                     } else {
                         updateMuteButton(MUTE_BUTTON_STATE_UNMUTE, true);
                         VoIPService.getSharedInstance().setMicMute(true, false, true);
-                        muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        muteButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                     }
                 }
             }
@@ -5143,7 +5143,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             });
             final NumberPicker.OnValueChangeListener onValueChangeListener = (picker, oldVal, newVal) -> {
                 try {
-                    container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignore) {
 
                 }

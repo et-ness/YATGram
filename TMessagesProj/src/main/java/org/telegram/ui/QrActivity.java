@@ -1052,7 +1052,7 @@ public class QrActivity extends BaseFragment {
                                 }
                             } catch (Exception ignore) {
                                 try {
-                                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                                 } catch (Exception ignore2) {}
                             }
                         }

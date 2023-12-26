@@ -1093,7 +1093,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private void onPasscodeError() {
         if (getParentActivity() == null) return;
         try {
-            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         } catch (Exception ignore) {}
         if (isPinCode()) {
             for (CodeNumberField f : codeFieldContainer.codeField) {

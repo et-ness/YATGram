@@ -632,7 +632,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
         if (animateConfetti) {
             AndroidUtilities.runOnUIThread(()->{
                 try {
-                    container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignored) {}
                 fireworksOverlay.start();
             }, 200);
