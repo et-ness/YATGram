@@ -127,14 +127,18 @@ public class BoostRepository {
         TLRPC.TL_inputInvoicePremiumGiftCode invoice = new TLRPC.TL_inputInvoicePremiumGiftCode();
         TLRPC.TL_inputStorePaymentPremiumGiftCode payload = new TLRPC.TL_inputStorePaymentPremiumGiftCode();
 
-        payload.flags = 1;
         payload.users = new ArrayList<>();
         for (TLObject user : users) {
             if (user instanceof TLRPC.User) {
                 payload.users.add(controller.getInputUser((TLRPC.User) user));
             }
         }
-        payload.boost_peer = controller.getInputPeer(-chat.id);
+
+        if (chat != null) {
+            payload.flags = 1;
+            payload.boost_peer = controller.getInputPeer(-chat.id);
+        }
+
         payload.currency = option.currency;
         payload.amount = option.amount;
 
@@ -179,64 +183,75 @@ public class BoostRepository {
     }
 
     public static void payGiftCodeByGoogle(List<TLObject> users, TLRPC.TL_premiumGiftCodeOption option, TLRPC.Chat chat, BaseFragment baseFragment, Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
-//        MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
-//        ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
-//        TLRPC.TL_inputStorePaymentPremiumGiftCode payload = new TLRPC.TL_inputStorePaymentPremiumGiftCode();
-//
-//        payload.flags = 1;
-//        payload.users = new ArrayList<>();
-//        for (TLObject user : users) {
-//            if (user instanceof TLRPC.User) {
-//                payload.users.add(controller.getInputUser((TLRPC.User) user));
-//            }
-//        }
-//        payload.boost_peer = controller.getInputPeer(-chat.id);
-//
-//        QueryProductDetailsParams.Product product = QueryProductDetailsParams.Product.newBuilder()
-//                .setProductType(BillingClient.ProductType.INAPP)
-//                .setProductId(option.store_product)
-//                .build();
-//        BillingController.getInstance().queryProductDetails(Arrays.asList(product), (billingResult, list) -> {
-//            ProductDetails.OneTimePurchaseOfferDetails offerDetails = list.get(0).getOneTimePurchaseOfferDetails();
-//            payload.currency = offerDetails.getPriceCurrencyCode();
-//            payload.amount = (long) ((offerDetails.getPriceAmountMicros() / Math.pow(10, 6)) * Math.pow(10, BillingController.getInstance().getCurrencyExp(option.currency)));
-//
-//            TLRPC.TL_payments_canPurchasePremium req = new TLRPC.TL_payments_canPurchasePremium();
-//            req.purpose = payload;
-//            connection.sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-//                if (error != null) {
-//                    onError.run(error);
-//                    return;
-//                }
-//                if (response != null) {
-//                    BillingController.getInstance().addResultListener(list.get(0).getProductId(), billingResult1 -> {
-//                        if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-//                            AndroidUtilities.runOnUIThread(() -> onSuccess.run(null));
-//                        }
-//                    });
-//                    BillingController.getInstance().setOnCanceled(() -> {
-//                        AndroidUtilities.runOnUIThread(() -> onError.run(null));
-//                    });
-//                    BillingController.getInstance().launchBillingFlow(
-//                            baseFragment.getParentActivity(), AccountInstance.getInstance(UserConfig.selectedAccount), payload,
-//                            Collections.singletonList(BillingFlowParams.ProductDetailsParams.newBuilder()
-//                                    .setProductDetails(list.get(0))
-//                                    .build())
-//                    );
-//                }
-//            }));
-//        });
+/*
+        MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
+        ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
+        TLRPC.TL_inputStorePaymentPremiumGiftCode payload = new TLRPC.TL_inputStorePaymentPremiumGiftCode();
+
+        payload.users = new ArrayList<>();
+        for (TLObject user : users) {
+            if (user instanceof TLRPC.User) {
+                payload.users.add(controller.getInputUser((TLRPC.User) user));
+            }
+        }
+        if (chat != null) {
+            payload.flags = 1;
+            payload.boost_peer = controller.getInputPeer(-chat.id);
+        }
+
+        QueryProductDetailsParams.Product product = QueryProductDetailsParams.Product.newBuilder()
+                .setProductType(BillingClient.ProductType.INAPP)
+                .setProductId(option.store_product)
+                .build();
+        BillingController.getInstance().queryProductDetails(Arrays.asList(product), (billingResult, list) -> {
+            ProductDetails.OneTimePurchaseOfferDetails offerDetails = list.get(0).getOneTimePurchaseOfferDetails();
+            payload.currency = offerDetails.getPriceCurrencyCode();
+            payload.amount = (long) ((offerDetails.getPriceAmountMicros() / Math.pow(10, 6)) * Math.pow(10, BillingController.getInstance().getCurrencyExp(option.currency)));
+
+            TLRPC.TL_payments_canPurchasePremium req = new TLRPC.TL_payments_canPurchasePremium();
+            req.purpose = payload;
+            connection.sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                if (error != null) {
+                    onError.run(error);
+                    return;
+                }
+                if (response != null) {
+                    BillingController.getInstance().addResultListener(list.get(0).getProductId(), billingResult1 -> {
+                        if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                            AndroidUtilities.runOnUIThread(() -> onSuccess.run(null));
+                        }
+                    });
+                    BillingController.getInstance().setOnCanceled(() -> {
+                        AndroidUtilities.runOnUIThread(() -> onError.run(null));
+                    });
+                    BillingController.getInstance().launchBillingFlow(
+                            baseFragment.getParentActivity(), AccountInstance.getInstance(UserConfig.selectedAccount), payload,
+                            Collections.singletonList(BillingFlowParams.ProductDetailsParams.newBuilder()
+                                    .setProductDetails(list.get(0))
+                                    .build())
+                    );
+                }
+            }));
+        });
+*/
     }
 
-    public static void launchPreparedGiveaway(TL_stories.TL_prepaidGiveaway prepaidGiveaway, List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.Chat chat, int date, boolean onlyNewSubscribers, Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
+    public static void launchPreparedGiveaway(TL_stories.TL_prepaidGiveaway prepaidGiveaway, List<TLObject> chats, List<TLObject> selectedCountries,
+                                              TLRPC.Chat chat, int date, boolean onlyNewSubscribers, boolean winnersVisible, boolean withAdditionPrize, String prizeDesc,
+                                              Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
         MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
         ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
 
         TLRPC.TL_inputStorePaymentPremiumGiveaway purpose = new TLRPC.TL_inputStorePaymentPremiumGiveaway();
         purpose.only_new_subscribers = onlyNewSubscribers;
+        purpose.winners_are_visible = winnersVisible;
+        purpose.prize_description = prizeDesc;
         purpose.until_date = date;
         purpose.flags |= 2;
         purpose.flags |= 4;
+        if (withAdditionPrize) {
+            purpose.flags |= 16;
+        }
         purpose.random_id = System.currentTimeMillis();
         purpose.additional_peers = new ArrayList<>();
         purpose.boost_peer = controller.getInputPeer(-chat.id);
@@ -268,15 +283,21 @@ public class BoostRepository {
         });
     }
 
-    public static void payGiveAway(List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.TL_premiumGiftCodeOption option, TLRPC.Chat chat, int date, boolean onlyNewSubscribers, BaseFragment baseFragment, Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
+    public static void payGiveAway(List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.TL_premiumGiftCodeOption option,
+                                   TLRPC.Chat chat, int date, boolean onlyNewSubscribers, BaseFragment baseFragment,
+                                   boolean winnersVisible, boolean withAdditionPrize, String prizeDesc,
+                                   Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
         if (!isGoogleBillingAvailable()) {
-            payGiveAwayByInvoice(chats, selectedCountries, option, chat, date, onlyNewSubscribers, baseFragment, onSuccess, onError);
+            payGiveAwayByInvoice(chats, selectedCountries, option, chat, date, onlyNewSubscribers, baseFragment, winnersVisible, withAdditionPrize, prizeDesc, onSuccess, onError);
         } else {
-            payGiveAwayByGoogle(chats, selectedCountries, option, chat, date, onlyNewSubscribers, baseFragment, onSuccess, onError);
+            payGiveAwayByGoogle(chats, selectedCountries, option, chat, date, onlyNewSubscribers, baseFragment, winnersVisible, withAdditionPrize, prizeDesc, onSuccess, onError);
         }
     }
 
-    public static void payGiveAwayByInvoice(List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.TL_premiumGiftCodeOption option, TLRPC.Chat chat, int date, boolean onlyNewSubscribers, BaseFragment baseFragment, Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
+    public static void payGiveAwayByInvoice(List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.TL_premiumGiftCodeOption option,
+                                            TLRPC.Chat chat, int date, boolean onlyNewSubscribers, BaseFragment baseFragment,
+                                            boolean winnersVisible, boolean withAdditionPrize, String prizeDesc,
+                                            Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
         MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
         ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
 
@@ -285,9 +306,14 @@ public class BoostRepository {
         TLRPC.TL_inputStorePaymentPremiumGiveaway payload = new TLRPC.TL_inputStorePaymentPremiumGiveaway();
 
         payload.only_new_subscribers = onlyNewSubscribers;
+        payload.winners_are_visible = winnersVisible;
+        payload.prize_description = prizeDesc;
         payload.until_date = date;
         payload.flags |= 2;
         payload.flags |= 4;
+        if (withAdditionPrize) {
+            payload.flags |= 16;
+        }
         payload.random_id = System.currentTimeMillis();
         payload.additional_peers = new ArrayList<>();
         for (TLObject o : chats) {
@@ -345,62 +371,72 @@ public class BoostRepository {
         }));
     }
 
-    public static void payGiveAwayByGoogle(List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.TL_premiumGiftCodeOption option, TLRPC.Chat chat, int date, boolean onlyNewSubscribers, BaseFragment baseFragment, Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
-//        MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
-//        ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
-//        TLRPC.TL_inputStorePaymentPremiumGiveaway payload = new TLRPC.TL_inputStorePaymentPremiumGiveaway();
-//
-//        payload.only_new_subscribers = onlyNewSubscribers;
-//        payload.until_date = date;
-//        payload.flags |= 2;
-//        payload.flags |= 4;
-//        payload.random_id = System.currentTimeMillis();
-//        payload.additional_peers = new ArrayList<>();
-//        for (TLObject o : chats) {
-//            if (o instanceof TLRPC.Chat) {
-//                payload.additional_peers.add(controller.getInputPeer(-((TLRPC.Chat) o).id));
-//            }
-//        }
-//        payload.boost_peer = controller.getInputPeer(-chat.id);
-//        for (TLObject object : selectedCountries) {
-//            TLRPC.TL_help_country country = (TLRPC.TL_help_country) object;
-//            payload.countries_iso2.add(country.iso2);
-//        }
-//
-//        QueryProductDetailsParams.Product product = QueryProductDetailsParams.Product.newBuilder()
-//                .setProductType(BillingClient.ProductType.INAPP)
-//                .setProductId(option.store_product)
-//                .build();
-//        BillingController.getInstance().queryProductDetails(Arrays.asList(product), (billingResult, list) -> {
-//            ProductDetails.OneTimePurchaseOfferDetails offerDetails = list.get(0).getOneTimePurchaseOfferDetails();
-//            payload.currency = offerDetails.getPriceCurrencyCode();
-//            payload.amount = (long) ((offerDetails.getPriceAmountMicros() / Math.pow(10, 6)) * Math.pow(10, BillingController.getInstance().getCurrencyExp(option.currency)));
-//
-//            TLRPC.TL_payments_canPurchasePremium req = new TLRPC.TL_payments_canPurchasePremium();
-//            req.purpose = payload;
-//            connection.sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-//                if (error != null) {
-//                    onError.run(error);
-//                    return;
-//                }
-//                if (response != null) {
-//                    BillingController.getInstance().addResultListener(list.get(0).getProductId(), billingResult1 -> {
-//                        if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-//                            AndroidUtilities.runOnUIThread(() -> onSuccess.run(null));
-//                        }
-//                    });
-//                    BillingController.getInstance().setOnCanceled(() -> {
-//                        AndroidUtilities.runOnUIThread(() -> onError.run(null));
-//                    });
-//                    BillingController.getInstance().launchBillingFlow(
-//                            baseFragment.getParentActivity(), AccountInstance.getInstance(UserConfig.selectedAccount), payload,
-//                            Collections.singletonList(BillingFlowParams.ProductDetailsParams.newBuilder()
-//                                    .setProductDetails(list.get(0))
-//                                    .build())
-//                    );
-//                }
-//            }));
-//        });
+    public static void payGiveAwayByGoogle(List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.TL_premiumGiftCodeOption option,
+                                           TLRPC.Chat chat, int date, boolean onlyNewSubscribers, BaseFragment baseFragment,
+                                           boolean winnersVisible, boolean withAdditionPrize, String prizeDesc,
+                                           Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
+/*
+        MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
+        ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
+        TLRPC.TL_inputStorePaymentPremiumGiveaway payload = new TLRPC.TL_inputStorePaymentPremiumGiveaway();
+
+        payload.only_new_subscribers = onlyNewSubscribers;
+        payload.winners_are_visible = winnersVisible;
+        payload.prize_description = prizeDesc;
+        payload.until_date = date;
+        payload.flags |= 2;
+        payload.flags |= 4;
+        if (withAdditionPrize) {
+            payload.flags |= 16;
+        }
+        payload.random_id = System.currentTimeMillis();
+        payload.additional_peers = new ArrayList<>();
+        for (TLObject o : chats) {
+            if (o instanceof TLRPC.Chat) {
+                payload.additional_peers.add(controller.getInputPeer(-((TLRPC.Chat) o).id));
+            }
+        }
+        payload.boost_peer = controller.getInputPeer(-chat.id);
+        for (TLObject object : selectedCountries) {
+            TLRPC.TL_help_country country = (TLRPC.TL_help_country) object;
+            payload.countries_iso2.add(country.iso2);
+        }
+
+        QueryProductDetailsParams.Product product = QueryProductDetailsParams.Product.newBuilder()
+                .setProductType(BillingClient.ProductType.INAPP)
+                .setProductId(option.store_product)
+                .build();
+        BillingController.getInstance().queryProductDetails(Arrays.asList(product), (billingResult, list) -> {
+            ProductDetails.OneTimePurchaseOfferDetails offerDetails = list.get(0).getOneTimePurchaseOfferDetails();
+            payload.currency = offerDetails.getPriceCurrencyCode();
+            payload.amount = (long) ((offerDetails.getPriceAmountMicros() / Math.pow(10, 6)) * Math.pow(10, BillingController.getInstance().getCurrencyExp(option.currency)));
+
+            TLRPC.TL_payments_canPurchasePremium req = new TLRPC.TL_payments_canPurchasePremium();
+            req.purpose = payload;
+            connection.sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                if (error != null) {
+                    onError.run(error);
+                    return;
+                }
+                if (response != null) {
+                    BillingController.getInstance().addResultListener(list.get(0).getProductId(), billingResult1 -> {
+                        if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                            AndroidUtilities.runOnUIThread(() -> onSuccess.run(null));
+                        }
+                    });
+                    BillingController.getInstance().setOnCanceled(() -> {
+                        AndroidUtilities.runOnUIThread(() -> onError.run(null));
+                    });
+                    BillingController.getInstance().launchBillingFlow(
+                            baseFragment.getParentActivity(), AccountInstance.getInstance(UserConfig.selectedAccount), payload,
+                            Collections.singletonList(BillingFlowParams.ProductDetailsParams.newBuilder()
+                                    .setProductDetails(list.get(0))
+                                    .build())
+                    );
+                }
+            }));
+        });
+*/
     }
 
     public static List<TLRPC.TL_premiumGiftCodeOption> filterGiftOptions(List<TLRPC.TL_premiumGiftCodeOption> list, int selected) {
@@ -419,6 +455,21 @@ public class BoostRepository {
             }
         }
         return result;
+    }
+
+    public static List<TLRPC.TL_premiumGiftCodeOption> filterGiftOptionsByBilling(List<TLRPC.TL_premiumGiftCodeOption> list) {
+        if (BoostRepository.isGoogleBillingAvailable()) {
+            List<TLRPC.TL_premiumGiftCodeOption> result = new ArrayList<>();
+            for (TLRPC.TL_premiumGiftCodeOption item : list) {
+                boolean isAvailableInGoogleStore = item.store_product != null;
+                if (isAvailableInGoogleStore) {
+                    result.add(item);
+                }
+            }
+            return result;
+        } else {
+            return list;
+        }
     }
 
     public static void loadCountries(Utilities.Callback<Pair<Map<String, List<TLRPC.TL_help_country>>, List<String>>> onDone) {
@@ -470,8 +521,10 @@ public class BoostRepository {
         MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
         ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
         TLRPC.TL_payments_getPremiumGiftCodeOptions req = new TLRPC.TL_payments_getPremiumGiftCodeOptions();
-        req.flags = 1;
-        req.boost_peer = controller.getInputPeer(-chat.id);
+        if (chat != null) {
+            req.flags = 1;
+            req.boost_peer = controller.getInputPeer(-chat.id);
+        }
 
         int reqId = connection.sendRequest(req, (response, error) -> {
             if (response != null) {
@@ -505,6 +558,35 @@ public class BoostRepository {
 //                    }
 //                    AndroidUtilities.runOnUIThread(() -> onDone.run(result));
 //                });
+            }
+        });
+    }
+
+    public static int searchContacts(int reqId, String query, Utilities.Callback<List<TLRPC.User>> onDone) {
+        MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
+        ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
+        if (reqId != 0) {
+            connection.cancelRequest(reqId, false);
+        }
+        if (query == null || query.isEmpty()) {
+            AndroidUtilities.runOnUIThread(() -> onDone.run(Collections.emptyList()));
+            return 0;
+        }
+        TLRPC.TL_contacts_search req = new TLRPC.TL_contacts_search();
+        req.q = query;
+        req.limit = 50;
+        return connection.sendRequest(req, (response, error) -> {
+            if (response instanceof TLRPC.TL_contacts_found) {
+                TLRPC.TL_contacts_found res = (TLRPC.TL_contacts_found) response;
+                controller.putUsers(res.users, false);
+                List<TLRPC.User> result = new ArrayList<>();
+                for (int a = 0; a < res.users.size(); a++) {
+                    TLRPC.User user = res.users.get(a);
+                    if (!user.self && !UserObject.isDeleted(user) && !user.bot && !UserObject.isService(user.id)) {
+                        result.add(user);
+                    }
+                }
+                AndroidUtilities.runOnUIThread(() -> onDone.run(result));
             }
         });
     }
@@ -592,7 +674,7 @@ public class BoostRepository {
                 return;
             }
             onDone.run(null);
-        }));
+        }), ConnectionsManager.RequestFlagFailOnServerErrors);
     }
 
     public static void getGiveawayInfo(MessageObject messageObject, Utilities.Callback<TLRPC.payments_GiveawayInfo> onDone, Utilities.Callback<TLRPC.TL_error> onError) {

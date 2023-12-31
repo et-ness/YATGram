@@ -22,8 +22,7 @@ public class BuildVars {
     public static boolean USE_CLOUD_STRINGS = true;
     public static boolean CHECK_UPDATES = true;
     public static boolean NO_SCOPED_STORAGE = Build.VERSION.SDK_INT <= 29;
-    public static int BUILD_VERSION = 4139;
-    public static String BUILD_VERSION_STRING = "10.3.2";
+    public static String BUILD_VERSION_STRING = BuildConfig.BUILD_VERSION_STRING;
     public static int APP_ID = 4;
     public static String APP_HASH = "014b35b6184100b085b0d0572f9b5103";
 
@@ -51,7 +50,6 @@ public class BuildVars {
         PLAYSTORE_APP_URL = "";
         DEBUG_VERSION = false;
         CHECK_UPDATES = (BuildConfig.CHECK_UPDATES != 0);
-        BUILD_VERSION = BuildConfig.VERSION_CODE;
     }
     public static int USER_ID_OWNER = BuildConfig.USER_ID_OWNER;
     public static String USER_REPO = BuildConfig.USER_REPO;

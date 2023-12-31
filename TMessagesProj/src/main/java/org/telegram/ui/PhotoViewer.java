@@ -5992,7 +5992,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
 
             @Override
-            protected boolean ignoreTouches() {
+            protected boolean ignoreTouches(float x, float y) {
                 return !keyboardShown && currentEditMode != EDIT_MODE_NONE;
             }
 
@@ -6107,7 +6107,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             if (captionEdit.isCaptionOverLimit()) {
                 AndroidUtilities.shakeViewSpring(captionEdit.limitTextView, shiftDp = -shiftDp);
                 BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                if (!MessagesController.getInstance(currentAccount).premiumLocked && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > captionEdit.getCodePointCount()) {
+                if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > captionEdit.getCodePointCount()) {
                     showCaptionLimitBulletin(containerView);
                 }
                 return;
@@ -10745,6 +10745,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 updateMinMax(scale);
                 padImageForHorizontalInsets = true;
                 containerView.invalidate();
+
+                if (placeProvider == null || !placeProvider.closeKeyboard()) {
+                    makeFocusable();
+                }
             }
         });
         imageMoveAnimation.start();
