@@ -13,6 +13,11 @@ function build_one {
 	mkdir ${CPU}
 	cd ${CPU}
 
+	CCACHE_ARG=""
+	if which ccache >/dev/null; then
+		CCACHE_ARG="-D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache"
+	fi
+
 	echo "Configuring..."
 	${cmakePath}cmake \
 	-DANDROID_NATIVE_API_LEVEL=${API} \
@@ -21,6 +26,7 @@ function build_one {
 	-DANDROID_NDK=${NDK} \
 	-DCMAKE_TOOLCHAIN_FILE=${NDK}/build/cmake/android.toolchain.cmake \
 	-GNinja -DCMAKE_MAKE_PROGRAM=${NINJA_PATH} \
+	$CCACHE_ARG \
 	../..
 
 	echo "Building..."

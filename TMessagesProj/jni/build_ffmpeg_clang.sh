@@ -17,6 +17,12 @@ function build_one {
 
 	CC=${CC_PREFIX}clang
 	CXX=${CC_PREFIX}clang++
+
+	if which ccache > /dev/null; then
+		sed -i 's/`dirname/ccache `dirname/' $CC
+		sed -i 's/`dirname/ccache `dirname/' $CXX
+	fi
+
 	CROSS_PREFIX=${PREBUILT}/bin/${ARCH_NAME}-linux-${BIN_MIDDLE}-
 	
 	INCLUDES=" -I${LIBVPXPREFIX}/include"
@@ -100,6 +106,11 @@ function build_one {
 	#read
 	make -j$COMPILATION_PROC_COUNT
 	make install
+
+	if which ccache > /dev/null; then
+		sed -i 's/ccache//' $CC
+		sed -i 's/ccache//' $CXX
+	fi
 }
 
 function setCurrentPlatform {

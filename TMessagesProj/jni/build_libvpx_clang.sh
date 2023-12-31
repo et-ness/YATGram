@@ -20,14 +20,13 @@ function build_one {
 	export CXX=${CC_PREFIX}clang++
 	export AS=${CC_PREFIX}clang++
 	export CROSS_PREFIX=${PREBUILT}/bin/${ARCH_NAME}-linux-${BIN_MIDDLE}-
-	
-	
+
 	export CFLAGS="-DANDROID -fpic -fpie ${OPTIMIZE_CFLAGS}"
 	export CPPFLAGS="${CFLAGS}"
 	export CXXFLAGS="${CFLAGS} -std=c++11"
 	export ASFLAGS="-D__ANDROID__"
 	export LDFLAGS="-L${PLATFORM}/usr/lib"
-	
+
 	if [ "x86" = ${ARCH} ]; then
 		sed -i '20s/^/#define rand() ((int)lrand48())\n/' vpx_dsp/add_noise.c
 	fi
@@ -36,8 +35,6 @@ function build_one {
 	make clean || true
 
 	echo "Configuring..."
-
-
 
 	./configure \
 	--extra-cflags="-isystem ${LLVM_PREFIX}/sysroot/usr/include/${ARCH_NAME}-linux-${BIN_MIDDLE} -isystem ${LLVM_PREFIX}/sysroot/usr/include" \
