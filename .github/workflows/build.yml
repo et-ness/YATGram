@@ -82,17 +82,18 @@ jobs:
           tempVer=$(cat ver.txt)
           tempVer=${tempVer::-2}
           echo "NEW_OFFICIAL_TAG_TEXT=$tempVer" >> $GITHUB_ENV
-#      - name: Draft release.
-#        uses: softprops/action-gh-release@v0.1.15
-#        if: ${{ matrix.type == 'debug' }}
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-#        with:
-#          draft: true
-#          files: tag_asset/*
-#          tag_name: ${{ env.NEW_TAG_TEXT }}
-#          name: "YATGram ${{ env.NEW_TAG_TEXT }}"
-#          body: "— Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram."
+          versionCode=$(grep VERSION_CODE TMessagesProj_AppFork/build/generated/source/buildConfig/afat/${{ matrix.type }}/org/telegram/messenger/regular/BuildConfig.java | cut -d' ' -f 9 | sed 's/;//')
+          echo "VERSION_CODE=$versionCode" >> $GITHUB_ENV
+      - name: Draft release.
+        uses: softprops/action-gh-release@v1
+        if: ${{ matrix.type == 'release' && startsWith(github.ref, 'refs/tags/') }}
+        with:
+          token: ${{ secrets.TOKEN_RELEASE }}
+          draft: true
+          files: tag_asset/*
+          tag_name: ${{ env.NEW_TAG_TEXT }}
+          name: "${{ env.NEW_TAG_TEXT }}"
+          body: "- Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram.\nVersion code: ${{ env.VERSION_CODE }}\n"
       - uses: actions/upload-artifact@master
         name: Upload artifact.
         with:
