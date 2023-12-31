@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+    tags: '[0-9]+.[0-9]+.[0-9]+.[0-9]+'
   pull_request:
   merge_group:
 
@@ -12,6 +13,12 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     environment: release
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      CCACHE_BASEDIR: "${{ github.workspace }}"
+
     strategy:
       matrix:
 #        type: [debug, release]
@@ -29,6 +36,33 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "11"
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r21e
+          link-to-sdk: true
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          max-size: 2G
+          key: ${{ runner.os }}
+          restore-keys: ${{ runner.os }}
+          save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
       - name: Prepare additional build number.
         run: |
           result=$((ADDITIONAL_BUILD / 10000))
@@ -39,16 +73,6 @@ jobs:
           echo "CHECK_UPDATES=${{ matrix.updates }}" >> $GITHUB_ENV
       - name: Build.
         run: |
-          ### https://github.com/actions/runner-images/issues/5930
-          ANDROID_ROOT=/usr/local/lib/android
-          ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
-          SDKMANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
-          echo "y" | $SDKMANAGER "ndk;21.4.7075529"
-
-          ###
-          yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses
-
-          ###
           vars=gradle.properties
 
           echo ${{ secrets.KEY_STORE }} | base64 --decode > TMessagesProj/config/release.keystore
@@ -63,10 +87,9 @@ jobs:
           echo "USER_REPO=$USER_REPO" >> $vars
           echo "CHECK_UPDATES=${{ matrix.updates }}" >> $vars
 
-          ###
           echo $ADDITIONAL_BUILD_NUMBER
           sudo apt update
-          sudo apt install openjdk-17-jdk openjdk-17-jre ninja-build
+          sudo apt install ninja-build
           ./gradlew :TMessagesProj_AppFork:${{ matrix.afat }}
 
           grep VERSION_NAME TMessagesProj/build/generated/source/buildConfig/${{ matrix.type }}/org/telegram/messenger/BuildConfig.java | cut -d'"' -f 2 > ver.txt
@@ -84,6 +107,7 @@ jobs:
           echo "NEW_OFFICIAL_TAG_TEXT=$tempVer" >> $GITHUB_ENV
           versionCode=$(grep VERSION_CODE TMessagesProj_AppFork/build/generated/source/buildConfig/afat/${{ matrix.type }}/org/telegram/messenger/regular/BuildConfig.java | cut -d' ' -f 9 | sed 's/;//')
           echo "VERSION_CODE=$versionCode" >> $GITHUB_ENV
+
       - name: Draft release.
         uses: softprops/action-gh-release@v1
         if: ${{ matrix.type == 'release' && startsWith(github.ref, 'refs/tags/') }}
@@ -94,6 +118,7 @@ jobs:
           tag_name: ${{ env.NEW_TAG_TEXT }}
           name: "${{ env.NEW_TAG_TEXT }}"
           body: "- Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram.\nVersion code: ${{ env.VERSION_CODE }}\n"
+
       - uses: actions/upload-artifact@master
         name: Upload artifact.
         with:
