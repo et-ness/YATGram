@@ -42,7 +42,6 @@ dependencies {
     implementation 'org.osmdroid:osmdroid-android:6.1.14'
     implementation 'org.apache.commons:commons-lang3:3.13.0'
 
-    implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
     constraints {
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0") {
             because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
