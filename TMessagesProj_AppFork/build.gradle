@@ -43,7 +43,8 @@ android {
     }
 
     def fdroid = Utils['isFdroid']()
-    def appSuffix = fdroid ? "" : ".beta"
+    // def appSuffix = fdroid ? "" : ".beta"
+    def appSuffix = ""
     def flavorsConfig = fdroid ? "config/release" : "config/debug"
     if (fdroid) {
         defaultConfig.applicationId = "org.yatgram.messenger"
