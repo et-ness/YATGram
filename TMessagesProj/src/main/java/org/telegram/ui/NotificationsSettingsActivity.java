@@ -657,11 +657,7 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
                 enabled = preferences.getBoolean("pushService", getMessagesController().keepAliveService);
                 editor.putBoolean("pushService", !enabled);
                 editor.commit();
-                if (!enabled) {
-                    ConnectionsManager.getInstance(currentAccount).setPushConnectionEnabled(true);
-                } else {
-                    ConnectionsManager.getInstance(currentAccount).setPushConnectionEnabled(false);
-                }
+                ConnectionsManager.getInstance(currentAccount).setPushConnectionEnabled(!enabled);
                 ApplicationLoader.startPushService();
             } else if (position == accountsAllRow) {
                 SharedPreferences preferences = MessagesController.getGlobalNotificationsSettings();
