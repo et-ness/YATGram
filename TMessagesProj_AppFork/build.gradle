@@ -184,6 +184,7 @@ android {
             sourceSets.standalone {
                 manifest.srcFile '../TMessagesProj/config/' + flavorsConfig + '/AndroidManifest_standalone.xml'
             }
+            minSdkVersion 23
             ext {
                 abiVersionCode = 9
             }
@@ -199,6 +200,7 @@ android {
             sourceSets.release {
                 manifest.srcFile '../TMessagesProj/config/' + flavorsConfig + '/AndroidManifest_SDK23.xml'
             }
+            minSdkVersion 23
             sourceSets.standalone {
                 manifest.srcFile '../TMessagesProj/config/' + flavorsConfig + '/AndroidManifest_standalone.xml'
             }
@@ -219,6 +221,7 @@ android {
             sourceSets.standalone {
                 manifest.srcFile '../TMessagesProj/config/' + flavorsConfig + '/AndroidManifest_standalone.xml'
             }
+            minSdkVersion 23
             ext {
                 abiVersionCode = 8
             }
@@ -252,8 +255,8 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 30
+        minSdkVersion 23
+        targetSdkVersion 33
         versionName Utils['getVersionName']()
         ndkVersion "21.4.7075529"
 
