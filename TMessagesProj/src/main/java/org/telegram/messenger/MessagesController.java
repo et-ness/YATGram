@@ -13378,6 +13378,11 @@ public class MessagesController extends BaseController implements NotificationCe
         getMessagesStorage().cleanup(false);
         cleanup();
         getContactsController().deleteUnknownAppAccounts();
+        if (ConnectionsManager.native_isTestBackend(currentAccount) != 0) {
+            ConnectionsManager.native_switchBackend(currentAccount, false);
+        }
+        SharedConfig.activeAccounts.remove(currentAccount);
+        SharedConfig.saveAccounts();
     }
 
     public void registerForPush(@PushListenerController.PushType int pushType, String regid) {
