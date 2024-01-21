@@ -74,7 +74,7 @@ public class LocationController extends BaseController implements NotificationCe
     private ArrayList<TLRPC.TL_peerLocated> cachedNearbyUsers = new ArrayList<>();
     private ArrayList<TLRPC.TL_peerLocated> cachedNearbyChats = new ArrayList<>();
 
-    private static SparseArray<LocationController> Instance = new SparseArray<>();
+    private static volatile SparseArray<LocationController> Instance = new SparseArray<>();
 
     public static LocationController getInstance(int num) {
         LocationController localInstance = Instance.get(num);

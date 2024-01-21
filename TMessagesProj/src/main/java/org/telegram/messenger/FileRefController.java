@@ -50,7 +50,7 @@ public class FileRefController extends BaseController {
     private ArrayList<Waiter> recentStickersWaiter = new ArrayList<>();
     private ArrayList<Waiter> favStickersWaiter = new ArrayList<>();
 
-    private static SparseArray<FileRefController> Instance = new SparseArray<>();
+    private static volatile SparseArray<FileRefController> Instance = new SparseArray<>();
 
     public static FileRefController getInstance(int num) {
         FileRefController localInstance = Instance.get(num);

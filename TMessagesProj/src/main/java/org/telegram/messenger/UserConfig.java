@@ -81,7 +81,7 @@ public class UserConfig extends BaseController {
     LongSparseArray<SaveToGallerySettingsHelper.DialogException> chanelSaveGalleryExceptions;
     LongSparseArray<SaveToGallerySettingsHelper.DialogException> groupsSaveGalleryExceptions;
 
-    private static SparseArray<UserConfig> Instance = new SparseArray<>();
+    private static volatile SparseArray<UserConfig> Instance = new SparseArray<>();
 
     public static UserConfig getInstance(int num) {
         UserConfig localInstance = Instance.get(num);

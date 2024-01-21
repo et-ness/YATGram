@@ -169,7 +169,7 @@ public class NotificationsController extends BaseController {
         audioManager = (AudioManager) ApplicationLoader.applicationContext.getSystemService(Context.AUDIO_SERVICE);
     }
 
-    private static SparseArray<NotificationsController> Instance = new SparseArray<>();
+    private static volatile SparseArray<NotificationsController> Instance = new SparseArray<>();
     private static final Object lockObject = new Object();
 
     public static NotificationsController getInstance(int num) {

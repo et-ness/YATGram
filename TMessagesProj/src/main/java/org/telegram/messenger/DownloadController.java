@@ -237,7 +237,7 @@ public class DownloadController extends BaseController implements NotificationCe
     public int currentWifiPreset;
     public int currentRoamingPreset;
     
-    private static SparseArray<DownloadController> Instance = new SparseArray<>();
+    private static volatile SparseArray<DownloadController> Instance = new SparseArray<>();
 
     public static DownloadController getInstance(int num) {
         DownloadController localInstance = Instance.get(num);

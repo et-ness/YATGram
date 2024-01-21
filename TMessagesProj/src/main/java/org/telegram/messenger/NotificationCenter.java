@@ -350,7 +350,7 @@ public class NotificationCenter {
 
     private int currentAccount;
     private int currentHeavyOperationFlags;
-    private static SparseArray<NotificationCenter> Instance = new SparseArray<>();
+    private static volatile SparseArray<NotificationCenter> Instance = new SparseArray<>();
     private static volatile NotificationCenter globalInstance;
 
     @UiThread

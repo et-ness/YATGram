@@ -9,7 +9,7 @@ import org.telegram.ui.Components.Paint.PersistColorPalette;
 public class AccountInstance {
 
     private int currentAccount;
-    private static SparseArray<AccountInstance> Instance = new SparseArray<>();
+    private static volatile SparseArray<AccountInstance> Instance = new SparseArray<>();
     public static AccountInstance getInstance(int num) {
         AccountInstance localInstance = Instance.get(num);
         if (localInstance == null) {

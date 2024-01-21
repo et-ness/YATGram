@@ -237,7 +237,7 @@ public class ContactsController extends BaseController {
 
     private int completedRequestsCount;
     
-    private static SparseArray<ContactsController> Instance = new SparseArray();
+    private static volatile SparseArray<ContactsController> Instance = new SparseArray();
     public static ContactsController getInstance(int num) {
         ContactsController localInstance = Instance.get(num);
         if (localInstance == null) {

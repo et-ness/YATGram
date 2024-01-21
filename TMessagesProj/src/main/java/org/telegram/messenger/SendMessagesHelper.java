@@ -857,7 +857,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
     }
 
-    private static SparseArray<SendMessagesHelper> Instance = new SparseArray<>();
+    private static volatile SparseArray<SendMessagesHelper> Instance = new SparseArray<>();
     public static SendMessagesHelper getInstance(int num) {
         SendMessagesHelper localInstance = Instance.get(num);
         if (localInstance == null) {

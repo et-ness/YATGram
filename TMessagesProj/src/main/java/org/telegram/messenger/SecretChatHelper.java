@@ -77,7 +77,7 @@ public class SecretChatHelper extends BaseController {
     private ArrayList<Long> pendingEncMessagesToDelete = new ArrayList<>();
     private boolean startingSecretChat = false;
 
-    private static SparseArray<SecretChatHelper> Instance = new SparseArray<>();
+    private static volatile SparseArray<SecretChatHelper> Instance = new SparseArray<>();
 
     public static SecretChatHelper getInstance(int num) {
         SecretChatHelper localInstance = Instance.get(num);

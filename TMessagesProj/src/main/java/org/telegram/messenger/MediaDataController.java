@@ -113,7 +113,7 @@ public class MediaDataController extends BaseController {
 
     public static String SHORTCUT_CATEGORY = "org.telegram.messenger.SHORTCUT_SHARE";
 
-    private static final SparseArray<MediaDataController> Instance = new SparseArray<>();
+    private static volatile SparseArray<MediaDataController> Instance = new SparseArray<>();
     private static final Object lockObject = new Object();
 
     public static MediaDataController getInstance(int num) {

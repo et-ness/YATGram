@@ -1275,7 +1275,7 @@ public class MessagesController extends BaseController implements NotificationCe
         return 0;
     };
 
-    private static SparseArray<MessagesController> Instance = new SparseArray<>();
+    private static volatile SparseArray<MessagesController> Instance = new SparseArray<>();
     private static final Object lockObject = new Object();
 
     public static MessagesController getInstance(int num) {

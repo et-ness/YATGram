@@ -119,7 +119,7 @@ public class StatsController extends BaseController {
         }
     };
 
-    private static SparseArray<StatsController> Instance = new SparseArray<>();
+    private static volatile SparseArray<StatsController> Instance = new SparseArray<>();
 
     public static StatsController getInstance(int num) {
         StatsController localInstance = Instance.get(num);
