@@ -43,16 +43,16 @@ public class NotificationImageProvider extends ContentProvider implements Notifi
 
 	@Override
 	public boolean onCreate() {
-            Utilities.stageQueue.postRunnable(() -> {
-                SharedConfig.loadConfig();
-                AndroidUtilities.runOnUIThread(() -> {
-                    for (int i : SharedConfig.activeAccounts) {
-                        NotificationCenter.getInstance(i).addObserver(this, NotificationCenter.fileLoaded);
-                    }
-                });
-            },10000);
+        Utilities.stageQueue.postRunnable(() -> {
+            SharedConfig.loadConfig();
+            for (int i : SharedConfig.activeAccounts) {
+                if (AccountInstance.getInstance(i).getUserConfig().isClientActivated()) {
+                    NotificationCenter.getInstance(i).addObserver(this, NotificationCenter.fileLoaded);
+                }
+            }
+        }, 10000);
 
-            return true;
+        return true;
 	}
 
 	@Override

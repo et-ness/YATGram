@@ -508,6 +508,19 @@ public class SharedConfig {
                 .apply();
     }
 
+    /*public static int getMaxAccount(Context context) {
+        if (context == null) {
+            synchronized (sync) {
+                if (ApplicationLoader.applicationContext == null) {
+                    return 0;
+                }
+            }
+            context = ApplicationLoader.applicationContext;
+        }
+        File[] obFilesDir = context.getFilesDir().listFiles((dir, name) -> name.toLowerCase().startsWith("account"));
+        return obFilesDir.length + 1;
+    }*/
+
     public static void loadConfig() {
         synchronized (sync) {
             if (configLoaded || ApplicationLoader.applicationContext == null) {
@@ -670,37 +683,6 @@ public class SharedConfig {
             callEncryptionHintDisplayedCount = preferences.getInt("callEncryptionHintDisplayedCount", 0);
 
             activeAccounts = Arrays.stream(preferences.getString("active_accounts", "").split(",")).filter(SharedConfig::isNotBlank).map(Integer::parseInt).collect(Collectors.toCollection(CopyOnWriteArraySet::new));
-
-            if (!preferences.contains("activeAccountsLoaded")) {
-                int maxAccounts;
-
-                File filesDir = ApplicationLoader.applicationContext.getFilesDir();
-                if (new File(filesDir, "account31").isDirectory()) {
-                    maxAccounts = 32;
-                } else if (new File(filesDir, "account15").isDirectory()) {
-                    maxAccounts = 16;
-                } else {
-                    maxAccounts = -1;
-                }
-
-                for (int i = 0; i < maxAccounts; i++) {
-                    SharedPreferences perf;
-                    if (i == 0) {
-                        perf = ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
-                    } else {
-                        perf = ApplicationLoader.applicationContext.getSharedPreferences("userconfig" + i, Context.MODE_PRIVATE);
-                    }
-                    if (isNotBlank(perf.getString("user", null))) {
-                        activeAccounts.add(i);
-                    }
-                }
-
-                if (!SharedConfig.activeAccounts.isEmpty()) {
-                    preferences.edit().putString("active_accounts", StringUtils.join(activeAccounts, ",")).apply();
-                }
-
-                preferences.edit().putBoolean("activeAccountsLoaded", true).apply();
-            }
 
             loadDebugConfig(preferences);
 
