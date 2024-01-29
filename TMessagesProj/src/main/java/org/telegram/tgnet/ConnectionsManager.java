@@ -1050,7 +1050,7 @@ public class ConnectionsManager extends BaseController {
                     if (i == 0) {
                         googleDomain = "www.google.com";
                     } else if (i == 1) {
-                        googleDomain = "www.google.ru";
+                        googleDomain = "www.google.co.uk";
                     } else {
                         googleDomain = "google.com";
                     }
