@@ -8,6 +8,7 @@ YATGram is a fork of the unofficial Telegram Fork Client
 - [Forkgram/Fork Client](https://github.com/forkgram/TelegramAndroid) principal fork of this proect
 - [Nekox](https://github.com/NekoX-Dev/NekoX) unlimited accounts, qrlogin and others
 - [Nagram](https://github.com/NextAlone/Nagram) Improvements of nekox's patch
+- [MercuryGram](https://github.com/drizzt/Mercurygram) some patches
 - [Telegram-FOSS](https://github.com/Telegram-FOSS-Team/Telegram-FOSS) Base of Forkgram
 - [Official Telegram](https://github.com/DrKLO/Telegram) All updates of Telegram Android
 
