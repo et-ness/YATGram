@@ -3708,6 +3708,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 !SharedConfig.payByInvoice ? "Enable Invoice Payment" : "Disable Invoice Payment",
                                 BuildVars.DEBUG_PRIVATE_VERSION ? "Update Attach Bots" : null,
                                 "Switch Backend",
+                                !SharedConfig.messageDetailsMenu ? "Enable Message Details menu" : "Disable Message Details menu",
                         };
 
                         builder.setItems(items, (dialog, which) -> {
@@ -3965,6 +3966,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 });
                                 builder1.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
                                 showDialog(builder1.create());
+                            } else if (which == 28) {
+                                SharedConfig.toggleMessageDetailsMenu();
                             }
                         });
                         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
