@@ -317,6 +317,11 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             items.add(new Item(FORK_NEW_STORY_ITEM, LocaleController.getString("NewMyStory", R.string.NewMyStory), R.drawable.msg_menu_stories));
             showDivider = true;
         }
+        if (ApplicationLoader.applicationLoaderInstance != null) {
+            if (ApplicationLoader.applicationLoaderInstance.extendDrawer(items)) {
+                showDivider = true;
+            }
+        }
         TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
         if (menuBots != null && menuBots.bots != null) {
             for (int i = 0; i < menuBots.bots.size(); i++) {
@@ -343,6 +348,22 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
         items.add(null); // divider
         items.add(new Item(7, LocaleController.getString("InviteFriends", R.string.InviteFriends), inviteIcon));
         items.add(new Item(13, LocaleController.getString("TelegramFeatures", R.string.TelegramFeatures), helpIcon));
+    }
+
+    public boolean click(View view, int position) {
+        position -= 2;
+        if (accountsShown) {
+            position -= getAccountRowsCount();
+        }
+        if (position < 0 || position >= items.size()) {
+            return false;
+        }
+        Item item = items.get(position);
+        if (item != null && item.listener != null) {
+            item.listener.onClick(view);
+            return true;
+        }
+        return false;
     }
 
     public int getId(int position) {
@@ -383,13 +404,14 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
         return item != null ? item.bot : null;
     }
 
-    private static class Item {
+    public static class Item {
         public int icon;
-        public String text;
+        public CharSequence text;
         public int id;
         TLRPC.TL_attachMenuBot bot;
+        View.OnClickListener listener;
 
-        public Item(int id, String text, int icon) {
+        public Item(int id, CharSequence text, int icon) {
             this.icon = icon;
             this.id = id;
             this.text = text;
@@ -406,6 +428,11 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             } else {
                 actionCell.setTextAndIcon(id, text, icon);
             }
+        }
+
+        public Item onClick(View.OnClickListener listener) {
+            this.listener = listener;
+            return this;
         }
     }
 }
