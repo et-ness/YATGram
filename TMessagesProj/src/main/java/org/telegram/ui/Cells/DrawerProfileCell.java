@@ -77,6 +77,7 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
     private BackupImageView avatarImageView;
     private SimpleTextView nameTextView;
     private TextView phoneTextView;
+    private TextView numAccountTextView;
     private ImageView shadowView;
     private ImageView arrowView;
     private RLottieImageView darkThemeView;
@@ -119,8 +120,6 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
         shadowView.setScaleType(ImageView.ScaleType.FIT_XY);
         shadowView.setImageResource(R.drawable.bottom_shadow);
         addView(shadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 70, Gravity.LEFT | Gravity.BOTTOM));
-
-
 
         avatarImageView = new BackupImageView(context);
         avatarImageView.getImageReceiver().setRoundRadius(AndroidUtilities.dp(32));
@@ -185,7 +184,10 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
         nameTextView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
         nameTextView.setEllipsizeByGradient(true);
         nameTextView.setRightDrawableOutside(true);
-        // addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM, 16, 0, 52, 28));
+
+        if (!SharedConfig.hideSensitiveData()) {
+            addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM, 16, 0, 76, 28));
+        }
 
         phoneTextView = new TextView(context);
         phoneTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
@@ -195,9 +197,14 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
         phoneTextView.setGravity(Gravity.LEFT);
         addView(phoneTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM, 16, 0, 52, 9));
 
-        if (!SharedConfig.hideSensitiveData()) {
-            addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM, 16, 0, 76, 28));
-        }
+        numAccountTextView = new TextView(context);
+        numAccountTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+        numAccountTextView.setLines(1);
+        numAccountTextView.setMaxLines(1);
+        numAccountTextView.setSingleLine(true);
+        numAccountTextView.setGravity(Gravity.RIGHT);
+        numAccountTextView.setTextColor(Theme.getColor(Theme.key_chats_menuName));
+        addView(numAccountTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 50, 9));
 
         arrowView = new ImageView(context);
         arrowView.setScaleType(ImageView.ScaleType.CENTER);
@@ -731,6 +738,7 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
         animatedStatus.setColor(Theme.getColor(Theme.isCurrentThemeDark() ? Theme.key_chats_verifiedBackground : Theme.key_chats_menuPhoneCats));
         status.setColor(Theme.getColor(Theme.isCurrentThemeDark() ? Theme.key_chats_verifiedBackground : Theme.key_chats_menuPhoneCats));
         phoneTextView.setText(PhoneFormat.getInstance().format("+" + user.phone));
+        numAccountTextView.setText(SharedConfig.activeAccounts != null ? String.valueOf(SharedConfig.activeAccounts.size()) : "0");
         AvatarDrawable avatarDrawable = new AvatarDrawable(user);
         avatarDrawable.setColor(Theme.getColor(Theme.key_avatar_backgroundInProfileBlue));
         avatarImageView.setForUserOrChat(user, avatarDrawable);
