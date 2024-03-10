@@ -63,17 +63,19 @@ jobs:
           restore-keys: ${{ runner.os }}
           save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
-      - name: Prepare additional build number.
-        env:
-          ADDITIONAL_BUILD: ${{ secrets.ADDITIONAL_BUILD_NUMBER }}
+      - name: Prepare additional build number
         run: |
-          result=$((ADDITIONAL_BUILD / 10000))
-          echo "ADDITIONAL_BUILD_NUMBER = $result should be between 0 and 10!"
-          echo "ADDITIONAL_BUILD_NUMBER=$result" >> $GITHUB_ENV
+          if [[ ${{github.ref}} == refs/tags/* ]]
+          then
+              IFS='.' read -ra BUILDNUMBER <<< ${{github.ref}}
+              echo "ADDITIONAL_BUILD_NUMBER=${BUILDNUMBER[3]}" >> $GITHUB_ENV
+          else
+              echo "ADDITIONAL_BUILD_NUMBER=0" >> $GITHUB_ENV
+          fi
           # used for check updates
           echo "USER_REPO=forkgram/TelegramAndroid" >> $GITHUB_ENV
           echo "CHECK_UPDATES=${{ matrix.updates }}" >> $GITHUB_ENV
-      - name: Build.
+      - name: Build
         run: |
           vars=gradle.properties
 
@@ -89,7 +91,6 @@ jobs:
           echo "USER_REPO=$USER_REPO" >> $vars
           echo "CHECK_UPDATES=${{ matrix.updates }}" >> $vars
 
-          echo $ADDITIONAL_BUILD_NUMBER
           sudo apt update
           sudo apt install ninja-build
           ./gradlew :TMessagesProj_AppFork:${{ matrix.afat }}
@@ -110,8 +111,8 @@ jobs:
           versionCode=$(grep VERSION_CODE TMessagesProj_AppFork/build/generated/source/buildConfig/afat/${{ matrix.type }}/org/telegram/messenger/regular/BuildConfig.java | cut -d' ' -f 9 | sed 's/;//')
           echo "VERSION_CODE=$versionCode" >> $GITHUB_ENV
 
-      - name: Draft release.
-        uses: softprops/action-gh-release@v1
+      - name: Draft release
+        uses: softprops/action-gh-release@v2
         if: ${{ matrix.type == 'release' && startsWith(github.ref, 'refs/tags/') }}
         with:
           token: ${{ secrets.TOKEN_RELEASE }}
@@ -122,7 +123,7 @@ jobs:
           body: "- Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram.\nVersion code: ${{ env.VERSION_CODE }}\n"
 
       - uses: actions/upload-artifact@master
-        name: Upload artifact.
+        name: Upload artifact
         with:
           name: YATGram-${{ matrix.type }}
           path: artifact/
