@@ -23,9 +23,15 @@ dependencies {
 
 android {
     compileSdkVersion 33
-    buildToolsVersion '32.0.0'
+    buildToolsVersion '34.0.0'
 
     defaultConfig.applicationId = "org.yatgram.messenger"
+
+    def sAppName = Utils['appPackage']()
+    if (!sAppName.isEmpty()) {
+        println 'Package name: ' + sAppName
+        defaultConfig.applicationId = sAppName
+    }
 
     sourceSets.main.jniLibs.srcDirs = ['../TMessagesProj/jni/']
 

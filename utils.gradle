@@ -11,9 +11,14 @@ def isFdroid = {
     return ((F_DROID.toInteger() == 1) as Boolean)
 }
 
+def getAppName = {
+    return APP_PACKAGE
+}
+
 ext {
     Utils = [:]
     Utils['getVersionName'] = getVersionName
     Utils['getVersionCode'] = getVersionCode
     Utils['isFdroid'] = isFdroid
+    Utils['appPackage'] = getAppName
 }
