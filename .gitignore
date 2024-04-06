@@ -13,3 +13,11 @@ TMessagesProj/.externalNativeBuild/
 TMessagesProj/jni/ffmpeg/android/
 TMessagesProj/jni/ffmpeg/build/
 TMessagesProj/jni/boringssl/build/
+TMessagesProj/jniLibs/
+TMessagesProj/jniRes/
+**/.DS_Store
+TMessagesProj/afat/
+TMessagesProj_App/afat/
+TMessagesProj_AppHockeyApp/afat/
+TMessagesProj_AppStandalone/afat/
+TMessagesProj_AppHuawei/afat/
