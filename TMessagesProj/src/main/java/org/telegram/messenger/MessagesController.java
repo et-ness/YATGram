@@ -9245,7 +9245,7 @@ public class MessagesController extends BaseController implements NotificationCe
             PushListenerController.sendRegistrationToServer(SharedConfig.pushType, SharedConfig.pushString);
         }
         getLocationController().update();
-        checkPromoInfoInternal(false);
+        //checkPromoInfoInternal(false);
         checkTosUpdate();
     }
 
@@ -9272,9 +9272,10 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void checkPromoInfo(final boolean reset) {
-        Utilities.stageQueue.postRunnable(() -> checkPromoInfoInternal(reset));
+        //Utilities.stageQueue.postRunnable(() -> checkPromoInfoInternal(reset));
     }
 
+/*
     private void checkPromoInfoInternal(boolean reset) {
         if (reset && checkingPromoInfo) {
             checkingPromoInfo = false;
@@ -9535,6 +9536,7 @@ public class MessagesController extends BaseController implements NotificationCe
             AndroidUtilities.runOnUIThread(this::removePromoDialog);
         }
     }
+*/
 
     private void removePromoDialog() {
         if (promoDialog == null) {
