@@ -46,6 +46,7 @@ public:
     int64_t getCurrentTimeMillis();
     int64_t getCurrentTimeMonotonicMillis();
     int32_t getCurrentTime();
+    int32_t getCurrentPingTime();
     uint32_t getCurrentDatacenterId();
     bool isTestBackend();
     int32_t getTimeDifference();
@@ -83,6 +84,8 @@ public:
 
     void reconnect(int32_t datacentrId, int32_t connectionType);
     void failNotRunningRequest(int32_t token);
+    void receivedIntegrityCheckClassic(int32_t requestToken, std::string nonce, std::string token);
+    void receivedCaptchaResult(int32_t requestTokensCount, int32_t* requestTokens, std::string token);
 
 private:
     static void *ThreadProc(void *data);
@@ -142,6 +145,7 @@ private:
     std::map<uint32_t, Datacenter *> datacenters;
     std::map<int32_t, std::vector<std::int32_t>> quickAckIdToRequestIds;
     int32_t pingTime;
+    int64_t pingTimeMs;
     bool testBackend = false;
     bool clientBlocked = true;
     std::string lastInitSystemLangcode = "";
@@ -150,9 +154,11 @@ private:
     uint32_t movingToDatacenterId = DEFAULT_DATACENTER_ID;
     int64_t pushSessionId = 0;
     int32_t currentPingTime = 0;
+    int32_t currentPingTimeLive = 0;
     bool registeringForPush = false;
     int64_t lastPushPingTime = 0;
     int32_t nextPingTimeOffset = 60000 * 3;
+    int64_t sendingPushPingTime = 0;
     bool sendingPushPing = false;
     bool sendingPing = false;
     bool updatingDcSettings = false;

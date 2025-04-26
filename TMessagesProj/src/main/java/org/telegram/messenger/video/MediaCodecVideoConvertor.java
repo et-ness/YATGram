@@ -3,11 +3,11 @@ package org.telegram.messenger.video;
 import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
-import android.media.MediaCodecList;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -22,11 +22,10 @@ import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.messenger.video.audio_input.AudioInput;
 import org.telegram.messenger.video.audio_input.BlankAudioInput;
 import org.telegram.messenger.video.audio_input.GeneralAudioInput;
-import org.telegram.ui.Components.RLottieDrawable;
+import org.telegram.ui.Stories.recorder.CollageLayout;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -64,9 +63,11 @@ public class MediaCodecVideoConvertor {
     }
 
     @TargetApi(18)
-    private boolean convertVideoInternal(ConvertVideoParams convertVideoParams,
-                                         boolean increaseTimeout,
-                                         int triesCount) {
+    private boolean convertVideoInternal(
+        ConvertVideoParams convertVideoParams,
+        boolean increaseTimeout,
+        int triesCount
+    ) {
         String videoPath = convertVideoParams.videoPath;
         File cacheFile = convertVideoParams.cacheFile;
         int rotationValue = convertVideoParams.rotationValue;
@@ -970,14 +971,20 @@ public class MediaCodecVideoConvertor {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("compression completed time=" + timeLeft + " needCompress=" + needCompress + " w=" + resultWidth + " h=" + resultHeight + " bitrate=" + bitrate + " file size=" + AndroidUtilities.formatFileSize(cacheFile.length()) + " encoder_name=" + selectedEncoderName);
         }
-
         return error;
     }
 
     private static void applyAudioInputs(ArrayList<MixedSoundInfo> soundInfos, ArrayList<AudioInput> audioInputs) throws IOException {
+        if (soundInfos == null) return;
         for (int i = 0; i < soundInfos.size(); i++) {
             MixedSoundInfo soundInfo = soundInfos.get(i);
-            GeneralAudioInput secondAudio = new GeneralAudioInput(soundInfo.audioFile);
+            GeneralAudioInput secondAudio;
+            try {
+                secondAudio = new GeneralAudioInput(soundInfo.audioFile);
+            } catch (Exception e) {
+                FileLog.e(e);
+                continue;
+            }
             secondAudio.setVolume(soundInfo.volume);
             long startTimeLocal = 0;
             if (soundInfo.startTime > 0) {
@@ -1299,9 +1306,9 @@ public class MediaCodecVideoConvertor {
         if (external) {
             String shaderCode;
             if (hdrInfo.getHDRType() == 1) {
-                shaderCode = RLottieDrawable.readRes(null, R.raw.hdr2sdr_hlg);
+                shaderCode = AndroidUtilities.readRes(R.raw.hdr2sdr_hlg);
             } else {
-                shaderCode = RLottieDrawable.readRes(null, R.raw.hdr2sdr_pq);
+                shaderCode = AndroidUtilities.readRes(R.raw.hdr2sdr_pq);
             }
             shaderCode = shaderCode.replace("$dstWidth", dstWidth + ".0");
             shaderCode = shaderCode.replace("$dstHeight", dstHeight + ".0");
@@ -1446,6 +1453,8 @@ public class MediaCodecVideoConvertor {
         boolean isDark;
         long wallpaperPeerId;
         boolean isSticker;
+        CollageLayout collage;
+        ArrayList<VideoEditedInfo.Part> collageParts;
 
         private ConvertVideoParams() {
 
@@ -1498,6 +1507,8 @@ public class MediaCodecVideoConvertor {
             params.messageVideoMaskPath = info.messageVideoMaskPath;
             params.backgroundPath = info.backgroundPath;
             params.isSticker = info.isSticker;
+            params.collage = info.collage;
+            params.collageParts = info.collageParts;
             return params;
         }
     }

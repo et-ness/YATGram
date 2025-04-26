@@ -32,7 +32,6 @@ import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.Keep;
@@ -49,19 +48,15 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.style.ClickableSpan;
-import android.text.style.URLSpan;
-import android.transition.ChangeBounds;
 import android.transition.Fade;
 import android.transition.Transition;
 import android.transition.TransitionManager;
 import android.transition.TransitionSet;
 import android.transition.TransitionValues;
-import android.util.Log;
 import android.util.Property;
 import android.util.SparseArray;
 import android.view.GestureDetector;
 import android.view.Gravity;
-import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.TextureView;
 import android.view.VelocityTracker;
@@ -80,8 +75,6 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ChatObject;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
@@ -94,36 +87,28 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.UserObject;
-import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
-import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextSelectionHelper;
-import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimationProperties;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.PlayPauseDrawable;
 import org.telegram.ui.Components.RLottieDrawable;
-import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.Scroller;
 import org.telegram.ui.Components.TimerParticles;
 import org.telegram.ui.Components.TranslateAlert2;
-import org.telegram.ui.Components.URLSpanReplacement;
 import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.Components.VideoPlayerSeekBar;
 import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.io.File;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
@@ -432,6 +417,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
     private float animateToClipHorizontal;
     private int[] animateFromRadius;
     private boolean animateToRadius;
+    @Keep
     private float animationValue;
     private int currentRotation;
     private long animationStartTime;
@@ -886,6 +872,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         actionBar.setBackgroundColor(Theme.ACTION_BAR_PHOTO_VIEWER_COLOR);
         actionBar.setOccupyStatusBar(Build.VERSION.SDK_INT >= 21);
         actionBar.setItemsBackgroundColor(Theme.ACTION_BAR_WHITE_SELECTOR_COLOR, false);
+        actionBar.setItemsColor(Color.WHITE, false);
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitleRightMargin(dp(70));
         containerView.addView(actionBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
@@ -1200,9 +1187,9 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 if (messageObject.isVideo()) {
                     MessageObject.addUrlsByPattern(messageObject.isOutOwner(), spannableString, false, 3, (int) messageObject.getDuration(), false);
                 }
-                str = Emoji.replaceEmoji(spannableString, captionTextView.getPaint().getFontMetricsInt(), dp(20), false);
+                str = Emoji.replaceEmoji(spannableString, captionTextView.getPaint().getFontMetricsInt(), false);
             } else {
-                str = Emoji.replaceEmoji(new SpannableStringBuilder(caption), captionTextView.getPaint().getFontMetricsInt(), dp(20), false);
+                str = Emoji.replaceEmoji(new SpannableStringBuilder(caption), captionTextView.getPaint().getFontMetricsInt(), false);
             }
             captionTextViewSwitcher.setTag(str);
             try {
@@ -1258,7 +1245,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
 //        }
     }
 
-    private void onLinkLongPress(URLSpan link, TextView widget, Runnable onDismiss) {
+    private void onLinkLongPress(ClickableSpan link, TextView widget, Runnable onDismiss) {
 //        int timestamp = -1;
 //        BottomSheet.Builder builder = new BottomSheet.Builder(parentActivity, false, resourcesProvider, 0xff1C2229);
 //        if (link.getURL().startsWith("video?")) {
@@ -1275,7 +1262,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
 //            builder.setTitle(link.getURL());
 //        }
 //        final int finalTimestamp = timestamp;
-//        builder.setItems(new CharSequence[]{LocaleController.getString("Open", R.string.Open), LocaleController.getString("Copy", R.string.Copy)}, (dialog, which) -> {
+//        builder.setItems(new CharSequence[]{LocaleController.getString(R.string.Open), LocaleController.getString(R.string.Copy)}, (dialog, which) -> {
 //            if (which == 0) {
 //                onLinkClick(link, widget);
 //            } else if (which == 1) {
@@ -1324,13 +1311,13 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
 //                AndroidUtilities.addToClipboard(url1);
 //                String bulletinMessage;
 //                if (tel) {
-//                    bulletinMessage = LocaleController.getString("PhoneCopied", R.string.PhoneCopied);
+//                    bulletinMessage = LocaleController.getString(R.string.PhoneCopied);
 //                } else if (url1.startsWith("#")) {
-//                    bulletinMessage = LocaleController.getString("HashtagCopied", R.string.HashtagCopied);
+//                    bulletinMessage = LocaleController.getString(R.string.HashtagCopied);
 //                } else if (url1.startsWith("@")) {
-//                    bulletinMessage = LocaleController.getString("UsernameCopied", R.string.UsernameCopied);
+//                    bulletinMessage = LocaleController.getString(R.string.UsernameCopied);
 //                } else {
-//                    bulletinMessage = LocaleController.getString("LinkCopied", R.string.LinkCopied);
+//                    bulletinMessage = LocaleController.getString(R.string.LinkCopied);
 //                }
 //                if (AndroidUtilities.shouldShowClipboardToast()) {
 //                    BulletinFactory.of(containerView, resourcesProvider).createSimpleBulletin(R.raw.voip_invite, bulletinMessage).show();
@@ -1401,7 +1388,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         if (parentActivity == null || messageObject == null || !messageObject.needDrawBluredPreview() || provider == null) {
             return;
         }
-        final PhotoViewer.PlaceProviderObject object = provider.getPlaceForPhoto(messageObject, null, 0, true);
+        final PhotoViewer.PlaceProviderObject object = provider.getPlaceForPhoto(messageObject, null, 0, true, false);
         if (object == null) {
             return;
         }
@@ -1520,7 +1507,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 }
             }
             if (MessageObject.isGifDocument(document)) {
-                actionBar.setTitle(LocaleController.getString("DisappearingGif", R.string.DisappearingGif));
+                actionBar.setTitle(LocaleController.getString(R.string.DisappearingGif));
                 ImageLocation location;
                 if (messageObject.messageOwner.attachPath != null && messageObject.attachPathExists) {
                     location = ImageLocation.getForPath(messageObject.messageOwner.attachPath);
@@ -1530,7 +1517,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 centerImage.setImage(location, null, currentThumb != null ? new BitmapDrawable(currentThumb.bitmap) : null, -1, null, messageObject, 1);
             } else {
                 playerRetryPlayCount = 1;
-                actionBar.setTitle(LocaleController.getString("DisappearingVideo", R.string.DisappearingVideo));
+                actionBar.setTitle(LocaleController.getString(R.string.DisappearingVideo));
                 File f = new File(messageObject.messageOwner.attachPath);
                 if (f.exists()) {
                     preparePlayer(f);
@@ -1547,7 +1534,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 centerImage.setImage(null, null, currentThumb != null ? new BitmapDrawable(currentThumb.bitmap) : null, -1, null, messageObject, 2);
             }
         } else {
-            actionBar.setTitle(LocaleController.getString("DisappearingPhoto", R.string.DisappearingPhoto));
+            actionBar.setTitle(LocaleController.getString(R.string.DisappearingPhoto));
             TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, AndroidUtilities.getPhotoSize());
             centerImage.setImage(ImageLocation.getForObject(sizeFull, messageObject.photoThumbsObject), null, currentThumb != null ? new BitmapDrawable(currentThumb.bitmap) : null, -1, null, messageObject, 2);
 
@@ -1611,7 +1598,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 ObjectAnimator.ofFloat(captionScrollView, View.ALPHA, 0, 1f),
                 ObjectAnimator.ofFloat(secretHint, View.ALPHA, 0, 1.0f),
                 ObjectAnimator.ofInt(photoBackgroundDrawable, AnimationProperties.COLOR_DRAWABLE_ALPHA, 0, 255),
-                ObjectAnimator.ofFloat(this, "animationValue", 0, 1),
+                ObjectAnimator.ofFloat(this, ANIMATION_VALUE, 0, 1),
                 ObjectAnimator.ofFloat(seekbarContainer, seekbarContainer.SEEKBAR_ALPHA, 1.0f),
                 ObjectAnimator.ofFloat(seekbarContainer, View.ALPHA, isVideo ? 1f : 0f)
         );
@@ -1946,6 +1933,18 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         canvas.restore();
     }
 
+    public final Property<SecretMediaViewer, Float> VIDEO_CROSSFADE_ALPHA = new AnimationProperties.FloatProperty<SecretMediaViewer>("videoCrossfadeAlpha") {
+        @Override
+        public void setValue(SecretMediaViewer object, float value) {
+            object.setVideoCrossfadeAlpha(value);
+        }
+
+        @Override
+        public Float get(SecretMediaViewer object) {
+            return object.getVideoCrossfadeAlpha();
+        }
+    };
+
     @Keep
     public float getVideoCrossfadeAlpha() {
         return videoCrossfadeAlpha;
@@ -2017,7 +2016,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         if (currentProvider == null || currentMessageObject.messageOwner.media.photo instanceof TLRPC.TL_photoEmpty || currentMessageObject.messageOwner.media.document instanceof TLRPC.TL_documentEmpty) {
             object = null;
         } else {
-            object = currentProvider.getPlaceForPhoto(currentMessageObject, null, 0, true);
+            object = currentProvider.getPlaceForPhoto(currentMessageObject, null, 0, true, false);
         }
         if (videoPlayer != null) {
             videoPlayer.pause();
@@ -2068,27 +2067,27 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 textureUploaded = false;
                 imageMoveAnimation.playTogether(
                         ObjectAnimator.ofInt(photoBackgroundDrawable, AnimationProperties.COLOR_DRAWABLE_ALPHA, 0),
-                        ObjectAnimator.ofFloat(this, "animationValue", 0, 1),
+                        ObjectAnimator.ofFloat(this, ANIMATION_VALUE, 0, 1),
                         ObjectAnimator.ofFloat(actionBar, View.ALPHA, 0),
                         ObjectAnimator.ofFloat(captionScrollView, View.ALPHA, 0),
                         ObjectAnimator.ofFloat(navigationBar, View.ALPHA, 0),
                         ObjectAnimator.ofFloat(seekbarContainer, seekbarContainer.SEEKBAR_ALPHA, 0f),
                         ObjectAnimator.ofFloat(seekbarContainer, View.ALPHA, 0f),
                         ObjectAnimator.ofFloat(secretHint, View.ALPHA, 0),
-                        ObjectAnimator.ofFloat(this, "videoCrossfadeAlpha", 0)
+                        ObjectAnimator.ofFloat(this, VIDEO_CROSSFADE_ALPHA, 0)
                 );
             } else {
                 centerImage.setManualAlphaAnimator(true);
                 imageMoveAnimation.playTogether(
                         ObjectAnimator.ofInt(photoBackgroundDrawable, AnimationProperties.COLOR_DRAWABLE_ALPHA, 0),
-                        ObjectAnimator.ofFloat(this, "animationValue", 0, 1),
+                        ObjectAnimator.ofFloat(this, ANIMATION_VALUE, 0, 1),
                         ObjectAnimator.ofFloat(actionBar, View.ALPHA, 0),
                         ObjectAnimator.ofFloat(captionScrollView, View.ALPHA, 0),
                         ObjectAnimator.ofFloat(navigationBar, View.ALPHA, 0),
                         ObjectAnimator.ofFloat(seekbarContainer, seekbarContainer.SEEKBAR_ALPHA, 0f),
                         ObjectAnimator.ofFloat(seekbarContainer, View.ALPHA, 0f),
                         ObjectAnimator.ofFloat(secretHint, View.ALPHA, 0),
-                        ObjectAnimator.ofFloat(centerImage, "currentAlpha", 0.0f)
+                        ObjectAnimator.ofFloat(centerImage, AnimationProperties.IMAGE_RECEIVER_ALPHA, 0.0f)
                 );
             }
 
@@ -2437,6 +2436,18 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         });
         imageMoveAnimation.start();
     }
+
+    public final Property<SecretMediaViewer, Float> ANIMATION_VALUE = new AnimationProperties.FloatProperty<SecretMediaViewer>("animationValue") {
+        @Override
+        public void setValue(SecretMediaViewer object, float value) {
+            object.setAnimationValue(value);
+        }
+
+        @Override
+        public Float get(SecretMediaViewer object) {
+            return object.getAnimationValue();
+        }
+    };
 
     @Keep
     public void setAnimationValue(float value) {

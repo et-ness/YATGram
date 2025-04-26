@@ -47,11 +47,9 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.WebFile;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AnimationProperties;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.CheckBox2;
-import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LetterDrawable;
 import org.telegram.ui.ActionBar.Theme;
@@ -208,7 +206,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
             if (inlineResult.title != null) {
                 try {
                     int width = (int) Math.ceil(Theme.chat_contextResult_titleTextPaint.measureText(inlineResult.title));
-                    CharSequence titleFinal = TextUtils.ellipsize(Emoji.replaceEmoji(inlineResult.title.replace('\n', ' '), Theme.chat_contextResult_titleTextPaint.getFontMetricsInt(), AndroidUtilities.dp(15), false), Theme.chat_contextResult_titleTextPaint, Math.min(width, maxWidth), TextUtils.TruncateAt.END);
+                    CharSequence titleFinal = TextUtils.ellipsize(Emoji.replaceEmoji(inlineResult.title.replace('\n', ' '), Theme.chat_contextResult_titleTextPaint.getFontMetricsInt(), false), Theme.chat_contextResult_titleTextPaint, Math.min(width, maxWidth), TextUtils.TruncateAt.END);
                     titleLayout = new StaticLayout(titleFinal, Theme.chat_contextResult_titleTextPaint, maxWidth + AndroidUtilities.dp(4), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                 } catch (Exception e) {
                     FileLog.e(e);
@@ -218,7 +216,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
 
             if (inlineResult.description != null) {
                 try {
-                    descriptionLayout = ChatMessageCell.generateStaticLayout(Emoji.replaceEmoji(inlineResult.description, Theme.chat_contextResult_descriptionTextPaint.getFontMetricsInt(), AndroidUtilities.dp(13), false), Theme.chat_contextResult_descriptionTextPaint, maxWidth, maxWidth, 0, 3);
+                    descriptionLayout = ChatMessageCell.generateStaticLayout(Emoji.replaceEmoji(inlineResult.description, Theme.chat_contextResult_descriptionTextPaint.getFontMetricsInt(), false), Theme.chat_contextResult_descriptionTextPaint, maxWidth, maxWidth, 0, 3);
                     if (descriptionLayout.getLineCount() > 0) {
                         linkY = descriptionY + descriptionLayout.getLineBottom(descriptionLayout.getLineCount() - 1) + AndroidUtilities.dp(1);
                     }
@@ -1039,28 +1037,28 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         StringBuilder sbuf = new StringBuilder();
         switch (documentAttachType) {
             case DOCUMENT_ATTACH_TYPE_DOCUMENT:
-                sbuf.append(LocaleController.getString("AttachDocument", R.string.AttachDocument));
+                sbuf.append(LocaleController.getString(R.string.AttachDocument));
                 break;
             case DOCUMENT_ATTACH_TYPE_GIF:
-                sbuf.append(LocaleController.getString("AttachGif", R.string.AttachGif));
+                sbuf.append(LocaleController.getString(R.string.AttachGif));
                 break;
             case DOCUMENT_ATTACH_TYPE_AUDIO:
-                sbuf.append(LocaleController.getString("AttachAudio", R.string.AttachAudio));
+                sbuf.append(LocaleController.getString(R.string.AttachAudio));
                 break;
             case DOCUMENT_ATTACH_TYPE_VIDEO:
-                sbuf.append(LocaleController.getString("AttachVideo", R.string.AttachVideo));
+                sbuf.append(LocaleController.getString(R.string.AttachVideo));
                 break;
             case DOCUMENT_ATTACH_TYPE_MUSIC:
-                sbuf.append(LocaleController.getString("AttachMusic", R.string.AttachMusic));
+                sbuf.append(LocaleController.getString(R.string.AttachMusic));
                 break;
             case DOCUMENT_ATTACH_TYPE_STICKER:
-                sbuf.append(LocaleController.getString("AttachSticker", R.string.AttachSticker));
+                sbuf.append(LocaleController.getString(R.string.AttachSticker));
                 break;
             case DOCUMENT_ATTACH_TYPE_PHOTO:
-                sbuf.append(LocaleController.getString("AttachPhoto", R.string.AttachPhoto));
+                sbuf.append(LocaleController.getString(R.string.AttachPhoto));
                 break;
             case DOCUMENT_ATTACH_TYPE_GEO:
-                sbuf.append(LocaleController.getString("AttachLocation", R.string.AttachLocation));
+                sbuf.append(LocaleController.getString(R.string.AttachLocation));
                 break;
         }
         final boolean hasTitle = titleLayout != null && !TextUtils.isEmpty(titleLayout.getText());

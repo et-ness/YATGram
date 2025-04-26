@@ -34,8 +34,6 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
-import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CombinedDrawable;
@@ -100,7 +98,7 @@ public class StatisticPostInfoCell extends FrameLayout {
             }
         };
         NotificationCenter.listenEmojiLoading(message);
-        message.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        message.setTypeface(AndroidUtilities.bold());
         message.setTextSize(16);
         message.setMaxLines(1);
         message.setTextColor(Color.BLACK);
@@ -224,7 +222,7 @@ public class StatisticPostInfoCell extends FrameLayout {
         if (messageObject.isMusic()) {
             text = String.format("%s, %s", messageObject.getMusicTitle().trim(), messageObject.getMusicAuthor().trim());
         } else if (messageObject.isStory()) {
-            text = LocaleController.getString("Story", R.string.Story);
+            text = LocaleController.getString(R.string.Story);
         } else {
             text = messageObject.caption != null ? messageObject.caption : messageObject.messageText;
         }
@@ -237,8 +235,8 @@ public class StatisticPostInfoCell extends FrameLayout {
         views.setText(String.format(LocaleController.getPluralString("Views", postInfo.getViews()), AndroidUtilities.formatWholeNumber(postInfo.getViews(), 0)));
 
         Date time = new Date(postInfo.getDate() * 1000L);
-        String monthTxt = LocaleController.getInstance().formatterYear.format(time);
-        String timeTxt = LocaleController.getInstance().formatterDay.format(time);
+        String monthTxt = LocaleController.getInstance().getFormatterYear().format(time);
+        String timeTxt = LocaleController.getInstance().getFormatterDay().format(time);
         date.setText(LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, monthTxt, timeTxt));
 
         shares.setText(AndroidUtilities.formatWholeNumber(postInfo.getForwards(), 0));

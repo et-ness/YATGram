@@ -24,13 +24,11 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
@@ -43,15 +41,13 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieImageView;
 
-import java.util.ArrayList;
-
 public class NotificationPermissionDialog extends BottomSheet implements NotificationCenter.NotificationCenterDelegate {
 
     private CounterView counterView;
     private RLottieImageView rLottieImageView;
     private Utilities.Callback<Boolean> whenGranted;
 
-    public NotificationPermissionDialog(Context context, Utilities.Callback<Boolean> whenGranted) {
+    public NotificationPermissionDialog(Context context, boolean settings, Utilities.Callback<Boolean> whenGranted) {
         super(context, false);
         this.whenGranted = whenGranted;
 
@@ -77,10 +73,10 @@ public class NotificationPermissionDialog extends BottomSheet implements Notific
 
         TextView textView = new TextView(context);
         textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
-        textView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        textView.setTypeface(AndroidUtilities.bold());
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
         textView.setGravity(Gravity.CENTER_HORIZONTAL);
-        textView.setText(LocaleController.getString("NotificationsPermissionAlertTitle"));
+        textView.setText(LocaleController.getString(R.string.NotificationsPermissionAlertTitle));
         textView.setPadding(AndroidUtilities.dp(30), 0, AndroidUtilities.dp(30), 0);
         linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
@@ -88,21 +84,21 @@ public class NotificationPermissionDialog extends BottomSheet implements Notific
         textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         textView.setGravity(Gravity.CENTER_HORIZONTAL);
-        textView.setText(LocaleController.getString("NotificationsPermissionAlertSubtitle"));
+        textView.setText(LocaleController.getString(R.string.NotificationsPermissionAlertSubtitle));
         textView.setPadding(AndroidUtilities.dp(30), AndroidUtilities.dp(10), AndroidUtilities.dp(30), AndroidUtilities.dp(21));
         linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-        linearLayout.addView(new SectionView(context, R.drawable.msg_message_s,     LocaleController.getString("NotificationsPermissionAlert1")), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        linearLayout.addView(new SectionView(context, R.drawable.msg_members_list2, LocaleController.getString("NotificationsPermissionAlert2")), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        linearLayout.addView(new SectionView(context, R.drawable.msg_customize_s,   LocaleController.getString("NotificationsPermissionAlert3")), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        linearLayout.addView(new SectionView(context, R.drawable.msg_message_s,     LocaleController.getString(R.string.NotificationsPermissionAlert1)), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        linearLayout.addView(new SectionView(context, R.drawable.msg_members_list2, LocaleController.getString(R.string.NotificationsPermissionAlert2)), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        linearLayout.addView(new SectionView(context, R.drawable.msg_customize_s,   LocaleController.getString(R.string.NotificationsPermissionAlert3)), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
         setCustomView(linearLayout);
         fixNavigationBar(getThemedColor(Theme.key_dialogBackground));
 
         textView = new TextView(context);
-        textView.setText(LocaleController.getString("NotificationsPermissionContinue"));
+        textView.setText(LocaleController.getString(settings ? R.string.NotificationsPermissionSettings : R.string.NotificationsPermissionContinue));
         textView.setGravity(Gravity.CENTER);
-        textView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        textView.setTypeface(AndroidUtilities.bold());
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         textView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
         textView.setBackground(Theme.AdaptiveRipple.filledRect(Theme.getColor(Theme.key_featuredStickers_addButton), 8));
@@ -148,7 +144,6 @@ public class NotificationPermissionDialog extends BottomSheet implements Notific
         }
     }
 
-    private boolean mayBeAccidentalDismiss;
     private long showTime;
 
     @Override
@@ -158,20 +153,12 @@ public class NotificationPermissionDialog extends BottomSheet implements Notific
     }
 
     @Override
-    protected void onDismissWithTouchOutside() {
-        mayBeAccidentalDismiss = (System.currentTimeMillis() - showTime) < 3000L;
-        super.onDismissWithTouchOutside();
-    }
-
-    @Override
     public void dismiss() {
         super.dismiss();
         if (whenGranted != null) {
             whenGranted.run(false);
             whenGranted = null;
-            if (!mayBeAccidentalDismiss) {
-                askLater();
-            }
+            askLater();
         }
         for (int a : SharedConfig.activeAccounts) {
             try {

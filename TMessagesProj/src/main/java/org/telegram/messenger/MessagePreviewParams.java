@@ -213,7 +213,7 @@ public class MessagePreviewParams {
             replyMessageObject = null;
             replyQuote = null;
         }
-        hasSecretMessages = replyMessageObject != null && (replyMessageObject.isVoiceOnce() || replyMessageObject.isRoundOnce());
+        hasSecretMessages = replyMessageObject != null && (replyMessageObject.isVoiceOnce() || replyMessageObject.isRoundOnce() || replyMessageObject.type == MessageObject.TYPE_GIFT_STARS);
         if (replyMessageObject != null || replyQuote != null) {
             if (group != null) {
                 replyMessage = new Messages(null, 1, group.messages, dialogId, null);
@@ -435,6 +435,11 @@ public class MessagePreviewParams {
         } else {
             this.forwardMessages = null;
         }
+    }
+
+    public int getForwardedMessagesCount() {
+        if (forwardMessages == null) return 0;
+        return forwardMessages.selectedIds.size();
     }
 
     private MessageObject toPreviewMessage(MessageObject messageObject, Boolean out, final int msgtype) {

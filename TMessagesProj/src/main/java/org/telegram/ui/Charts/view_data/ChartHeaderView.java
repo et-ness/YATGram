@@ -48,12 +48,12 @@ public class ChartHeaderView extends FrameLayout {
         this.resourcesProvider = resourcesProvider;
         TextPaint textPaint = new TextPaint();
         textPaint.setTextSize(14);
-        textPaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        textPaint.setTypeface(AndroidUtilities.bold());
         textMargin = (int) textPaint.measureText("00 MMM 0000 - 00 MMM 000");
 
         title = new TextView(context);
         title.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-        title.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        title.setTypeface(AndroidUtilities.bold());
         addView(title, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL, 16, 0, textMargin, 0));
 
         back = new TextView(context);
@@ -64,20 +64,20 @@ public class ChartHeaderView extends FrameLayout {
 
         dates = new TextView(context);
         dates.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-        dates.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        dates.setTypeface(AndroidUtilities.bold());
         dates.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
         addView(dates, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.END | Gravity.CENTER_VERTICAL, 16, 0, 16, 0));
 
         datesTmp = new TextView(context);
         datesTmp.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-        datesTmp.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        datesTmp.setTypeface(AndroidUtilities.bold());
         datesTmp.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
         addView(datesTmp, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.END | Gravity.CENTER_VERTICAL, 16, 0, 16, 0));
         datesTmp.setVisibility(View.GONE);
 
 
         back.setVisibility(View.GONE);
-        back.setText(LocaleController.getString("ZoomOut", R.string.ZoomOut));
+        back.setText(LocaleController.getString(R.string.ZoomOut));
         zoomIcon = ContextCompat.getDrawable(getContext(), R.drawable.msg_zoomout_stats);
         back.setCompoundDrawablesWithIntrinsicBounds(zoomIcon, null, null, null);
         back.setCompoundDrawablePadding(AndroidUtilities.dp(4));
@@ -111,9 +111,9 @@ public class ChartHeaderView extends FrameLayout {
         }
         final String newText;
         if (end - start >= 86400000L) {
-            newText = LocaleController.getInstance().formatterYear.format(new Date(start)) + " — " + LocaleController.getInstance().formatterYear.format(new Date(end));
+            newText = LocaleController.getInstance().getFormatterYear().format(new Date(start)) + " — " + LocaleController.getInstance().getFormatterYear().format(new Date(end));
         } else {
-            newText = LocaleController.getInstance().formatterYear.format(new Date(start));
+            newText = LocaleController.getInstance().getFormatterYear().format(new Date(start));
         }
 
         dates.setText(newText);

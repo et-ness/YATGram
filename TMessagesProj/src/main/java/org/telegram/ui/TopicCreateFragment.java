@@ -34,6 +34,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -109,9 +110,9 @@ public class TopicCreateFragment extends BaseFragment {
     @Override
     public View createView(Context context) {
         if (topicForEdit != null) {
-            actionBar.setTitle(LocaleController.getString("EditTopic", R.string.EditTopic));
+            actionBar.setTitle(LocaleController.getString(R.string.EditTopic));
         } else {
-            actionBar.setTitle(LocaleController.getString("NewTopic", R.string.NewTopic));
+            actionBar.setTitle(LocaleController.getString(R.string.NewTopic));
         }
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
@@ -221,7 +222,7 @@ public class TopicCreateFragment extends BaseFragment {
                             editForumRequest.title = topicName;
                             editForumRequest.flags |= 1;
                         }
-                        if (topicForEdit.icon_emoji_id != editForumRequest.icon_emoji_id) {
+                        if (topicForEdit.icon_emoji_id != selectedEmojiDocumentId) {
                             editForumRequest.icon_emoji_id = selectedEmojiDocumentId;
                             editForumRequest.flags |= 2;
                         }
@@ -260,7 +261,7 @@ public class TopicCreateFragment extends BaseFragment {
             }
         });
         if (topicForEdit == null) {
-            actionBar.createMenu().addItem(CREATE_ID, LocaleController.getString("Create", R.string.Create).toUpperCase());
+            actionBar.createMenu().addItem(CREATE_ID, LocaleController.getString(R.string.Create).toUpperCase());
         } else {
             actionBar.createMenu().addItem(EDIT_ID, R.drawable.ic_ab_done);
         }
@@ -289,15 +290,15 @@ public class TopicCreateFragment extends BaseFragment {
 
         HeaderCell headerCell = new HeaderCell(context);
         if (topicForEdit != null && topicForEdit.id == 1) {
-            headerCell.setText(LocaleController.getString("CreateGeneralTopicTitle", R.string.CreateGeneralTopicTitle));
+            headerCell.setText(LocaleController.getString(R.string.CreateGeneralTopicTitle));
         } else {
-            headerCell.setText(LocaleController.getString("CreateTopicTitle", R.string.CreateTopicTitle));
+            headerCell.setText(LocaleController.getString(R.string.CreateTopicTitle));
         }
 
         FrameLayout editTextContainer = new FrameLayout(context);
 
         editTextBoldCursor = new EditTextBoldCursor(context);
-        editTextBoldCursor.setHintText(LocaleController.getString("EnterTopicName", R.string.EnterTopicName));
+        editTextBoldCursor.setHintText(LocaleController.getString(R.string.EnterTopicName));
         editTextBoldCursor.setHintColor(getThemedColor(Theme.key_chat_messagePanelHint));
         editTextBoldCursor.setTextColor(getThemedColor(Theme.key_chat_messagePanelText));
         editTextBoldCursor.setPadding(AndroidUtilities.dp(0), editTextBoldCursor.getPaddingTop(), AndroidUtilities.dp(0), editTextBoldCursor.getPaddingBottom());
@@ -426,7 +427,7 @@ public class TopicCreateFragment extends BaseFragment {
                     }
                 }
 
-                protected void onEmojiSelected(View view, Long documentId, TLRPC.Document document, Integer until) {
+                protected void onEmojiSelected(View view, Long documentId, TLRPC.Document document, TL_stars.TL_starGiftUnique gift, Integer until) {
                     boolean setIsFree = false;
                     if (!TextUtils.isEmpty(UserConfig.getInstance(currentAccount).defaultTopicIcons)) {
                         TLRPC.TL_messages_stickerSet stickerSet = getMediaDataController().getStickerSetByEmojiOrName(UserConfig.getInstance(currentAccount).defaultTopicIcons);
@@ -477,7 +478,7 @@ public class TopicCreateFragment extends BaseFragment {
 
             checkBoxCell = new TextCheckCell2(context);
             checkBoxCell.getCheckBox().setDrawIconType(0);
-            checkBoxCell.setTextAndCheck(LocaleController.getString("EditTopicHide", R.string.EditTopicHide), !topicForEdit.hidden, false);
+            checkBoxCell.setTextAndCheck(LocaleController.getString(R.string.EditTopicHide), !topicForEdit.hidden, false);
             checkBoxCell.setBackground(Theme.createSelectorWithBackgroundDrawable(getThemedColor(Theme.key_windowBackgroundWhite), getThemedColor(Theme.key_listSelector)));
             checkBoxCell.setOnClickListener(e -> {
                 checkBoxCell.setChecked(!checkBoxCell.isChecked());
@@ -485,7 +486,7 @@ public class TopicCreateFragment extends BaseFragment {
             emojiContainer.addView(checkBoxCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 50, Gravity.TOP, 0, 8, 0, 0));
 
             TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
-            infoCell.setText(LocaleController.getString("EditTopicHideInfo", R.string.EditTopicHideInfo));
+            infoCell.setText(LocaleController.getString(R.string.EditTopicHideInfo));
             infoCell.setBackground(Theme.getThemedDrawableByKey(getContext(), R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow, getResourceProvider()));
             emojiContainer.addView(infoCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 8 + 50, 0, 0));
         }
@@ -517,8 +518,8 @@ public class TopicCreateFragment extends BaseFragment {
                 BulletinFactory.of(this)
                         .createEmojiBulletin(
                                 emoji,
-                                AndroidUtilities.replaceTags(LocaleController.getString("UnlockPremiumEmojiHint", R.string.UnlockPremiumEmojiHint)),
-                                LocaleController.getString("PremiumMore", R.string.PremiumMore),
+                                AndroidUtilities.replaceTags(LocaleController.getString(R.string.UnlockPremiumEmojiHint)),
+                                LocaleController.getString(R.string.PremiumMore),
                                 () -> {
                                     new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_ANIMATED_EMOJI, false).show();
                                 }

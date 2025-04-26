@@ -10,9 +10,9 @@ import java.util.ArrayList;
 public class ChatMessagesMetadataController {
 
     final ChatActivity chatActivity;
-    private ArrayList<MessageObject> reactionsToCheck = new ArrayList<>(10);
-    private ArrayList<MessageObject> extendedMediaToCheck = new ArrayList<>(10);
-    private ArrayList<MessageObject> storiesToCheck = new ArrayList<>(10);
+    private final ArrayList<MessageObject> reactionsToCheck = new ArrayList<>(10);
+    private final ArrayList<MessageObject> extendedMediaToCheck = new ArrayList<>(10);
+    private final ArrayList<MessageObject> storiesToCheck = new ArrayList<>(10);
 
     ArrayList<Integer> reactionsRequests = new ArrayList<>();
     ArrayList<Integer> extendedMediaRequests = new ArrayList<>();
@@ -38,11 +38,11 @@ public class ChatMessagesMetadataController {
             storiesToCheck.clear();
             for (int i = from; i < to; i++) {
                 MessageObject messageObject = messages.get(i);
-                if (chatActivity.getThreadMessage() != messageObject && messageObject.getId() > 0 && messageObject.messageOwner.action == null && (currentTime - messageObject.reactionsLastCheckTime) > 15000L) {
+                if (chatActivity.getThreadMessage() != messageObject && messageObject.getId() > 0 && (messageObject.messageOwner.action == null || messageObject.canSetReaction()) && (currentTime - messageObject.reactionsLastCheckTime) > 15000L) {
                     messageObject.reactionsLastCheckTime = currentTime;
                     reactionsToCheck.add(messageObject);
                 }
-                if (chatActivity.getThreadMessage() != messageObject && messageObject.getId() > 0 && messageObject.hasExtendedMediaPreview() && (currentTime - messageObject.extendedMediaLastCheckTime) > 30000L) {
+                if (chatActivity.getThreadMessage() != messageObject && messageObject.getId() > 0 && (messageObject.hasExtendedMediaPreview() || messageObject.hasPaidMediaPreview()) && (currentTime - messageObject.extendedMediaLastCheckTime) > 30000L) {
                     messageObject.extendedMediaLastCheckTime = currentTime;
                     extendedMediaToCheck.add(messageObject);
                 }

@@ -35,6 +35,8 @@ public:
     uint32_t retryCount = 0;
     bool failedBySalt = false;
     int32_t failedByFloodWait = 0;
+    bool awaitingIntegrityCheck = false;
+    bool awaitingCaptchaCheck = false;
     bool premiumFloodWait = false;
     ConnectionType connectionType;
     uint32_t requestFlags;
@@ -65,7 +67,7 @@ public:
     void addRespondMessageId(int64_t id);
     bool respondsToMessageId(int64_t id);
     void clear(bool time);
-    void onComplete(TLObject *result, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msg_id);
+    void onComplete(TLObject *result, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msg_id, int32_t dcId);
     void onQuickAck();
     void onWriteToSocket();
     bool isMediaRequest();

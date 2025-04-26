@@ -99,7 +99,7 @@ public class DialogsEmptyCell extends LinearLayout {
         titleView = new TextView(context);
         titleView.setTextColor(Theme.getColor(Theme.key_chats_nameMessage_threeLines));
         titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-        titleView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        titleView.setTypeface(AndroidUtilities.bold());
         titleView.setGravity(Gravity.CENTER);
         addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 52, 10, 52, 0));
 
@@ -136,26 +136,26 @@ public class DialogsEmptyCell extends LinearLayout {
             case TYPE_WELCOME_WITH_CONTACTS:
             case TYPE_WELCOME_NO_CONTACTS:
                 icon = R.raw.utyan_newborn;
-                help = LocaleController.getString("NoChatsHelp", R.string.NoChatsHelp);
-                titleView.setText(LocaleController.getString("NoChats", R.string.NoChats));
+                help = LocaleController.getString(R.string.NoChatsHelp);
+                titleView.setText(LocaleController.getString(R.string.NoChats));
                 break;
             case TYPE_FILTER_NO_CHATS_TO_DISPLAY:
                 imageView.setAutoRepeat(false);
                 icon = R.raw.filter_no_chats;
                 if (forward) {
-                    titleView.setText(LocaleController.getString("FilterNoChatsToForward", R.string.FilterNoChatsToForward));
-                    help = LocaleController.getString("FilterNoChatsToForwardInfo", R.string.FilterNoChatsToForwardInfo);
+                    titleView.setText(LocaleController.getString(R.string.FilterNoChatsToForward));
+                    help = LocaleController.getString(R.string.FilterNoChatsToForwardInfo);
                 } else {
-                    titleView.setText(LocaleController.getString("FilterNoChatsToDisplay", R.string.FilterNoChatsToDisplay));
-                    help = LocaleController.getString("FilterNoChatsToDisplayInfo", R.string.FilterNoChatsToDisplayInfo);
+                    titleView.setText(LocaleController.getString(R.string.FilterNoChatsToDisplay));
+                    help = LocaleController.getString(R.string.FilterNoChatsToDisplayInfo);
                 }
                 break;
             default:
             case TYPE_FILTER_ADDING_CHATS:
                 imageView.setAutoRepeat(true);
                 icon = R.raw.filter_new;
-                help = LocaleController.getString("FilterAddingChatsInfo", R.string.FilterAddingChatsInfo);
-                titleView.setText(LocaleController.getString("FilterAddingChats", R.string.FilterAddingChats));
+                help = LocaleController.getString(R.string.FilterAddingChatsInfo);
+                titleView.setText(LocaleController.getString(R.string.FilterAddingChats));
                 break;
         }
         if (icon != 0) {
@@ -163,7 +163,7 @@ public class DialogsEmptyCell extends LinearLayout {
             if (currentType == TYPE_WELCOME_WITH_CONTACTS) {
                 if (isUtyanAnimationTriggered()) {
                     utyanCollapseProgress = 1f;
-                    String noChatsContactsHelp = LocaleController.getString("NoChatsContactsHelp", R.string.NoChatsContactsHelp);
+                    String noChatsContactsHelp = LocaleController.getString(R.string.NoChatsContactsHelp);
                     if (AndroidUtilities.isTablet() && !AndroidUtilities.isSmallTablet()) {
                         noChatsContactsHelp = noChatsContactsHelp.replace('\n', ' ');
                     }
@@ -225,7 +225,7 @@ public class DialogsEmptyCell extends LinearLayout {
         }
         utyanAnimationTriggered = true;
         if (changeContactsHelp) {
-            String noChatsContactsHelp = LocaleController.getString("NoChatsContactsHelp", R.string.NoChatsContactsHelp);
+            String noChatsContactsHelp = LocaleController.getString(R.string.NoChatsContactsHelp);
             if (AndroidUtilities.isTablet() && !AndroidUtilities.isSmallTablet()) {
                 noChatsContactsHelp = noChatsContactsHelp.replace('\n', ' ');
             }

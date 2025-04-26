@@ -8,27 +8,19 @@
 
 package org.telegram.ui.Cells;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.os.SystemClock;
 import android.text.TextUtils;
-import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.TextView;
-
-import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
@@ -65,18 +57,20 @@ public class LocationCell extends FrameLayout {
         addView(imageView, LayoutHelper.createFrame(42, 42, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), LocaleController.isRTL ? 0 : 15, 11, LocaleController.isRTL ? 15 : 0, 0));
 
         nameTextView = new AnimatedTextView(context, true, true, true);
-        nameTextView.setAnimationProperties(0.4f, 0, 240, CubicBezierInterpolator.EASE_OUT_QUINT);
+        nameTextView.setAnimationProperties(0.4f, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
+        nameTextView.setScaleProperty(.6f);
         nameTextView.setTextSize(AndroidUtilities.dp(16));
         nameTextView.setEllipsizeByGradient(true);
         nameTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
-        nameTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        nameTextView.setTypeface(AndroidUtilities.bold());
         nameTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
         nameTextView.getDrawable().setOverrideFullWidth(AndroidUtilities.displaySize.x);
         NotificationCenter.listenEmojiLoading(nameTextView);
         addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 22, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), (LocaleController.isRTL ? 16 : 73), 10, (LocaleController.isRTL ? 73 : 16), 0));
 
         addressTextView = new AnimatedTextView(context, true, true, true);
-        addressTextView.setAnimationProperties(0.4f, 0, 240, CubicBezierInterpolator.EASE_OUT_QUINT);
+        addressTextView.setScaleProperty(.6f);
+        addressTextView.setAnimationProperties(0.4f, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
         addressTextView.setTextSize(AndroidUtilities.dp(14));
         addressTextView.setEllipsizeByGradient(true);
         addressTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText3));

@@ -30,10 +30,9 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.core.math.MathUtils;
-
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -119,13 +118,13 @@ public class LimitPreviewView extends LinearLayout {
         final FrameLayout defaultLayout = new TextViewHolder(context, true);
 
         defaultText = new TextView(context);
-        defaultText.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        defaultText.setText(LocaleController.getString("LimitFree", R.string.LimitFree));
+        defaultText.setTypeface(AndroidUtilities.bold());
+        defaultText.setText(LocaleController.getString(R.string.LimitFree));
         defaultText.setGravity(Gravity.CENTER_VERTICAL);
         defaultText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
 
         defaultCount = new TextView(context);
-        defaultCount.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        defaultCount.setTypeface(AndroidUtilities.bold());
         defaultCount.setText(String.format("%d", premiumLimit));
         defaultCount.setGravity(Gravity.CENTER_VERTICAL);
         defaultCount.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
@@ -141,8 +140,8 @@ public class LimitPreviewView extends LinearLayout {
         final FrameLayout premiumLayout = new TextViewHolder(context, false);
 
         premiumText = new TextView(context);
-        premiumText.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        premiumText.setText(LocaleController.getString("LimitPremium", R.string.LimitPremium));
+        premiumText.setTypeface(AndroidUtilities.bold());
+        premiumText.setText(LocaleController.getString(R.string.LimitPremium));
         premiumText.setGravity(Gravity.CENTER_VERTICAL);
         premiumText.setTextColor(Color.WHITE);
 
@@ -162,7 +161,7 @@ public class LimitPreviewView extends LinearLayout {
                 super.setText(text, type);
             }
         };
-        premiumCount.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        premiumCount.setTypeface(AndroidUtilities.bold());
         premiumCount.setText(String.format("%d", premiumLimit));
         premiumCount.setGravity(Gravity.CENTER_VERTICAL);
         premiumCount.setTextColor(Color.WHITE);
@@ -406,7 +405,9 @@ public class LimitPreviewView extends LinearLayout {
                 if (v > 1f && animatingRotate) {
                     if (!wasHaptic) {
                         wasHaptic = true;
-                        limitIcon.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        try {
+                            limitIcon.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                        } catch (Exception ignored) {}
                     }
                     limitIcon.setRotation(limitIconRotation + (v - 1f) * 60);
                 } else if (!animatingRotation) {
@@ -552,6 +553,7 @@ public class LimitPreviewView extends LinearLayout {
         isBoostsStyle = true;
     }
 
+    @Keep
     public void setStatus(int currentLevel, int maxLevel, boolean animated) {
         if (currentValue == currentLevel) {
             animated = false;
@@ -638,7 +640,7 @@ public class LimitPreviewView extends LinearLayout {
 
         public CounterView(Context context) {
             super(context);
-            textPaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+            textPaint.setTypeface(AndroidUtilities.bold());
             textPaint.setTextSize(dp(22));
             textPaint.setColor(Color.WHITE);
             dstOutPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));

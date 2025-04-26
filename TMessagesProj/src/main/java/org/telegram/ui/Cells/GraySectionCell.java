@@ -8,6 +8,8 @@
 
 package org.telegram.ui.Cells;
 
+import static org.telegram.messenger.AndroidUtilities.dp;
+
 import android.content.Context;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -25,15 +27,15 @@ import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Premium.CarouselView;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.List;
 
-public class GraySectionCell extends FrameLayout {
+public class GraySectionCell extends FrameLayout implements Theme.Colorable {
 
     private AnimatedEmojiSpan.TextViewEmojis textView;
     private AnimatedTextView rightTextView;
+    private FrameLayout.LayoutParams rightTextViewLayoutParams;
     private final Theme.ResourcesProvider resourcesProvider;
     private int layerHeight = 32;
 
@@ -49,7 +51,7 @@ public class GraySectionCell extends FrameLayout {
 
         textView = new AnimatedEmojiSpan.TextViewEmojis(getContext());
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-        textView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        textView.setTypeface(AndroidUtilities.bold());
         textView.setTextColor(getThemedColor(Theme.key_graySectionText));
         textView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
         addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 16, 0, 16, 0));
@@ -60,21 +62,27 @@ public class GraySectionCell extends FrameLayout {
                 return Button.class.getName();
             }
         };
-        rightTextView.setPadding(AndroidUtilities.dp(2), 0, AndroidUtilities.dp(2), 0);
+        rightTextView.setPadding(dp(2), 0, dp(2), 0);
         rightTextView.setAnimationProperties(.9f, 0, 420, CubicBezierInterpolator.EASE_OUT_QUINT);
-        rightTextView.setTextSize(AndroidUtilities.dp(14));
+        rightTextView.setTextSize(dp(14));
         rightTextView.setTextColor(getThemedColor(Theme.key_graySectionText));
         rightTextView.setGravity(LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT);
-        addView(rightTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, 16, 0, 16, 0));
+        addView(rightTextView, rightTextViewLayoutParams = LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, 16, 0, 16, 0));
 
         ViewCompat.setAccessibilityHeading(this, true);
+    }
+
+    public void updateColors() {
+        setBackgroundColor(getThemedColor(Theme.key_graySection));
+        textView.setTextColor(getThemedColor(Theme.key_graySectionText));
+        rightTextView.setTextColor(getThemedColor(Theme.key_graySectionText));
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(
                 MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(layerHeight), MeasureSpec.EXACTLY));
+                MeasureSpec.makeMeasureSpec(dp(layerHeight), MeasureSpec.EXACTLY));
     }
 
     public void setLayerHeight(int dp){
@@ -105,8 +113,14 @@ public class GraySectionCell extends FrameLayout {
         rightTextView.setVisibility(VISIBLE);
     }
 
-    public void setRightText(String right) {
+    public void setRightText(CharSequence right) {
         setRightText(right, true);
+    }
+
+    public void setRightTextMargin(int marginDp) {
+        rightTextViewLayoutParams.leftMargin = dp(marginDp);
+        rightTextViewLayoutParams.rightMargin = dp(marginDp);
+        rightTextView.setLayoutParams(rightTextViewLayoutParams);
     }
 
     public void setRightText(CharSequence right, boolean moveDown) {

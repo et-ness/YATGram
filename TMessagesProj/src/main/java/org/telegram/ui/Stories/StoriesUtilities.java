@@ -859,9 +859,9 @@ public class StoriesUtilities {
     public static CharSequence getUploadingStr(TextView textView, boolean medium, boolean edit) {
         String str;
         if (edit) {
-            str = LocaleController.getString("StoryEditing", R.string.StoryEditing);
+            str = LocaleController.getString(R.string.StoryEditing);
         } else {
-            str = LocaleController.getString("UploadingStory", R.string.UploadingStory);
+            str = LocaleController.getString(R.string.UploadingStory);
         }
         int index = str.indexOf("…");
         if (index > 0) {
@@ -878,9 +878,9 @@ public class StoriesUtilities {
     public static void applyUploadingStr(SimpleTextView textView, boolean medium, boolean edit) {
         String str;
         if (edit) {
-            str = LocaleController.getString("StoryEditing", R.string.StoryEditing);
+            str = LocaleController.getString(R.string.StoryEditing);
         } else {
-            str = LocaleController.getString("UploadingStory", R.string.UploadingStory);
+            str = LocaleController.getString(R.string.UploadingStory);
         }
         int index = str.indexOf("…");
         if (index > 0) {
@@ -895,7 +895,7 @@ public class StoriesUtilities {
     }
 
     public static void applyUploadingStr(AnimatedTextView textView, boolean medium, boolean animated) {
-        String str = LocaleController.getString("UploadingStory", R.string.UploadingStory);
+        String str = LocaleController.getString(R.string.UploadingStory);
         int index = str.indexOf("…");
         if (index > 0) {
             SpannableStringBuilder spannableStringBuilder = SpannableStringBuilder.valueOf(str);
@@ -909,12 +909,12 @@ public class StoriesUtilities {
     }
 
     public static CharSequence createExpiredStoryString() {
-        return createExpiredStoryString(false, "ExpiredStory", R.string.ExpiredStory);
+        return createExpiredStoryString(false, R.string.ExpiredStory);
     }
 
-    public static CharSequence createExpiredStoryString(boolean useScale, String strKey, int strRes, Object... args) {
+    public static CharSequence createExpiredStoryString(boolean useScale, int strRes, Object... args) {
         SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
-        spannableStringBuilder.append("d ").append(LocaleController.formatString(strKey, strRes, args));
+        spannableStringBuilder.append("d ").append(LocaleController.formatString(strRes, args));
         ColoredImageSpan coloredImageSpan = new ColoredImageSpan(R.drawable.msg_mini_bomb);
         if (useScale) {
             coloredImageSpan.setScale(0.8f, 0.8f);
@@ -927,7 +927,7 @@ public class StoriesUtilities {
 
     public static CharSequence createReplyStoryString() {
         SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
-        spannableStringBuilder.append("d ").append(LocaleController.getString("Story", R.string.Story));
+        spannableStringBuilder.append("d ").append(LocaleController.getString(R.string.Story));
         ColoredImageSpan coloredImageSpan = new ColoredImageSpan(R.drawable.msg_mini_replystory2);
         spannableStringBuilder.setSpan(coloredImageSpan, 0, 1, 0);
         return spannableStringBuilder;
@@ -1222,7 +1222,9 @@ public class StoriesUtilities {
                             AndroidUtilities.cancelRunOnUIThread(longPressRunnable);
                         }
                         AndroidUtilities.runOnUIThread(longPressRunnable = () -> {
-                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                            try {
+                                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                            } catch (Exception ignored) {}
                             if (buttonBounce != null) {
                                 buttonBounce.setPressed(false);
                             }
@@ -1451,15 +1453,19 @@ public class StoriesUtilities {
 
         public void setChat(TLRPC.Chat chat, boolean animated) {
             int colorId = -1;
-//            if (chat != null && chat.profile_color != null) {
-//                colorId = chat.profile_color.color;
-//            }
+            if (chat != null && chat.profile_color != null) {
+                colorId = chat.profile_color.color;
+            }
             setColorId(colorId, animated);
         }
 
         public void setColorId(int colorId, boolean animated) {
             MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
             MessagesController.PeerColor peerColor = peerColors == null ? null : peerColors.getColor(colorId);
+            setColor(peerColor, animated);
+        }
+
+        public void setColor(MessagesController.PeerColor peerColor, boolean animated) {
             if (peerColor != null) {
                 setColors(
                     peerColor.getStoryColor1(Theme.isCurrentThemeDark()),
@@ -1470,6 +1476,7 @@ public class StoriesUtilities {
                 resetColors(animated);
             }
         }
+
         private void resetColors(boolean animated) {
             if (isDialogCell) {
                 setColors(Theme.getColor(Theme.key_stories_circle_dialog1), Theme.getColor(Theme.key_stories_circle_dialog2), animated);

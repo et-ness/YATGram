@@ -39,7 +39,7 @@ public class ReplyMessageLine {
     public final float[] radii = new float[8];
     private final Path lineClipPath = new Path();
     private final Path backgroundPath = new Path();
-    private final Paint backgroundPaint = new Paint();
+    public final Paint backgroundPaint = new Paint();
     private LoadingDrawable backgroundLoadingDrawable;
 
     public boolean hasColor2, hasColor3;
@@ -49,6 +49,7 @@ public class ReplyMessageLine {
     private Path color3Path = new Path();
     private int switchedCount = 0;
     private float emojiAlpha = 1f;
+    private boolean sponsored;
 
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emoji;
 
@@ -152,6 +153,7 @@ public class ReplyMessageLine {
         final boolean dark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
         reversedOut = false;
         emojiDocumentId = 0;
+        sponsored = messageObject != null && messageObject.isSponsored();
         if (messageObject == null) {
             hasColor2 = hasColor3 = false;
             color1 = color2 = color3 = Theme.getColor(Theme.key_chat_inReplyLine, resourcesProvider);
@@ -224,9 +226,26 @@ public class ReplyMessageLine {
                     emojiDocumentId = UserObject.getEmojiId(currentUser);
                 }
             } else if (messageObject.isFromChannel() && currentChat != null) {
-                colorId = ChatObject.getColorId(currentChat);
-                if (type == TYPE_LINK) {
-                    emojiDocumentId = ChatObject.getEmojiId(currentChat);
+                if (currentChat.signature_profiles) {
+                    long did = messageObject.getFromChatId();
+                    if (did >= 0) {
+                        TLRPC.User user = MessagesController.getInstance(messageObject.currentAccount).getUser(did);
+                        colorId = UserObject.getColorId(user);
+                        if (type == TYPE_LINK) {
+                            emojiDocumentId = UserObject.getEmojiId(user);
+                        }
+                    } else {
+                        TLRPC.Chat chat = MessagesController.getInstance(messageObject.currentAccount).getChat(-did);
+                        colorId = ChatObject.getColorId(chat);
+                        if (type == TYPE_LINK) {
+                            emojiDocumentId = ChatObject.getEmojiId(chat);
+                        }
+                    }
+                } else {
+                    colorId = ChatObject.getColorId(currentChat);
+                    if (type == TYPE_LINK) {
+                        emojiDocumentId = ChatObject.getEmojiId(currentChat);
+                    }
                 }
             } else {
                 colorId = 0;
@@ -325,6 +344,26 @@ public class ReplyMessageLine {
         return nameColorAnimated.set(nameColor);
     }
 
+    public int setFactCheck(Theme.ResourcesProvider resourcesProvider) {
+        nameColor = Theme.getColor(Theme.key_text_RedBold, resourcesProvider);
+        color1 = Theme.getColor(Theme.key_text_RedBold, resourcesProvider);
+        hasColor2 = false;
+        hasColor3 = false;
+        backgroundColor = Theme.multAlpha(Theme.getColor(Theme.key_text_RedBold, resourcesProvider), 0.10f);
+        if (emojiDocumentId != 0 && emoji == null) {
+            emoji = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(parentView, false, dp(20), AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW_STATIC);
+            if (parentView instanceof ChatMessageCell ? ((ChatMessageCell) parentView).isCellAttachedToWindow() : parentView.isAttachedToWindow()) {
+                emoji.attach();
+            }
+        }
+        if (emoji != null) {
+            if (emoji.set(emojiDocumentId, true)) {
+                emojiLoaded = false;
+            }
+        }
+        return nameColorAnimated.set(nameColor);
+    }
+
     public void setEmojiAlpha(float emojiAlpha) {
         this.emojiAlpha = emojiAlpha;
     }
@@ -378,7 +417,7 @@ public class ReplyMessageLine {
         canvas.save();
 
         clipPath.rewind();
-        final int rad = (int) Math.floor(SharedConfig.bubbleRadius / 3f);
+        final int rad = (int) Math.floor(SharedConfig.bubbleRadius / (sponsored ? 2f : 3f));
         rectF.set(rect.left, rect.top, rect.left + Math.max(dp(3), dp(2 * rad)), rect.bottom);
         clipPath.addRoundRect(rectF, dp(rad), dp(rad), Path.Direction.CW);
         canvas.clipPath(clipPath);

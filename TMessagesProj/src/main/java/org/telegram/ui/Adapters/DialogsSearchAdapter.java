@@ -8,14 +8,21 @@
 
 package org.telegram.ui.Adapters;
 
+import static org.telegram.messenger.AndroidUtilities.dp;
+
 import android.content.Context;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.util.Pair;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.collection.LongSparseArray;
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -50,43 +57,86 @@ import org.telegram.ui.Cells.HintDialogCell;
 import org.telegram.ui.Cells.ProfileSearchCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TopicSearchCell;
+import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.ForegroundColorSpanThemable;
+import org.telegram.ui.Components.ItemOptions;
+import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilteredSearchView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 
     public final static int VIEW_TYPE_PROFILE_CELL = 0;
     public final static int VIEW_TYPE_GRAY_SECTION = 1;
-    public final int VIEW_TYPE_DIALOG_CELL = 2;
-    public final int VIEW_TYPE_TOPIC_CELL = 3;
-    public final int VIEW_TYPE_LOADING = 4;
-    public final int VIEW_TYPE_HASHTAG_CELL = 5;
-    public final int VIEW_TYPE_CATEGORY_LIST = 6;
-    public final int VIEW_TYPE_ADD_BY_PHONE = 7;
-    public final int VIEW_TYPE_INVITE_CONTACT_CELL = 8;
-    private Context mContext;
+    public final static int VIEW_TYPE_DIALOG_CELL = 2;
+    public final static int VIEW_TYPE_TOPIC_CELL = 3;
+    public final static int VIEW_TYPE_LOADING = 4;
+    public final static int VIEW_TYPE_HASHTAG_CELL = 5;
+    public final static int VIEW_TYPE_CATEGORY_LIST = 6;
+    public final static int VIEW_TYPE_ADD_BY_PHONE = 7;
+    public final static int VIEW_TYPE_INVITE_CONTACT_CELL = 8;
+    public final static int VIEW_TYPE_PUBLIC_POST = 9;
+    public final static int VIEW_TYPE_EMPTY_RESULT = 10;
+
+    public static enum Filter {
+        All(0, R.string.SearchMessagesFilterAll, R.string.SearchMessagesFilterAllFrom),
+        Private(8, R.string.SearchMessagesFilterPrivate, R.string.SearchMessagesFilterPrivateFrom),
+        Groups(4, R.string.SearchMessagesFilterGroup, R.string.SearchMessagesFilterGroupFrom),
+        Channels(2, R.string.SearchMessagesFilterChannels, R.string.SearchMessagesFilterChannelsFrom);
+
+        public final int flags;
+        public final int strResId;
+        public final int strFromResId;
+
+        Filter(int flags, int strResId, int strFromResId) {
+            this.flags = flags;
+            this.strResId = strResId;
+            this.strFromResId = strFromResId;
+        }
+    }
+
+    private Filter currentMessagesFilter = Filter.All;
+    private boolean forceLoadingMessages;
+    public void resetFilter() {
+        currentMessagesFilter = Filter.All;
+    }
+
+    private final Context mContext;
     private Runnable searchRunnable;
     private Runnable searchRunnable2;
+    private int searchHashtagRequest = -1;
+    private Runnable searchHashtagRunnable;
     private ArrayList<Object> searchResult = new ArrayList<>();
+    public int publicPostsTotalCount;
+    public int publicPostsLastRate;
+    public ArrayList<MessageObject> publicPosts = new ArrayList<>();
+    public String publicPostsHashtag;
     private final ArrayList<ContactsController.Contact> searchContacts = new ArrayList<>();
     private final ArrayList<TLRPC.TL_forumTopic> searchTopics = new ArrayList<>();
     private ArrayList<CharSequence> searchResultNames = new ArrayList<>();
     private final ArrayList<MessageObject> searchForumResultMessages = new ArrayList<>();
     private final ArrayList<MessageObject> searchResultMessages = new ArrayList<>();
     private final ArrayList<String> searchResultHashtags = new ArrayList<>();
+    public final ArrayList<TLRPC.TL_sponsoredPeer> sponsoredPeers = new ArrayList<>();
+    private final HashSet<byte[]> seenSponsoredPeers = new HashSet<>();
     private String lastSearchText;
     private boolean searchWas;
     private int reqId = 0;
     private int lastReqId;
     private int reqForumId = 0;
+    private String sponsoredQuery;
+    private int sponsoredReqId;
     private int lastForumReqId;
     public DialogsSearchAdapterDelegate delegate;
     private int needMessagesSearch;
@@ -94,6 +144,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     private boolean localMessagesSearchEndReached;
     public int localMessagesLoadingRow = -1;
     private String lastMessagesSearchString;
+    private int lastMessagesSearchFilterFlags;
     private String currentMessagesQuery;
     private int nextSearchRate;
     private int lastSearchId;
@@ -186,7 +237,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             if (showPremiumBlock) {
                 cell.showPremiumBlocked();
             }
-            cell.setLayoutParams(new RecyclerView.LayoutParams(AndroidUtilities.dp(80), AndroidUtilities.dp(86)));
+            cell.setLayoutParams(new RecyclerView.LayoutParams(dp(80), dp(86)));
             return new RecyclerListView.Holder(cell);
         }
 
@@ -477,6 +528,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             searchForumResultMessages.clear();
             lastReqId = 0;
             lastMessagesSearchString = null;
+            lastMessagesSearchFilterFlags = 0;
             searchWas = false;
             notifyDataSetChanged();
             return;
@@ -495,12 +547,18 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
 
         final TLRPC.TL_messages_searchGlobal req = new TLRPC.TL_messages_searchGlobal();
+        req.broadcasts_only = (currentMessagesFilter.flags & 2) != 0;
+        req.groups_only = (currentMessagesFilter.flags & 4) != 0;
+        req.users_only = (currentMessagesFilter.flags & 8) != 0;
         req.limit = 20;
         req.q = query;
         req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
         req.flags |= 1;
         req.folder_id = folderId;
-        if (query.equals(lastMessagesSearchString) && !searchResultMessages.isEmpty() && lastMessagesSearchId == lastSearchId) {
+        if (!query.equals(lastMessagesSearchString)) {
+            forceLoadingMessages = false;
+        }
+        if (query.equals(lastMessagesSearchString) && lastMessagesSearchFilterFlags == currentMessagesFilter.flags && !searchResultMessages.isEmpty() && lastMessagesSearchId == lastSearchId) {
             MessageObject lastMessage = searchResultMessages.get(searchResultMessages.size() - 1);
             req.offset_id = lastMessage.getId();
             req.offset_rate = nextSearchRate;
@@ -512,6 +570,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             req.offset_peer = new TLRPC.TL_inputPeerEmpty();
         }
         lastMessagesSearchString = query;
+        lastMessagesSearchFilterFlags = currentMessagesFilter.flags;
         lastReqId++;
         final int currentReqId = lastReqId;
         reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
@@ -535,7 +594,20 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     messageObject.setQuery(query);
                 }
             }
-            AndroidUtilities.runOnUIThread(() -> {
+            HashSet<Pair<Boolean, Long>> dialogIdsToGetMaxRead = new HashSet<>();
+            if (error == null) {
+                TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+                for (int a = 0; a < res.messages.size(); a++) {
+                    TLRPC.Message message = res.messages.get(a);
+                    long dialog_id = MessageObject.getDialogId(message);
+                    ConcurrentHashMap<Long, Integer> read_max = message.out ? MessagesController.getInstance(currentAccount).dialogs_read_outbox_max : MessagesController.getInstance(currentAccount).dialogs_read_inbox_max;
+                    Integer value = read_max.get(dialog_id);
+                    if (value == null) {
+                        dialogIdsToGetMaxRead.add(new Pair<>(message.out, dialog_id));
+                    }
+                }
+            }
+            Runnable done = () -> {
                 if (currentReqId == lastReqId && (searchId <= 0 || searchId == lastSearchId)) {
                     waitingResponseCount--;
                     if (error == null) {
@@ -573,11 +645,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             long dialog_id = MessageObject.getDialogId(message);
                             ConcurrentHashMap<Long, Integer> read_max = message.out ? MessagesController.getInstance(currentAccount).dialogs_read_outbox_max : MessagesController.getInstance(currentAccount).dialogs_read_inbox_max;
                             Integer value = read_max.get(dialog_id);
-                            if (value == null) {
-                                value = MessagesStorage.getInstance(currentAccount).getDialogReadMax(message.out, dialog_id);
-                                read_max.put(dialog_id, value);
+                            if (value != null) {
+                                message.unread = value < message.id;
                             }
-                            message.unread = value < message.id;
                         }
                         searchWas = true;
                         messagesSearchEndReached = res.messages.size() != 20;
@@ -597,19 +667,38 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                         }
                         globalSearchCollapsed = true;
                         phoneCollapsed = true;
+                        forceLoadingMessages = false;
+                        if (messagesEmptyLayout != null) {
+                            messagesEmptyLayout.setQuery(lastMessagesSearchString);
+                        }
                         notifyDataSetChanged();
                     }
                 }
                 reqId = 0;
-            });
+            };
+            if (dialogIdsToGetMaxRead.isEmpty()) {
+                AndroidUtilities.runOnUIThread(done);
+            } else {
+                MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
+                    MessagesController messagesController = MessagesController.getInstance(currentAccount);
+                    for (Pair<Boolean, Long> p : dialogIdsToGetMaxRead) {
+                        final boolean out = p.first;
+                        final long did = p.second;
+                        ConcurrentHashMap<Long, Integer> read_max = out ? messagesController.dialogs_read_outbox_max : messagesController.dialogs_read_inbox_max;
+                        final int dialog_read_max = MessagesStorage.getInstance(currentAccount).getDialogReadMaxSync(out, did);
+                        read_max.put(did, dialog_read_max);
+                    }
+                    AndroidUtilities.runOnUIThread(done);
+                });
+            }
         }, ConnectionsManager.RequestFlagFailOnServerErrors);
     }
 
     public boolean hasRecentSearch() {
-        return resentSearchAvailable() && getRecentItemsCount() > 0;
+        return recentSearchAvailable() && getRecentItemsCount() > 0;
     }
 
-    private boolean resentSearchAvailable() {
+    private boolean recentSearchAvailable() {
         return (
             dialogsType != DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO &&
             dialogsType != DialogsActivity.DIALOGS_TYPE_USERS_ONLY &&
@@ -719,7 +808,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 }
 
                 if (!usersToLoad.isEmpty()) {
-                    MessagesStorage.getInstance(currentAccount).getUsersInternal(TextUtils.join(",", usersToLoad), users);
+                    MessagesStorage.getInstance(currentAccount).getUsersInternal(usersToLoad, users);
                     for (int a = 0; a < users.size(); a++) {
                         TLRPC.User user = users.get(a);
                         RecentSearchObject recentSearchObject = hashMap.get(user.id);
@@ -757,6 +846,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         recentSearchObject.did = did;
         recentSearchObject.object = object;
         recentSearchObject.date = (int) (System.currentTimeMillis() / 1000);
+        filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
@@ -800,6 +890,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             queryFilter = new StringBuilder("1");
         }
         final StringBuilder finalQueryFilter = queryFilter;
+        filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
@@ -886,7 +977,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             updateSearchResults(resultArray, resultArrayNames, encUsers, contacts, searchId);
             FiltersView.fillTipDates(q, localTipDates);
             localTipArchive = false;
-            if (q.length() >= 3 && (LocaleController.getString("ArchiveSearchFilter", R.string.ArchiveSearchFilter).toLowerCase().startsWith(q) || "archive".startsWith(query))) {
+            if (q.length() >= 3 && (LocaleController.getString(R.string.ArchiveSearchFilter).toLowerCase().startsWith(q) || "archive".startsWith(query))) {
                 localTipArchive = true;
             }
             AndroidUtilities.runOnUIThread(() -> {
@@ -957,7 +1048,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     }
                 }
 
-                if (resentSearchAvailable() && !(obj instanceof TLRPC.EncryptedChat)) {
+                if (recentSearchAvailable() && !(obj instanceof TLRPC.EncryptedChat)) {
                     boolean foundInRecent = false;
                     if (delegate != null && delegate.getSearchForumDialogId() == dialogId) {
                         foundInRecent = true;
@@ -1000,7 +1091,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 
     int waitingResponseCount;
 
-    public void searchDialogs(String text, int folderId) {
+    public void searchDialogs(String text, int folderId, boolean allowPublicPosts) {
         if (text != null && text.equals(lastSearchText) && (folderId == this.folderId || TextUtils.isEmpty(text))) {
             return;
         }
@@ -1014,6 +1105,14 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             AndroidUtilities.cancelRunOnUIThread(searchRunnable2);
             searchRunnable2 = null;
         }
+        if (searchHashtagRunnable != null) {
+            AndroidUtilities.cancelRunOnUIThread(searchHashtagRunnable);
+            searchHashtagRunnable = null;
+        }
+        if (searchHashtagRequest >= 0) {
+            ConnectionsManager.getInstance(currentAccount).cancelRequest(searchHashtagRequest, true);
+            searchHashtagRequest = -1;
+        }
         String query;
         if (text != null) {
             query = text.trim();
@@ -1021,12 +1120,45 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             query = null;
         }
         filterRecent(query);
+        if (!TextUtils.equals(sponsoredQuery, query)) {
+            sponsoredQuery = query;
+            sponsoredPeers.clear();
+            if (sponsoredReqId != 0) {
+                ConnectionsManager.getInstance(currentAccount).cancelRequest(sponsoredReqId, true);
+                sponsoredReqId = 0;
+            }
+            if (query == null || query.length() < 4 || UserConfig.getInstance(currentAccount).isPremium() && MessagesController.getInstance(currentAccount).isSponsoredDisabled()) {
+                sponsoredQuery = null;
+            } else {
+                final TLRPC.TL_contacts_getSponsoredPeers req = new TLRPC.TL_contacts_getSponsoredPeers();
+                req.q = sponsoredQuery = query;
+                sponsoredReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
+                    sponsoredReqId = 0;
+                    if (res instanceof TLRPC.TL_contacts_sponsoredPeersEmpty) {
+                        if (!sponsoredPeers.isEmpty()) {
+                            sponsoredPeers.clear();
+                            notifyDataSetChanged();
+                        }
+                    } else if (res instanceof TLRPC.TL_contacts_sponsoredPeers) {
+                        final TLRPC.TL_contacts_sponsoredPeers r = (TLRPC.TL_contacts_sponsoredPeers) res;
+                        MessagesController.getInstance(currentAccount).putUsers(r.users, true);
+                        MessagesController.getInstance(currentAccount).putChats(r.chats, true);
+                        sponsoredPeers.addAll(r.peers);
+                        notifyDataSetChanged();
+                    }
+                }));
+            }
+        }
         if (TextUtils.isEmpty(query)) {
             filteredRecentQuery = null;
             searchAdapterHelper.unloadRecentHashtags();
             searchResult.clear();
             searchResultNames.clear();
             searchResultHashtags.clear();
+            publicPostsTotalCount = 0;
+            publicPostsLastRate = 0;
+            publicPostsHashtag = null;
+            publicPosts.clear();
             searchAdapterHelper.mergeResults(null, null);
             if (dialogsType != DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
                 searchAdapterHelper.queryServerSearch(
@@ -1064,6 +1196,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             }
         } else {
             searchAdapterHelper.mergeResults(searchResult, filtered2RecentSearchObjects);
+            publicPostsTotalCount = 0;
+            publicPostsLastRate = 0;
+            publicPostsHashtag = null;
+            publicPosts.clear();
             if (needMessagesSearch != 2 && (query.startsWith("#") && query.length() == 1)) {
                 messagesSearchEndReached = true;
                 if (searchAdapterHelper.loadRecentHashtags()) {
@@ -1094,6 +1230,27 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             if (delegate != null) {
                 delegate.searchStateChanged(true, false);
             }
+
+            String hashtag = null, hashtagUsername = null;
+            if (allowPublicPosts && query != null) {
+                String tquery = query.trim();
+                if (tquery.length() > 1 && (tquery.charAt(0) == '#' || tquery.charAt(0) == '$')) {
+                    int atIndex = tquery.indexOf('@');
+                    hashtag = tquery.substring(1);
+                    if (atIndex >= 0) {
+                        hashtagUsername = tquery.substring(atIndex + 1);
+                    }
+                }
+            }
+
+//            if (hashtagUsername != null) {
+//                TLObject chat = MessagesController.getInstance(currentAccount).getUserOrChat(hashtagUsername);
+//                if (chat == null) {
+//
+//                }
+//                TLRPC.TL_messages_search
+//                return;
+//            }
 
             Utilities.searchQueue.postRunnable(searchRunnable = () -> {
                 searchRunnable = null;
@@ -1133,6 +1290,52 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     }
                 });
             }, 300);
+
+            final String finalHashtag = hashtag;
+
+            if (finalHashtag != null) {
+                waitingResponseCount++;
+                AndroidUtilities.runOnUIThread(searchHashtagRunnable = () -> {
+                    searchHashtagRunnable = null;
+                    if (searchId != lastSearchId) {
+                        return;
+                    }
+                    if (searchHashtagRequest >= 0) {
+                        ConnectionsManager.getInstance(currentAccount).cancelRequest(searchHashtagRequest, true);
+                    }
+                    TLRPC.TL_channels_searchPosts req = new TLRPC.TL_channels_searchPosts();
+                    req.hashtag = finalHashtag;
+                    req.limit = 3;
+                    req.offset_peer = new TLRPC.TL_inputPeerEmpty();
+                    searchHashtagRequest = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
+                        if (searchId != lastSearchId) {
+                            return;
+                        }
+                        if (res instanceof TLRPC.messages_Messages) {
+                            TLRPC.messages_Messages msgs = (TLRPC.messages_Messages) res;
+                            int totalCount = 0;
+                            if (msgs instanceof TLRPC.TL_messages_messages) {
+                                totalCount = ((TLRPC.TL_messages_messages) msgs).messages.size();
+                            } else if (msgs instanceof TLRPC.TL_messages_messagesSlice) {
+                                totalCount = ((TLRPC.TL_messages_messagesSlice) msgs).count;
+                            }
+                            publicPostsTotalCount = totalCount;
+                            publicPostsLastRate = msgs.next_rate;
+                            publicPostsHashtag = finalHashtag;
+                            MessagesController.getInstance(currentAccount).putUsers(msgs.users, false);
+                            MessagesController.getInstance(currentAccount).putChats(msgs.chats, false);
+                            for (int i = 0; i < msgs.messages.size(); ++i) {
+                                TLRPC.Message msg = msgs.messages.get(i);
+                                publicPosts.add(new MessageObject(currentAccount, msg, false, true));
+                            }
+                            if (delegate != null) {
+                                delegate.searchStateChanged(waitingResponseCount > 0, true);
+                            }
+                            notifyDataSetChanged();
+                        }
+                    }));
+                }, 300);
+            }
         }
     }
 
@@ -1152,6 +1355,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             return 0;
         }
         int count = 0;
+        if (!publicPosts.isEmpty()) {
+            count += publicPosts.size() + 1;
+        }
         if (!searchResultHashtags.isEmpty()) {
             count += searchResultHashtags.size() + 1;
             return count;
@@ -1175,7 +1381,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         count += resultsCount;
         int localServerCount = searchAdapterHelper.getLocalServerSearch().size();
         count += localServerCount;
-        int globalCount = searchAdapterHelper.getGlobalSearch().size();
+        int globalCount = searchAdapterHelper.getGlobalSearch().size() + sponsoredPeers.size();
         if (globalCount > 3 && globalSearchCollapsed) {
             globalCount = 3;
         }
@@ -1183,7 +1389,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (phoneCount > 3 && phoneCollapsed) {
             phoneCount = 3;
         }
-        if (resultsCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty())) {
+        if (resultsCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty() || !publicPosts.isEmpty())) {
             count++;
         }
         if (globalCount != 0) {
@@ -1200,6 +1406,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             localMessagesLoadingRow = count;
         }
         int messagesCount = searchResultMessages.size();
+        if ((currentMessagesFilter != Filter.All || forceLoadingMessages) && searchResultMessages.isEmpty()) {
+            messagesCount = forceLoadingMessages ? 3 : 1;
+        }
         if (!searchForumResultMessages.isEmpty() && !localMessagesSearchEndReached) {
             messagesCount = 0;
         }
@@ -1213,6 +1422,12 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     }
 
     public Object getItem(int i) {
+        if (!publicPosts.isEmpty()) {
+            if (i > 0 && i - 1 < publicPosts.size()) {
+                return publicPosts.get(i - 1);
+            }
+            i -= (publicPosts.size() + 1);
+        }
         if (!searchResultHashtags.isEmpty()) {
             if (i > 0) {
                 return searchResultHashtags.get(i - 1);
@@ -1258,7 +1473,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         ArrayList<Object> phoneSearch = searchAdapterHelper.getPhoneSearch();
         int localCount = searchResult.size();
         int localServerCount = localServerSearch.size();
-        if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty())) {
+        if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty() || !publicPosts.isEmpty())) {
             if (i == 0) {
                 return null;
             }
@@ -1268,7 +1483,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (phoneCount > 3 && phoneCollapsed) {
             phoneCount = 3;
         }
-        int globalCount = globalSearch.isEmpty() ? 0 : globalSearch.size() + 1;
+        int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearch.size() + sponsoredPeers.size() + 1;
         if (globalCount > 4 && globalSearchCollapsed) {
             globalCount = 4;
         }
@@ -1285,9 +1500,17 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
         i -= phoneCount;
         if (i > 0 && i < globalCount) {
-            return globalSearch.get(i - 1);
+            i--;
+            if (i >= 0 && i < sponsoredPeers.size()) {
+                return sponsoredPeers.get(i);
+            }
+            i -= sponsoredPeers.size();
+            if (i >= 0 && i < globalSearch.size()) {
+                return globalSearch.get(i);
+            }
+        } else {
+            i -= globalCount;
         }
-        i -= globalCount;
         int localMessagesCount = searchForumResultMessages.isEmpty() ? 0 : searchForumResultMessages.size() + 1;
         if (i > 0 && i <= searchForumResultMessages.size()) {
             return searchForumResultMessages.get(i - 1);
@@ -1308,6 +1531,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (!searchResultHashtags.isEmpty()) {
             return false;
         }
+        if (!publicPosts.isEmpty()) {
+            i -= 1 + publicPosts.size();
+        }
         if (isRecentSearchDisplayed()) {
             int offset = (hasHints() ? 1 : 0);
             ArrayList<RecentSearchObject> recent = searchWas ? filtered2RecentSearchObjects : filteredRecentSearchObjects;
@@ -1325,7 +1551,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (phoneCount > 3 && phoneCollapsed) {
             phoneCount = 3;
         }
-        int globalCount = globalSearch.isEmpty() ? 0 : globalSearch.size() + 1;
+        int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearch.size() + sponsoredPeers.size() + 1;
         if (globalCount > 4 && globalSearchCollapsed) {
             globalCount = 4;
         }
@@ -1336,7 +1562,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             }
             i -= contactsCount + 1;
         }
-        if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty())) {
+        if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty() || !publicPosts.isEmpty())) {
             if (i == 0) {
                 return false;
             }
@@ -1364,6 +1590,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
         i -= localMessagesCount;
         int messagesCount = searchResultMessages.isEmpty() ? 0 : searchResultMessages.size() + 1;
+        if ((currentMessagesFilter != Filter.All || forceLoadingMessages) && searchResultMessages.isEmpty()) {
+            messagesCount = forceLoadingMessages ? 4 : 2;
+        }
         if (i > 0 && i < messagesCount) {
             return false;
         }
@@ -1378,8 +1607,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     @Override
     public boolean isEnabled(RecyclerView.ViewHolder holder) {
         int type = holder.getItemViewType();
-        return type != 1 && type != 4;
+        return type != 1 && type != 4 && type != VIEW_TYPE_EMPTY_RESULT;
     }
+
+    private EmptyLayout messagesEmptyLayout;
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -1392,6 +1623,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 view = new GraySectionCell(mContext);
                 break;
             case VIEW_TYPE_DIALOG_CELL:
+            case VIEW_TYPE_PUBLIC_POST:
                 view = new DialogCell(null, mContext, false, true) {
                     @Override
                     public boolean isForumCell() {
@@ -1458,13 +1690,24 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             case VIEW_TYPE_INVITE_CONTACT_CELL:
                 view = new ProfileSearchCell(mContext);
                 break;
+            case VIEW_TYPE_EMPTY_RESULT:
+                view = messagesEmptyLayout = new EmptyLayout(mContext, resourcesProvider, () -> {
+                    currentMessagesFilter = Filter.All;
+                    searchResultMessages.clear();
+                    if (messagesSectionPosition >= 0 && messagesSectionPosition < getItemCount()) {
+                        notifyItemChanged(messagesSectionPosition);
+                    }
+                    loadMoreSearchMessages();
+                });
+                messagesEmptyLayout.setQuery(lastMessagesSearchString);
+                break;
             case VIEW_TYPE_ADD_BY_PHONE:
             default:
                 view = new TextCell(mContext, 16, false);
                 break;
         }
         if (viewType == 5) {
-            view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, AndroidUtilities.dp(86)));
+            view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, dp(86)));
         } else {
             view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
         }
@@ -1474,6 +1717,8 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     private boolean hasHints() {
         return !searchWas && !MediaDataController.getInstance(currentAccount).hints.isEmpty() && (dialogsType != DialogsActivity.DIALOGS_TYPE_START_ATTACH_BOT || dialogsActivity.allowUsers);
     }
+
+    private int messagesSectionPosition = -1;
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
@@ -1491,32 +1736,45 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 boolean isRecent = false;
                 boolean isGlobal = isGlobalSearch(position);
                 String un = null;
+                ArrayList<TLRPC.TL_username> usernames = null;
                 Object obj = getItem(position);
 
-                if (obj instanceof TLRPC.User) {
-                    user = (TLRPC.User) obj;
-                    un = UserObject.getPublicUsername(user);
-                    if (un != null && lastSearchText != null && !un.toLowerCase().contains(lastSearchText.toLowerCase())) {
-                        if (user.usernames != null) {
-                            for (int i = 0; i < user.usernames.size(); ++i) {
-                                TLRPC.TL_username u = user.usernames.get(i);
-                                if (u != null && u.active && u.username.toLowerCase().contains(lastSearchText.toLowerCase())) {
-                                    un = u.username;
-                                }
-                            }
+                if (obj instanceof TLRPC.TL_sponsoredPeer) {
+                    final TLRPC.TL_sponsoredPeer sponsoredPeer = (TLRPC.TL_sponsoredPeer) obj;
+                    seenSponsoredPeer(sponsoredPeer);
+                    final long dialogId = DialogObject.getPeerDialogId(sponsoredPeer.peer);
+                    if (dialogId >= 0) {
+                        user = MessagesController.getInstance(currentAccount).getUser(dialogId);
+                        if (user != null) {
+                            usernames = user.usernames;
+                            un = DialogObject.getPublicUsername(user, currentMessagesQuery);
+                        }
+                    } else {
+                        chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
+                        if (chat != null) {
+                            usernames = chat.usernames;
+                            un = DialogObject.getPublicUsername(chat, currentMessagesQuery);
                         }
                     }
+                } else if (obj instanceof TLRPC.User) {
+                    user = (TLRPC.User) obj;
+                    usernames = user.usernames;
+                    un = DialogObject.getPublicUsername(user, currentMessagesQuery);
                 } else if (obj instanceof TLRPC.Chat) {
                     chat = MessagesController.getInstance(currentAccount).getChat(((TLRPC.Chat) obj).id);
                     if (chat == null) {
                         chat = (TLRPC.Chat) obj;
                     }
-                    un = ChatObject.getPublicUsername(chat);
+                    usernames = chat.usernames;
+                    un = DialogObject.getPublicUsername(chat, currentMessagesQuery);
                 } else if (obj instanceof TLRPC.EncryptedChat) {
                     encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat(((TLRPC.EncryptedChat) obj).id);
                     user = MessagesController.getInstance(currentAccount).getUser(encryptedChat.user_id);
                 }
 
+                if (!publicPosts.isEmpty()) {
+                    position -= publicPosts.size() + 1;
+                }
                 if (isRecentSearchDisplayed()) {
                     if (position < getRecentItemsCount()) {
                         cell.useSeparator = position != getRecentItemsCount() - 1;
@@ -1531,7 +1789,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 ArrayList<Object> phoneSearch = searchAdapterHelper.getPhoneSearch();
                 int localCount = searchResult.size();
                 int localServerCount = searchAdapterHelper.getLocalServerSearch().size();
-                if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty())) {
+                if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty() || !publicPosts.isEmpty())) {
                     position--;
                 }
                 int phoneCount = phoneSearch.size();
@@ -1542,12 +1800,16 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 if (phoneCount > 0 && phoneSearch.get(phoneCount - 1) instanceof String) {
                     phoneCount2 -= 2;
                 }
-                int globalCount = globalSearch.isEmpty() ? 0 : globalSearch.size() + 1;
+                int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearch.size() + sponsoredPeers.size() + 1;
                 if (globalCount > 4 && globalSearchCollapsed) {
                     globalCount = 4;
                 }
                 if (!isRecent) {
-                    cell.useSeparator = (position != getItemCount() - getRecentItemsCount() - 1 && position != localCount + phoneCount2 + localServerCount - 1 && position != localCount + globalCount + phoneCount + localServerCount - 1);
+                    cell.useSeparator = (
+                        position != getItemCount() - getRecentItemsCount() - 1 &&
+                        position != localCount + phoneCount2 + localServerCount - 1 &&
+                        position != localCount + globalCount + phoneCount + localServerCount - 1
+                    );
                 }
                 if (position >= 0 && position < searchResult.size() && user == null) {
                     name = searchResultNames.get(position);
@@ -1573,6 +1835,31 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(nameSearch);
                             spannableStringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_windowBackgroundWhiteBlueText4), index, index + foundUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                             name = spannableStringBuilder;
+                        }
+                        if (usernames != null && usernames.size() > 1) {
+                            String query = foundUserName;
+                            if (query.startsWith("@"))
+                                query = query.substring(1);
+                            String matchedUsername = null;
+                            for (TLRPC.TL_username u : usernames) {
+                                if (!u.active) continue;
+                                if (u.username.startsWith(query)) {
+                                    matchedUsername = u.username;
+                                    break;
+                                }
+                            }
+                            if (matchedUsername == null) {
+                                for (TLRPC.TL_username u : usernames) {
+                                    if (!u.active) continue;
+                                    if (u.username.contains(query)) {
+                                        matchedUsername = u.username;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (matchedUsername != null) {
+                                un = matchedUsername;
+                            }
                         }
                         if (un != null && (user == null || isGlobal)) {
                             if (foundUserName.startsWith("@")) {
@@ -1602,17 +1889,17 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 }
                 cell.setChecked(false, false);
                 boolean savedMessages = false;
-                if (user != null && user.id == selfUserId) {
-                    name = LocaleController.getString("SavedMessages", R.string.SavedMessages);
+                if (user != null && user.id == selfUserId && dialogsType != DialogsActivity.DIALOGS_TYPE_BOT_SELECT_VERIFY) {
+                    name = LocaleController.getString(R.string.SavedMessages);
                     username = null;
                     savedMessages = true;
                 }
                 if (chat != null && chat.participants_count != 0) {
                     String membersString;
                     if (ChatObject.isChannel(chat) && !chat.megagroup) {
-                        membersString = LocaleController.formatPluralStringComma("Subscribers", chat.participants_count, ' ');
+                        membersString = LocaleController.formatPluralStringSpaced("Subscribers", chat.participants_count);
                     } else {
-                        membersString = LocaleController.formatPluralStringComma("Members", chat.participants_count, ' ');
+                        membersString = LocaleController.formatPluralStringSpaced("Members", chat.participants_count);
                     }
                     if (username instanceof SpannableStringBuilder) {
                         ((SpannableStringBuilder) username).append(", ").append(membersString);
@@ -1621,7 +1908,19 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     } else {
                         username = membersString;
                     }
+                } else if (user != null && user.bot && user.bot_active_users != 0) {
+                    String membersString = LocaleController.formatPluralStringSpaced("BotUsersShort", user.bot_active_users);
+                    if (username instanceof SpannableStringBuilder) {
+                        ((SpannableStringBuilder) username).append(", ").append(membersString);
+                    } else if (!TextUtils.isEmpty(username)) {
+                        username = TextUtils.concat(username, ", ", membersString);
+                    } else {
+                        username = membersString;
+                    }
                 }
+                cell.allowBotOpenButton(isRecent, this::openBotApp);
+                cell.setOnSponsoredOptionsClick(this::openSponsoredOptions);
+                cell.setAd(obj instanceof TLRPC.TL_sponsoredPeer ? (TLRPC.TL_sponsoredPeer) obj : null);
                 cell.setData(user != null ? user : chat, encryptedChat, name, username, true, savedMessages);
                 cell.setChecked(delegate.isSelected(cell.getDialogId()), oldDialogId == cell.getDialogId());
                 break;
@@ -1629,85 +1928,98 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             case VIEW_TYPE_GRAY_SECTION: {
                 final GraySectionCell cell = (GraySectionCell) holder.itemView;
                 if (!searchResultHashtags.isEmpty()) {
-                    cell.setText(LocaleController.getString("Hashtags", R.string.Hashtags), LocaleController.getString("ClearButton", R.string.ClearButton), v -> {
+                    cell.setText(LocaleController.getString(R.string.Hashtags), LocaleController.getString(R.string.ClearButton), v -> {
                         if (delegate != null) {
                             delegate.needClearList();
                         }
                     });
                 } else {
                     int rawPosition = position;
-                    if (isRecentSearchDisplayed() || !searchTopics.isEmpty() || !searchContacts.isEmpty()) {
+                    if (!publicPosts.isEmpty()) {
+                        if (position == 0) {
+                            cell.setText(LocaleController.getString(R.string.PublicPostsTabs), AndroidUtilities.replaceArrows(LocaleController.getString(R.string.PublicPostsMore), false, dp(-2), dp(1)), v -> {
+                                openPublicPosts();
+                            });
+                            return;
+                        }
+                        position -= 1 + publicPosts.size();
+                    }
+                    ArrayList<TLObject> globalSearch = searchAdapterHelper.getGlobalSearch();
+                    if (isRecentSearchDisplayed() || !searchTopics.isEmpty() || !searchContacts.isEmpty() || !publicPosts.isEmpty()) {
                         int offset = hasHints() ? 1 : 0;
                         if (position < offset) {
-                            cell.setText(LocaleController.getString("ChatHints", R.string.ChatHints));
+                            cell.setText(LocaleController.getString(R.string.ChatHints));
                             return;
                         } else if (position == offset && isRecentSearchDisplayed()) {
                             if (!searchWas) {
-                                cell.setText(LocaleController.getString("Recent", R.string.Recent), LocaleController.getString("ClearButton", R.string.ClearButton), v -> {
+                                cell.setText(LocaleController.getString(R.string.Recent), LocaleController.getString(R.string.ClearButton), v -> {
                                     if (delegate != null) {
                                         delegate.needClearList();
                                     }
                                 });
                             } else {
-                                cell.setText(LocaleController.getString("Recent", R.string.Recent), LocaleController.getString("Clear", R.string.Clear), v -> {
+                                cell.setText(LocaleController.getString(R.string.Recent), LocaleController.getString(R.string.Clear), v -> {
                                     if (delegate != null) {
                                         delegate.needClearList();
                                     }
                                 });
                             }
                             return;
-                        } else if (position == getRecentItemsCount() + (searchTopics.isEmpty() ? 0 : searchTopics.size() + 1) + (searchContacts.isEmpty() ? 0 : searchContacts.size() + 1)) {
-                            cell.setText(LocaleController.getString("SearchAllChatsShort", R.string.SearchAllChatsShort));
+                        } else if (position == getRecentItemsCount() + (searchTopics.isEmpty() ? 0 : searchTopics.size() + 1) + (searchContacts.isEmpty() ? 0 : searchContacts.size() + 1) && !searchResult.isEmpty()) {
+                            cell.setText(LocaleController.getString(R.string.SearchAllChatsShort));
                             return;
                         } else {
                             position -= getRecentItemsCount();
                         }
                     }
-                    ArrayList<TLObject> globalSearch = searchAdapterHelper.getGlobalSearch();
                     int localCount = searchResult.size();
                     int localServerCount = searchAdapterHelper.getLocalServerSearch().size();
                     int phoneCount = searchAdapterHelper.getPhoneSearch().size();
                     if (phoneCount > 3 && phoneCollapsed) {
                         phoneCount = 3;
                     }
-                    int globalCount = globalSearch.isEmpty() ? 0 : globalSearch.size() + 1;
+                    int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearch.size() + sponsoredPeers.size() + 1;
                     if (globalCount > 4 && globalSearchCollapsed) {
                         globalCount = 4;
                     }
                     int localMessagesCount = searchForumResultMessages.isEmpty() ? 0 : searchForumResultMessages.size() + 1;
                     int messagesCount = searchResultMessages.isEmpty() ? 0 : searchResultMessages.size() + 1;
+                    if ((currentMessagesFilter != Filter.All || forceLoadingMessages) && searchResultMessages.isEmpty()) {
+                        messagesCount = forceLoadingMessages ? 4 : 2;
+                    }
                     String title = null;
                     boolean showMore = false;
                     Runnable onClick = null;
+                    CharSequence customRightText = null;
                     if (!searchTopics.isEmpty()) {
                         if (position == 0) {
-                            title = LocaleController.getString("Topics", R.string.Topics);
+                            title = LocaleController.getString(R.string.Topics);
                         }
                         position -= 1 + searchTopics.size();
                     }
                     if (!searchContacts.isEmpty()) {
                         if (position == 0) {
-                            title = LocaleController.getString("InviteToTelegramShort", R.string.InviteToTelegramShort);
+                            title = LocaleController.getString(R.string.InviteToTelegramShort);
                         }
                         position -= 1 + searchContacts.size();
                     }
                     if (title == null) {
                         position -= localCount + localServerCount;
                         if (position >= 0 && position < phoneCount) {
-                            title = LocaleController.getString("PhoneNumberSearch", R.string.PhoneNumberSearch);
+                            title = LocaleController.getString(R.string.PhoneNumberSearch);
                             if (searchAdapterHelper.getPhoneSearch().size() > 3) {
                                 showMore = phoneCollapsed;
                                 onClick = () -> {
                                     phoneCollapsed = !phoneCollapsed;
-                                    cell.setRightText(phoneCollapsed ? LocaleController.getString("ShowMore", R.string.ShowMore) : LocaleController.getString("ShowLess", R.string.ShowLess));
+                                    cell.setRightText(phoneCollapsed ? LocaleController.getString(R.string.ShowMore) : LocaleController.getString(R.string.ShowLess));
                                     notifyDataSetChanged();
                                 };
                             }
                         } else {
                             position -= phoneCount;
                             if (position >= 0 && position < globalCount) {
-                                title = LocaleController.getString("GlobalSearch", R.string.GlobalSearch);
-                                if (searchAdapterHelper.getGlobalSearch().size() > 3) {
+                                title = LocaleController.getString(R.string.GlobalSearch);
+                                if (searchAdapterHelper.getGlobalSearch().size() + sponsoredPeers.size() > 3) {
                                     showMore = globalSearchCollapsed;
                                     onClick = () -> {
                                         final long now = SystemClock.elapsedRealtime();
@@ -1716,7 +2028,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                         }
                                         lastShowMoreUpdate = now;
 
-                                        int totalGlobalCount = globalSearch.isEmpty() ? 0 : globalSearch.size();
+                                        int totalGlobalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearch.size() + sponsoredPeers.size();
                                         boolean disableRemoveAnimation = getItemCount() > rawPosition + Math.min(totalGlobalCount, globalSearchCollapsed ? 4 : Integer.MAX_VALUE) + 1;
                                         if (itemAnimator != null) {
                                             itemAnimator.setAddDuration(disableRemoveAnimation ? 45 : 200);
@@ -1724,7 +2036,8 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                             itemAnimator.setRemoveDelay(disableRemoveAnimation ? 270 : 0);
                                         }
                                         globalSearchCollapsed = !globalSearchCollapsed;
-                                        cell.setRightText(globalSearchCollapsed ? LocaleController.getString("ShowMore", R.string.ShowMore) : LocaleController.getString("ShowLess", R.string.ShowLess), globalSearchCollapsed);
+                                        cell.setRightTextMargin(16);
+                                        cell.setRightText(globalSearchCollapsed ? LocaleController.getString(R.string.ShowMore) : LocaleController.getString(R.string.ShowLess), globalSearchCollapsed);
                                         showMoreHeader = null;
                                         View parent = (View) cell.getParent();
                                         if (parent instanceof RecyclerView) {
@@ -1769,23 +2082,52 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                 }
                             } else if (delegate != null && localMessagesCount > 0 && position - globalCount <= 1) {
                                 TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-delegate.getSearchForumDialogId());
-                                title = LocaleController.formatString("SearchMessagesIn", R.string.SearchMessagesIn, (chat == null ? "null" : chat.title));
+                                title = LocaleController.formatString(R.string.SearchMessagesIn, (chat == null ? "null" : chat.title));
                             } else {
-                                title = LocaleController.getString("SearchMessages", R.string.SearchMessages);
+                                messagesSectionPosition = position;
+                                customRightText = getFilterFromString(currentMessagesFilter);
+                                onClick = () -> {
+                                    ItemOptions o = ItemOptions.makeOptions(dialogsActivity, cell);
+                                    for (Filter f : Filter.values()) {
+                                        final boolean isCurrent = f.flags == currentMessagesFilter.flags;
+                                        o.addChecked(isCurrent, LocaleController.getString(f.strResId), () -> {
+                                            if (isCurrent) return;
+                                            cell.setRightText(getFilterFromString(currentMessagesFilter = f));
+                                            cell.setRightTextMargin(6);
+                                            searchResultMessages.clear();
+                                            forceLoadingMessages = true;
+                                            notifyDataSetChanged();
+                                            loadMoreSearchMessages();
+                                        });
+                                    }
+                                    o
+                                        .setGravity(Gravity.RIGHT)
+                                        .setOnTopOfScrim()
+                                        .setDrawScrim(false)
+                                        .setDimAlpha(0)
+                                        .show();
+                                };
+                                title = LocaleController.getString(R.string.SearchMessages);
                             }
                         }
                     }
 
                     if (onClick == null) {
                         cell.setText(title);
+                    } else if (customRightText != null) {
+                        final Runnable finalOnClick = onClick;
+                        cell.setText(title, customRightText, e -> finalOnClick.run());
+                        cell.setRightTextMargin(6);
                     } else {
                         final Runnable finalOnClick = onClick;
-                        cell.setText(title, showMore ? LocaleController.getString("ShowMore", R.string.ShowMore) : LocaleController.getString("ShowLess", R.string.ShowLess), e -> finalOnClick.run());
+                        cell.setText(title, showMore ? LocaleController.getString(R.string.ShowMore) : LocaleController.getString(R.string.ShowLess), e -> finalOnClick.run());
+                        cell.setRightTextMargin(16);
                     }
                 }
                 break;
             }
-            case VIEW_TYPE_DIALOG_CELL: {
+            case VIEW_TYPE_DIALOG_CELL:
+            case VIEW_TYPE_PUBLIC_POST: {
                 DialogCell cell = (DialogCell) holder.itemView;
                 cell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                 cell.useSeparator = (position != getItemCount() - 1);
@@ -1832,6 +2174,17 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
     }
 
+    private ColoredImageSpan filterArrowsIcon;
+    private CharSequence getFilterFromString(Filter filter) {
+        SpannableStringBuilder sb = new SpannableStringBuilder(LocaleController.getString(filter.strFromResId));
+        sb.append("v");
+//        if (filterArrowsIcon == null) {
+            filterArrowsIcon = new ColoredImageSpan(R.drawable.arrows_select);
+//        }
+        sb.setSpan(filterArrowsIcon, sb.length() - 1, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return sb;
+    }
+
     boolean globalSearchCollapsed = true;
     boolean phoneCollapsed = true;
 
@@ -1839,6 +2192,12 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     public int getItemViewType(int i) {
         if (!searchResultHashtags.isEmpty()) {
             return i == 0 ? VIEW_TYPE_GRAY_SECTION : VIEW_TYPE_HASHTAG_CELL;
+        }
+        if (!publicPosts.isEmpty()) {
+            if (i == 0) return VIEW_TYPE_GRAY_SECTION;
+            i--;
+            if (i < publicPosts.size()) return VIEW_TYPE_PUBLIC_POST;
+            i -= publicPosts.size();
         }
         if (isRecentSearchDisplayed()) {
             int offset = hasHints() ? 1 : 0;
@@ -1873,7 +2232,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         ArrayList<TLObject> globalSearch = searchAdapterHelper.getGlobalSearch();
         int localCount = searchResult.size();
         int localServerCount = searchAdapterHelper.getLocalServerSearch().size();
-        if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty())) {
+        if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty() || !publicPosts.isEmpty())) {
             if (i == 0) {
                 return VIEW_TYPE_GRAY_SECTION;
             }
@@ -1883,11 +2242,14 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (phoneCount > 3 && phoneCollapsed) {
             phoneCount = 3;
         }
-        int globalCount = globalSearch.isEmpty() ? 0 : globalSearch.size() + 1;
+        int globalCount = sponsoredPeers.isEmpty() && globalSearch.isEmpty() ? 0 : globalSearch.size() + sponsoredPeers.size() + 1;
         if (globalCount > 4 && globalSearchCollapsed) {
             globalCount = 4;
         }
         int messagesCount = searchResultMessages.isEmpty() ? 0 : searchResultMessages.size() + 1;
+        if ((currentMessagesFilter != Filter.All || forceLoadingMessages) && searchResultMessages.isEmpty()) {
+            messagesCount = forceLoadingMessages ? 4 : 2;
+        }
         if (!searchForumResultMessages.isEmpty() && !localMessagesSearchEndReached) {
             messagesCount = 0;
         }
@@ -1937,6 +2299,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (i >= 0 && i < messagesCount) {
             if (i == 0) {
                 return VIEW_TYPE_GRAY_SECTION;
+            } else if (forceLoadingMessages && searchResultMessages.isEmpty()) {
+                return VIEW_TYPE_LOADING;
+            } else if (currentMessagesFilter != Filter.All && searchResultMessages.isEmpty()) {
+                return VIEW_TYPE_EMPTY_RESULT;
             } else {
                 return VIEW_TYPE_DIALOG_CELL;
             }
@@ -2022,5 +2388,193 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         String q1;
         String q2;
         ContactsController.Contact contact;
+    }
+
+    protected void openPublicPosts() {
+
+    }
+
+    protected void openBotApp(TLRPC.User bot) {
+
+    }
+
+    protected void openSponsoredOptions(ProfileSearchCell cell, TLRPC.TL_sponsoredPeer sponsoredPeer) {
+
+    }
+
+    private static class EmptyLayout extends LinearLayout {
+
+        private TextView textView;
+        public EmptyLayout(Context context, Theme.ResourcesProvider resourcesProvider, Runnable onClickAll) {
+            super(context);
+
+            setOrientation(LinearLayout.VERTICAL);
+
+            BackupImageView imageView = new BackupImageView(context);
+            imageView.setImageDrawable(new RLottieDrawable(R.raw.utyan_empty, "utyan_empty", dp(120), dp(120)));
+            addView(imageView, LayoutHelper.createLinear(120, 120, Gravity.CENTER_HORIZONTAL, 0, 27, 0, 0));
+
+            TextView titleView = new TextView(context);
+            titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 17);
+            titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+            titleView.setTypeface(AndroidUtilities.bold());
+            titleView.setText(LocaleController.getString(R.string.SearchMessagesFilterEmptyTitle));
+            titleView.setGravity(Gravity.CENTER);
+            addView(titleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 8, 0, 9));
+
+            textView = new TextView(context);
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+            textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+            textView.setText(LocaleController.formatString(R.string.SearchMessagesFilterEmptyText, ""));
+            textView.setGravity(Gravity.CENTER);
+            addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 14));
+
+            TextView button = new TextView(context);
+            button.setPadding(dp(12), dp(4), dp(12), dp(4));
+            button.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+            button.setText(LocaleController.getString(R.string.SearchMessagesFilterEmptySearchAll));
+            button.setTextColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
+            button.setBackground(Theme.createSimpleSelectorRoundRectDrawable(6, 0, Theme.multAlpha(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), .15f)));
+            button.setOnClickListener(v -> onClickAll.run());
+            addView(button, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 38));
+        }
+
+        public void setQuery(String query) {
+            textView.setText(LocaleController.formatString(R.string.SearchMessagesFilterEmptyText, query));
+
+        }
+
+    }
+
+    private int globalSearchPosition() {
+        if (waitingResponseCount == 3) {
+            return 0;
+        }
+        int count = 0;
+        if (!publicPosts.isEmpty()) {
+            count += publicPosts.size() + 1;
+        }
+        if (!searchResultHashtags.isEmpty()) {
+            count += searchResultHashtags.size() + 1;
+            return count;
+        }
+        if (isRecentSearchDisplayed()) {
+            count += getRecentItemsCount();
+            if (!searchWas) {
+                return count;
+            }
+        }
+        if (!searchTopics.isEmpty()) {
+            count++;
+            count += searchTopics.size();
+        }
+        if (!searchContacts.isEmpty()) {
+            int contactsCount = searchContacts.size();
+            count += contactsCount + 1;
+        }
+
+        int resultsCount = searchResult.size();
+        count += resultsCount;
+        int localServerCount = searchAdapterHelper.getLocalServerSearch().size();
+        count += localServerCount;
+        if (resultsCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty() || !publicPosts.isEmpty())) {
+            count++;
+        }
+        return count;
+    }
+
+    public void removeAd(TLRPC.TL_sponsoredPeer peer) {
+        if (sponsoredPeers.isEmpty()) return;
+        int index = sponsoredPeers.indexOf(peer);
+        if (index < 0) return;
+
+        int globalSearchPosition = globalSearchPosition();
+        if (globalSearchPosition >= getItemCount()) return;
+
+        int wasGlobalCountUncollapsed = searchAdapterHelper.getGlobalSearch().size() + sponsoredPeers.size();
+        int wasGlobalCount = wasGlobalCountUncollapsed;
+        if (wasGlobalCount > 3 && globalSearchCollapsed) {
+            wasGlobalCount = 3;
+        }
+
+        sponsoredPeers.remove(index);
+        notifyItemRemoved(globalSearchPosition + 1 + index);
+
+        int globalCountUncollapsed = searchAdapterHelper.getGlobalSearch().size() + sponsoredPeers.size();
+        int globalCount = globalCountUncollapsed;
+        if (globalCount > 3 && globalSearchCollapsed) {
+            globalCount = 3;
+        }
+
+        if (globalCount > 0 && (wasGlobalCountUncollapsed > 3) != (globalCountUncollapsed > 3)) {
+            notifyItemChanged(globalSearchPosition);
+        }
+
+        if (globalCount <= 0) {
+            notifyItemRemoved(globalSearchPosition);
+        } else if (globalSearchCollapsed) {
+            notifyItemChanged(globalSearchPosition + 2);notifyItemRangeInserted(globalSearchPosition + 1 + (3 - 1), Math.min(Math.max(0, wasGlobalCountUncollapsed - 3), 1));
+        }
+    }
+
+    public void removeAllAds() {
+        if (sponsoredPeers.isEmpty()) return;
+
+        int globalSearchPosition = globalSearchPosition();
+        if (globalSearchPosition >= getItemCount()) return;
+
+        int wasGlobalCountUncollapsed = searchAdapterHelper.getGlobalSearch().size() + sponsoredPeers.size();
+        int wasGlobalCount = wasGlobalCountUncollapsed;
+        if (wasGlobalCount > 3 && globalSearchCollapsed) {
+            wasGlobalCount = 3;
+        }
+
+        int sponsoredCount = sponsoredPeers.size();
+        if (globalSearchCollapsed) {
+            sponsoredCount = Math.min(3, sponsoredCount);
+        }
+        sponsoredPeers.clear();
+        notifyItemRangeRemoved(globalSearchPosition + 1, sponsoredCount);
+
+        int globalCountUncollapsed = searchAdapterHelper.getGlobalSearch().size() + sponsoredPeers.size();
+        int globalCount = globalCountUncollapsed;
+        if (globalCount > 3 && globalSearchCollapsed) {
+            globalCount = 3;
+        }
+
+        if (globalCount > 0 && (wasGlobalCountUncollapsed > 3) != (globalCountUncollapsed > 3)) {
+            notifyItemChanged(globalSearchPosition);
+        }
+
+        if (globalCount <= 0) {
+            notifyItemRemoved(globalSearchPosition);
+        } else if (globalSearchCollapsed) {
+            notifyItemChanged(globalSearchPosition + (3 - sponsoredCount));
+            notifyItemRangeInserted(globalSearchPosition + 1 + (3 - sponsoredCount), Math.min(Math.max(0, wasGlobalCountUncollapsed - 3), sponsoredCount));
+        }
+    }
+
+    public void seenSponsoredPeer(TLRPC.TL_sponsoredPeer sponsoredPeer) {
+        if (sponsoredPeer == null) return;
+        boolean sent = false;
+        for (byte[] r : seenSponsoredPeers) {
+            if (Arrays.equals(r, sponsoredPeer.random_id)) {
+                sent = true;
+                break;
+            }
+        }
+        if (sent) return;
+
+        seenSponsoredPeers.add(sponsoredPeer.random_id);
+        TLRPC.TL_messages_viewSponsoredMessage req = new TLRPC.TL_messages_viewSponsoredMessage();
+        req.random_id = sponsoredPeer.random_id;
+        ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
+    }
+
+    public void clickedSponsoredPeer(TLRPC.TL_sponsoredPeer sponsoredPeer) {
+        if (sponsoredPeer == null) return;
+        TLRPC.TL_messages_clickSponsoredMessage req = new TLRPC.TL_messages_clickSponsoredMessage();
+        req.random_id = sponsoredPeer.random_id;
+        ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
     }
 }

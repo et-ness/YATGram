@@ -14,7 +14,6 @@ import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
-import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -35,9 +34,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
@@ -105,6 +106,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
     public View startEnterFromView;
     public View overrideTitleIcon;
     public TLRPC.InputStickerSet statusStickerSet;
+    public TLRPC.TL_emojiStatusCollectible emojiStatusCollectible;
     public boolean isEmojiStatus;
 
     int[] coords = new int[2];
@@ -197,7 +199,8 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
         return this;
     }
 
-    private void showDialog(Dialog dialog) {
+    @Override
+    public boolean showDialog(Dialog dialog) {
         if (iconTextureView != null) {
             iconTextureView.setDialogVisible(true);
         }
@@ -209,6 +212,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
             starParticlesView.setPaused(false);
         });
         dialog.show();
+        return true;
     }
 
     @Override
@@ -289,7 +293,17 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
         if (titleView == null || subtitleView == null) {
             return;
         }
-        if (statusStickerSet != null) {
+        if (emojiStatusCollectible != null) {
+            String collectionName = emojiStatusCollectible.title;
+            int spaceIndex;
+            if ((spaceIndex = collectionName.lastIndexOf(' ')) >= 0) {
+                collectionName = collectionName.substring(0, spaceIndex);
+            }
+            titleView[0].setText(AndroidUtilities.replaceSingleTag(LocaleController.formatString(R.string.TelegramPremiumUserStatusCollectibleDialogTitle, DialogObject.getShortName(user), collectionName), () -> {
+                Browser.openUrl(getContext(), "https://" + MessagesController.getInstance(currentAccount).linkPrefix + "/nft/" + emojiStatusCollectible.slug);
+            }));
+            subtitleView.setText(AndroidUtilities.replaceTags(LocaleController.getString(R.string.TelegramPremiumUserStatusDialogSubtitle)));
+        } else if (statusStickerSet != null) {
             final String stickerSetPlaceholder = "<STICKERSET>";
             String string = LocaleController.formatString(R.string.TelegramPremiumUserStatusDialogTitle, ContactsController.formatName(user.first_name, user.last_name), stickerSetPlaceholder);
             CharSequence charSequence = AndroidUtilities.replaceSingleLink(string, accentColor == null ? getThemedColor(Theme.key_windowBackgroundWhiteBlueButton) : accentColor);
@@ -414,7 +428,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
 
     @Override
     protected CharSequence getTitle() {
-        return LocaleController.getString("TelegramPremium", R.string.TelegramPremium);
+        return LocaleController.getString(R.string.TelegramPremium);
     }
 
     @Override
@@ -499,7 +513,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
                             };
                             titleView[a].setVisibility(a == 0 ? View.VISIBLE : View.GONE);
                             titleView[a].setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-                            titleView[a].setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+                            titleView[a].setTypeface(AndroidUtilities.bold());
                             titleView[a].setGravity(Gravity.CENTER_HORIZONTAL);
                             titleView[a].setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
                             titleView[a].setLinkTextColor(getThemedColor(Theme.key_windowBackgroundWhiteLinkText));
@@ -598,12 +612,12 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
                     SpannableStringBuilder stringBuilder1 = AndroidUtilities.replaceSingleTag(
                             terms1,
                             Theme.key_chat_messageLinkIn, 0,
-                            () -> Browser.openUrl(fragment.getParentActivity(), LocaleController.getString("TermsOfServiceUrl", R.string.TermsOfServiceUrl)));
+                            () -> Browser.openUrl(fragment.getParentActivity(), LocaleController.getString(R.string.TermsOfServiceUrl)));
                     String terms2 = getString("GiftPremiumPrivacyPolicy", R.string.GiftPremiumPrivacyPolicy);
                     SpannableStringBuilder stringBuilder2 = AndroidUtilities.replaceSingleTag(
                             terms2,
                             Theme.key_chat_messageLinkIn, 0,
-                            () -> Browser.openUrl(fragment.getParentActivity(), LocaleController.getString("PrivacyPolicyUrl", R.string.PrivacyPolicyUrl)));
+                            () -> Browser.openUrl(fragment.getParentActivity(), LocaleController.getString(R.string.PrivacyPolicyUrl)));
                     cell.setText(AndroidUtilities.replaceCharSequence("%1$s", stringBuilder1, stringBuilder2));
                     view = cell;
                     break;

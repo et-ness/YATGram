@@ -3,9 +3,11 @@ package org.telegram.ui.Components.Premium.boosts.adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +24,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.TextCell;
+import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.Premium.boosts.BoostRepository;
 import org.telegram.ui.Components.Premium.boosts.cells.selector.SelectorCountryCell;
@@ -43,6 +46,7 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
     public static final int VIEW_TYPE_LETTER = 7;
     public static final int VIEW_TYPE_TOP_SECTION = 8;
     public static final int VIEW_TYPE_BUTTON = 9;
+    public static final int VIEW_TYPE_CUSTOM = 10;
 
     private final Theme.ResourcesProvider resourcesProvider;
     private final Context context;
@@ -53,8 +57,11 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
     private boolean isGreenSelector;
     private GraySectionCell topSectionCell;
 
-    public SelectorAdapter(Context context, Theme.ResourcesProvider resourcesProvider) {
+    public boolean needChecks;
+
+    public SelectorAdapter(Context context, boolean needChecks, Theme.ResourcesProvider resourcesProvider) {
         this.context = context;
+        this.needChecks = needChecks;
         this.resourcesProvider = resourcesProvider;
         BoostRepository.loadParticipantsCount(result -> {
             chatsParticipantsCount.clear();
@@ -94,11 +101,11 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
         if (viewType == VIEW_TYPE_PAD) {
             view = new View(context);
         } else if (viewType == VIEW_TYPE_USER) {
-            view = new SelectorUserCell(context, resourcesProvider, isGreenSelector);
+            view = new SelectorUserCell(context, needChecks, resourcesProvider, isGreenSelector);
         } else if (viewType == VIEW_TYPE_NO_USERS) {
             StickerEmptyView searchEmptyView = new StickerEmptyView(context, null, StickerEmptyView.STICKER_TYPE_SEARCH, resourcesProvider);
-            searchEmptyView.title.setText(LocaleController.getString("NoResult", R.string.NoResult));
-            searchEmptyView.subtitle.setText(LocaleController.getString("SearchEmptyViewFilteredSubtitle2", R.string.SearchEmptyViewFilteredSubtitle2));
+            searchEmptyView.title.setText(LocaleController.getString(R.string.NoResult));
+            searchEmptyView.subtitle.setText(LocaleController.getString(R.string.SearchEmptyViewFilteredSubtitle2));
             searchEmptyView.linearLayout.setTranslationY(AndroidUtilities.dp(24));
             view = searchEmptyView;
         } else if (viewType == VIEW_TYPE_LETTER) {
@@ -112,6 +119,8 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             cell.leftPadding = 23 - 7;
             cell.imageLeft = 19;
             view = cell;
+        } else if (viewType == VIEW_TYPE_CUSTOM) {
+            view = new FrameLayout(context);
         } else {
             view = new View(context);
         }
@@ -140,8 +149,14 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
         final int viewType = holder.getItemViewType();
         if (viewType == VIEW_TYPE_USER) {
             SelectorUserCell userCell = (SelectorUserCell) holder.itemView;
-            if (item.user != null) {
+            if (item.icon != null) {
+                userCell.setCustomUser(item.icon, item.text, item.subtext);
+            } else if (item.user != null) {
                 userCell.setUser(item.user);
+                if (item.subtext != null) {
+                    userCell.setSubtitle(item.subtext);
+                    userCell.subtitleTextView.setTextColor(Theme.getColor(Theme.key_dialogTextGray3, resourcesProvider));
+                }
             } else if (item.chat != null) {
                 userCell.setChat(item.chat, getParticipantsCount(item.chat));
             } else if (item.peer != null) {
@@ -201,6 +216,12 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             TextCell cell = (TextCell) holder.itemView;
             cell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
             cell.setTextAndIcon(item.text, item.resId, false);
+        } else if (viewType == VIEW_TYPE_CUSTOM) {
+            FrameLayout frameLayout = (FrameLayout) holder.itemView;
+            if (frameLayout.getChildCount() != 1 || frameLayout.getChildAt(0) != item.view) {
+                AndroidUtilities.removeFromParent(item.view);
+                frameLayout.addView(item.view, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+            }
         }
     }
 
@@ -217,60 +238,60 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
         return items == null ? 0 : items.size();
     }
 
-    private RecyclerListView.Adapter realAdapter() {
-        return listView.getAdapter();
-    }
-
-    @Override
-    public void notifyItemChanged(int position) {
-        realAdapter().notifyItemChanged(position + 1);
-    }
-
-    @Override
-    public void notifyItemChanged(int position, @Nullable Object payload) {
-        realAdapter().notifyItemChanged(position + 1, payload);
-    }
-
-    @Override
-    public void notifyItemInserted(int position) {
-        realAdapter().notifyItemInserted(position + 1);
-    }
-
-    @Override
-    public void notifyItemMoved(int fromPosition, int toPosition) {
-        realAdapter().notifyItemMoved(fromPosition + 1, toPosition);
-    }
-
-    @Override
-    public void notifyItemRangeChanged(int positionStart, int itemCount) {
-        realAdapter().notifyItemRangeChanged(positionStart + 1, itemCount);
-    }
-
-    @Override
-    public void notifyItemRangeChanged(int positionStart, int itemCount, @Nullable Object payload) {
-        realAdapter().notifyItemRangeChanged(positionStart + 1, itemCount, payload);
-    }
-
-    @Override
-    public void notifyItemRangeInserted(int positionStart, int itemCount) {
-        realAdapter().notifyItemRangeInserted(positionStart + 1, itemCount);
-    }
-
-    @Override
-    public void notifyItemRangeRemoved(int positionStart, int itemCount) {
-        realAdapter().notifyItemRangeRemoved(positionStart + 1, itemCount);
-    }
-
-    @Override
-    public void notifyItemRemoved(int position) {
-        realAdapter().notifyItemRemoved(position + 1);
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Override
-    public void notifyDataSetChanged() {
-        realAdapter().notifyDataSetChanged();
-    }
+//    private RecyclerListView.Adapter realAdapter() {
+//        return listView.getAdapter();
+//    }
+//
+//    @Override
+//    public void notifyItemChanged(int position) {
+//        realAdapter().notifyItemChanged(position + 1);
+//    }
+//
+//    @Override
+//    public void notifyItemChanged(int position, @Nullable Object payload) {
+//        realAdapter().notifyItemChanged(position + 1, payload);
+//    }
+//
+//    @Override
+//    public void notifyItemInserted(int position) {
+//        realAdapter().notifyItemInserted(position + 1);
+//    }
+//
+//    @Override
+//    public void notifyItemMoved(int fromPosition, int toPosition) {
+//        realAdapter().notifyItemMoved(fromPosition + 1, toPosition);
+//    }
+//
+//    @Override
+//    public void notifyItemRangeChanged(int positionStart, int itemCount) {
+//        realAdapter().notifyItemRangeChanged(positionStart + 1, itemCount);
+//    }
+//
+//    @Override
+//    public void notifyItemRangeChanged(int positionStart, int itemCount, @Nullable Object payload) {
+//        realAdapter().notifyItemRangeChanged(positionStart + 1, itemCount, payload);
+//    }
+//
+//    @Override
+//    public void notifyItemRangeInserted(int positionStart, int itemCount) {
+//        realAdapter().notifyItemRangeInserted(positionStart + 1, itemCount);
+//    }
+//
+//    @Override
+//    public void notifyItemRangeRemoved(int positionStart, int itemCount) {
+//        realAdapter().notifyItemRangeRemoved(positionStart + 1, itemCount);
+//    }
+//
+//    @Override
+//    public void notifyItemRemoved(int position) {
+//        realAdapter().notifyItemRemoved(position + 1);
+//    }
+//
+//    @SuppressLint("NotifyDataSetChanged")
+//    @Override
+//    public void notifyDataSetChanged() {
+//        realAdapter().notifyDataSetChanged();
+//    }
 
     public void notifyChangedLast() {
         if (items == null || items.isEmpty()) {
@@ -292,6 +313,8 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
         public int padHeight = -1;
         public View.OnClickListener callback;
         public View.OnClickListener options;
+        public View view;
+        public Drawable icon;
 
         private Item(int viewType, boolean selectable) {
             super(viewType, selectable);
@@ -308,6 +331,21 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             item.id = id;
             item.resId = resId;
             item.text = text;
+            return item;
+        }
+
+        public static Item asCustom(View view) {
+            Item item = new Item(VIEW_TYPE_CUSTOM, false);
+            item.view = view;
+            return item;
+        }
+
+        public static Item asCustomUser(int id, Drawable icon, CharSequence title, CharSequence subtitle) {
+            Item item = new Item(VIEW_TYPE_USER, true);
+            item.id = id;
+            item.icon = icon;
+            item.text = title;
+            item.subtext = subtitle;
             return item;
         }
 
@@ -398,6 +436,8 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             } else if (viewType == VIEW_TYPE_TOP_SECTION && (!TextUtils.equals(text, i.text))) {
                 return false;
             } else if (viewType == VIEW_TYPE_BUTTON && (!TextUtils.equals(text, i.text) || id != i.id || resId != i.resId)) {
+                return false;
+            } else if (viewType == VIEW_TYPE_CUSTOM && view != i.view) {
                 return false;
             }
             return true;

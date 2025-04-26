@@ -66,12 +66,15 @@ public class ReactedUsersListView extends FrameLayout {
     MessageContainsEmojiButton messageContainsEmojiButton;
     Theme.ResourcesProvider resourcesProvider;
 
-    public ReactedUsersListView(Context context, Theme.ResourcesProvider resourcesProvider, int currentAccount, MessageObject message, TLRPC.ReactionCount reactionCount, boolean addPadding) {
+    private boolean showReactionPreview;
+
+    public ReactedUsersListView(Context context, Theme.ResourcesProvider resourcesProvider, int currentAccount, MessageObject message, TLRPC.ReactionCount reactionCount, boolean addPadding, boolean showReactionPreview) {
         super(context);
         this.currentAccount = currentAccount;
         this.message = message;
         this.filter = reactionCount == null ? null : reactionCount.reaction;
         this.resourcesProvider = resourcesProvider;
+        this.showReactionPreview = showReactionPreview;
         predictiveCount = reactionCount == null ? VISIBLE_ITEMS : reactionCount.count;
         listView = new RecyclerListView(context, resourcesProvider) {
             @Override
@@ -100,7 +103,7 @@ public class ReactedUsersListView extends FrameLayout {
                 View view = null;
                 switch (viewType) {
                     case USER_VIEW_TYPE:
-                        view = new ReactedUserHolderView(ReactedUserHolderView.STYLE_DEFAULT, currentAccount, context, null);
+                        view = new ReactedUserHolderView(ReactedUserHolderView.STYLE_DEFAULT, currentAccount, context, resourcesProvider, true, showReactionPreview);
                         break;
                     default:
                     case CUSTOM_EMOJI_VIEW_TYPE:
@@ -182,7 +185,7 @@ public class ReactedUsersListView extends FrameLayout {
         addView(loadingView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         if (!addPadding && filter != null && filter instanceof TLRPC.TL_reactionCustomEmoji && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
             customReactionsEmoji.clear();
-            customReactionsEmoji.add(ReactionsLayoutInBubble.VisibleReaction.fromTLReaction(filter));
+            customReactionsEmoji.add(ReactionsLayoutInBubble.VisibleReaction.fromTL(filter));
             updateCustomReactionsButton();
         }
         loadingView.setViewType(customReactionsEmoji.isEmpty() ? FlickerLoadingView.REACTED_TYPE : FlickerLoadingView.REACTED_TYPE_WITH_EMOJI_HINT);
@@ -284,7 +287,7 @@ public class ReactedUsersListView extends FrameLayout {
                         }
 
 
-                        ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTLReaction(res.reactions.get(i).reaction);
+                        ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(res.reactions.get(i).reaction);
                         if (visibleReaction.documentId != 0) {
                             visibleCustomEmojiReactions.add(visibleReaction);
                         }

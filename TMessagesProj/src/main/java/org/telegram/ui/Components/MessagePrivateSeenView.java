@@ -1,7 +1,6 @@
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.ui.ActionBar.Theme.key_dialogGrayLine;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -33,6 +32,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
@@ -41,13 +41,17 @@ import org.telegram.ui.Components.Premium.PremiumButtonView;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
-import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.Date;
 
 public class MessagePrivateSeenView extends FrameLayout {
 
+    public static final int TYPE_SEEN = 0;
+    public static final int TYPE_EDIT = 1;
+    public static final int TYPE_FORWARD = 2;
+
     private final int currentAccount;
+    private final int type;
     private final Theme.ResourcesProvider resourcesProvider;
 
     private final LinearLayout valueLayout;
@@ -57,12 +61,15 @@ public class MessagePrivateSeenView extends FrameLayout {
 
     private final long dialogId;
     private final int messageId;
+    private final int edit_date;
+    private final int fwd_date;
     private final Runnable dismiss;
 
     private final int messageDiff;
 
-    public MessagePrivateSeenView(Context context, @NonNull MessageObject messageObject, Runnable dismiss, Theme.ResourcesProvider resourcesProvider) {
+    public MessagePrivateSeenView(Context context, int type, @NonNull MessageObject messageObject, Runnable dismiss, Theme.ResourcesProvider resourcesProvider) {
         super(context);
+        this.type = type;
 
         currentAccount = messageObject.currentAccount;
         this.resourcesProvider = resourcesProvider;
@@ -71,10 +78,22 @@ public class MessagePrivateSeenView extends FrameLayout {
 
         dialogId = messageObject.getDialogId();
         messageId = messageObject.getId();
+        edit_date = messageObject.messageOwner == null ? 0 : messageObject.messageOwner.edit_date;
+        fwd_date = messageObject.messageOwner == null || messageObject.messageOwner.fwd_from == null ? 0 : messageObject.messageOwner.fwd_from.date;
 
         ImageView iconView = new ImageView(context);
         addView(iconView, LayoutHelper.createFrame(24, 24, Gravity.LEFT | Gravity.CENTER_VERTICAL, 11, 0, 0, 0));
-        Drawable drawable = ContextCompat.getDrawable(context, messageObject.isVoice() ? R.drawable.msg_played : R.drawable.msg_seen).mutate();
+        int icon;
+        if (type == TYPE_EDIT) {
+            icon = R.drawable.menu_edited_stamp;
+        } else if (type == TYPE_FORWARD) {
+            icon = R.drawable.menu_forward_stamp;
+        } else if (messageObject.isVoice()) {
+            icon = R.drawable.msg_played;
+        } else {
+            icon = R.drawable.msg_seen;
+        }
+        Drawable drawable = ContextCompat.getDrawable(context, icon).mutate();
         drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuItemIcon, resourcesProvider), PorterDuff.Mode.MULTIPLY));
         iconView.setImageDrawable(drawable);
 
@@ -107,6 +126,19 @@ public class MessagePrivateSeenView extends FrameLayout {
     }
 
     private void request() {
+        if (type == TYPE_EDIT) {
+            valueLayout.setAlpha(1f);
+            loadingView.setAlpha(0f);
+            premiumTextView.setVisibility(View.GONE);
+            valueTextView.setText(LocaleController.formatPmEditedDate(edit_date));
+            return;
+        } else if (type == TYPE_FORWARD) {
+            valueLayout.setAlpha(1f);
+            loadingView.setAlpha(0f);
+            premiumTextView.setVisibility(View.GONE);
+            valueTextView.setText(LocaleController.formatPmFwdDate(fwd_date));
+            return;
+        }
         setOnClickListener(null);
         valueLayout.setAlpha(0f);
         loadingView.setAlpha(1f);
@@ -168,7 +200,7 @@ public class MessagePrivateSeenView extends FrameLayout {
         layout.addView(imageView, LayoutHelper.createLinear(80, 80, Gravity.CENTER_HORIZONTAL, 0, 16, 0, 16));
 
         TextView headerView = new TextView(context);
-        headerView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        headerView.setTypeface(AndroidUtilities.bold());
         headerView.setGravity(Gravity.CENTER);
         headerView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
         headerView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
@@ -193,7 +225,7 @@ public class MessagePrivateSeenView extends FrameLayout {
         button1.setOnClickListener(v -> {
             button1.setLoading(true);
             if (lastSeen) {
-                TLRPC.TL_account_setPrivacy req = new TLRPC.TL_account_setPrivacy();
+                TL_account.setPrivacy req = new TL_account.setPrivacy();
                 req.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
                 req.rules.add(new TLRPC.TL_inputPrivacyValueAllowAll());
                 ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
@@ -211,7 +243,7 @@ public class MessagePrivateSeenView extends FrameLayout {
                     }
                 }));
             } else {
-                TLRPC.TL_account_setGlobalPrivacySettings req = new TLRPC.TL_account_setGlobalPrivacySettings();
+                TL_account.setGlobalPrivacySettings req = new TL_account.setGlobalPrivacySettings();
                 req.settings = ContactsController.getInstance(currentAccount).getGlobalPrivacySettings();
                 if (req.settings == null) {
                     req.settings = new TLRPC.TL_globalPrivacySettings();
@@ -258,7 +290,7 @@ public class MessagePrivateSeenView extends FrameLayout {
             layout.addView(or, LayoutHelper.createLinear(270, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 12, 17, 12, 17));
 
             TextView headerView2 = new TextView(context);
-            headerView2.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+            headerView2.setTypeface(AndroidUtilities.bold());
             headerView2.setGravity(Gravity.CENTER);
             headerView2.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
             headerView2.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
@@ -294,7 +326,12 @@ public class MessagePrivateSeenView extends FrameLayout {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        Bulletin.hideVisible();
+        if (Bulletin.getVisibleBulletin() != null) {
+            Bulletin bulletin = Bulletin.getVisibleBulletin();
+            if (bulletin.getLayout() != null && bulletin.getLayout().getParent() != null && bulletin.getLayout().getParent().getParent() instanceof Bulletin.BulletinWindow.BulletinWindowLayout) {
+                bulletin.hide();
+            }
+        }
     }
 
     float minWidth = -1;
@@ -307,17 +344,21 @@ public class MessagePrivateSeenView extends FrameLayout {
 
         if (minWidth < 0) {
             minWidth = 0;
-            final long date = System.currentTimeMillis();
-            minWidth = Math.max(minWidth, dp(40 + 96 + 8));
-            minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.getString(R.string.PmReadUnknown)));
-            minWidth = Math.max(minWidth, dp(40 + 16 + 8) + valueTextView.getPaint().measureText(LocaleController.getString(R.string.PmRead) + premiumTextView.getPaint().measureText(LocaleController.getString(R.string.PmReadShowWhen))));
-            minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadTodayAt, LocaleController.getInstance().formatterDay.format(new Date(date)))));
-            if (messageDiff > 60 * 60 * 24) {
-                minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadYesterdayAt, LocaleController.getInstance().formatterDay.format(new Date(date)))));
-            }
-            if (messageDiff > 60 * 60 * 24 * 2) {
-                minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadDateTimeAt, LocaleController.getInstance().formatterDayMonth.format(new Date(date)), LocaleController.getInstance().formatterDay.format(new Date(date)))));
-                minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadDateTimeAt, LocaleController.getInstance().formatterYear.format(new Date(date)), LocaleController.getInstance().formatterDay.format(new Date(date)))));
+            if (type == TYPE_SEEN) {
+                final long date = System.currentTimeMillis();
+                minWidth = Math.max(minWidth, dp(40 + 96 + 8));
+                minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.getString(R.string.PmReadUnknown)));
+                minWidth = Math.max(minWidth, dp(40 + 16 + 8) + valueTextView.getPaint().measureText(LocaleController.getString(R.string.PmRead) + premiumTextView.getPaint().measureText(LocaleController.getString(R.string.PmReadShowWhen))));
+                minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadTodayAt, LocaleController.getInstance().getFormatterDay().format(new Date(date)))));
+                if (messageDiff > 60 * 60 * 24) {
+                    minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadYesterdayAt, LocaleController.getInstance().getFormatterDay().format(new Date(date)))));
+                }
+                if (messageDiff > 60 * 60 * 24 * 2) {
+                    minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadDateTimeAt, LocaleController.getInstance().getFormatterDayMonth().format(new Date(date)), LocaleController.getInstance().getFormatterDay().format(new Date(date)))));
+                    minWidth = Math.max(minWidth, dp(40 + 8) + valueTextView.getPaint().measureText(LocaleController.formatString(R.string.PmReadDateTimeAt, LocaleController.getInstance().getFormatterYear().format(new Date(date)), LocaleController.getInstance().getFormatterDay().format(new Date(date)))));
+                }
+            } else {
+                minWidth = dp(40 + 8) + valueTextView.getPaint().measureText(valueTextView.getText().toString());
             }
         }
 

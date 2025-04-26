@@ -78,25 +78,25 @@ public class PermanentLinkBottomSheet extends BottomSheet {
         linkActionView.setDelegate(() -> generateLink(true));
 
         titleView = new TextView(context);
-        titleView.setText(LocaleController.getString("InviteLink", R.string.InviteLink));
-        titleView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        titleView.setText(LocaleController.getString(R.string.InviteLink));
+        titleView.setTypeface(AndroidUtilities.bold());
         titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
         titleView.setGravity(Gravity.CENTER_HORIZONTAL);
         titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
 
         subtitle = new TextView(context);
-        subtitle.setText(isChannel ? LocaleController.getString("LinkInfoChannel", R.string.LinkInfoChannel) : LocaleController.getString("LinkInfo", R.string.LinkInfo));
+        subtitle.setText(isChannel ? LocaleController.getString(R.string.LinkInfoChannel) : LocaleController.getString(R.string.LinkInfo));
         subtitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         subtitle.setGravity(Gravity.CENTER_HORIZONTAL);
         subtitle.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
         subtitle.setLineSpacing(subtitle.getLineSpacingExtra(), subtitle.getLineSpacingMultiplier() * 1.1f);
 
         manage = new TextView(context);
-        manage.setText(LocaleController.getString("ManageInviteLinks", R.string.ManageInviteLinks));
+        manage.setText(LocaleController.getString(R.string.ManageInviteLinks));
         manage.setGravity(Gravity.CENTER);
         manage.setEllipsize(TextUtils.TruncateAt.END);
         manage.setSingleLine(true);
-        manage.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        manage.setTypeface(AndroidUtilities.bold());
         manage.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         manage.setTextColor(Theme.getColor(Theme.key_featuredStickers_addButton));
         manage.setBackground(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(8), Color.TRANSPARENT, ColorUtils.setAlphaComponent(Theme.getColor(Theme.key_featuredStickers_addButton), 120)));
@@ -159,9 +159,9 @@ public class PermanentLinkBottomSheet extends BottomSheet {
 
                 if (showDialog && fragment != null) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                    builder.setMessage(LocaleController.getString("RevokeAlertNewLink", R.string.RevokeAlertNewLink));
-                    builder.setTitle(LocaleController.getString("RevokeLink", R.string.RevokeLink));
-                    builder.setNegativeButton(LocaleController.getString("OK", R.string.OK), null);
+                    builder.setMessage(LocaleController.getString(R.string.RevokeAlertNewLink));
+                    builder.setTitle(LocaleController.getString(R.string.RevokeLink));
+                    builder.setNegativeButton(LocaleController.getString(R.string.OK), null);
                     fragment.showDialog(builder.create());
                 }
             }

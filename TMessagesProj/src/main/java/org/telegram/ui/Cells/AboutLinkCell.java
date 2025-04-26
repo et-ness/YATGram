@@ -165,7 +165,7 @@ public class AboutLinkCell extends FrameLayout {
         showMoreTextView.setLines(1);
         showMoreTextView.setMaxLines(1);
         showMoreTextView.setSingleLine(true);
-        showMoreTextView.setText(LocaleController.getString("DescriptionMore", R.string.DescriptionMore));
+        showMoreTextView.setText(LocaleController.getString(R.string.DescriptionMore));
         showMoreTextView.setOnClickListener(e -> {
             updateCollapse(true, true);
         });
@@ -320,7 +320,7 @@ public class AboutLinkCell extends FrameLayout {
                             layout.draw(canvas);
                             canvas.restoreToCount(c);
                             x += layout.getLineRight(0) + SPACE;
-                            y += layout.getLineBottom(0) + layout.getTopPadding();
+                            y += layout.getLineBottom(0) + layout.getTopPadding() - 1;
                         }
                     }
                 }
@@ -364,7 +364,7 @@ public class AboutLinkCell extends FrameLayout {
         }
         stringBuilder = new SpannableStringBuilder(oldText);
         MessageObject.addLinks(false, stringBuilder, false, false, !parseLinks);
-        Emoji.replaceEmoji(stringBuilder, Theme.profile_aboutTextPaint.getFontMetricsInt(), AndroidUtilities.dp(20), false);
+        Emoji.replaceEmoji(stringBuilder, Theme.profile_aboutTextPaint.getFontMetricsInt(), false);
         if (lastMaxWidth <= 0) {
             lastMaxWidth = AndroidUtilities.displaySize.x - AndroidUtilities.dp(23 + 23);
         }
@@ -403,27 +403,29 @@ public class AboutLinkCell extends FrameLayout {
                 final Layout layout = pressedLinkLayout;
                 final float yOffset = pressedLinkYOffset;
 
-                ClickableSpan pressedLinkFinal = (ClickableSpan) pressedLink.getSpan();
-                BottomSheet.Builder builder = new BottomSheet.Builder(parentFragment.getParentActivity());
-                builder.setTitle(url);
-                builder.setItems(new CharSequence[]{LocaleController.getString("Open", R.string.Open), LocaleController.getString("Copy", R.string.Copy)}, (dialog, which) -> {
-                    if (which == 0) {
-                        onLinkClick(pressedLinkFinal, layout, yOffset);
-                    } else if (which == 1) {
-                        AndroidUtilities.addToClipboard(url);
-                        if (AndroidUtilities.shouldShowClipboardToast()) {
-                            if (url.startsWith("@")) {
-                                BulletinFactory.of(parentFragment).createSimpleBulletin(R.raw.copy, LocaleController.getString("UsernameCopied", R.string.UsernameCopied)).show();
-                            } else if (url.startsWith("#") || url.startsWith("$")) {
-                                BulletinFactory.of(parentFragment).createSimpleBulletin(R.raw.copy, LocaleController.getString("HashtagCopied", R.string.HashtagCopied)).show();
-                            } else {
-                                BulletinFactory.of(parentFragment).createSimpleBulletin(R.raw.copy, LocaleController.getString("LinkCopied", R.string.LinkCopied)).show();
+                if (getContext() != null) {
+                    ClickableSpan pressedLinkFinal = (ClickableSpan) pressedLink.getSpan();
+                    BottomSheet.Builder builder = new BottomSheet.Builder(getContext());
+                    builder.setTitle(url);
+                    builder.setItems(new CharSequence[]{LocaleController.getString(R.string.Open), LocaleController.getString(R.string.Copy)}, (dialog, which) -> {
+                        if (which == 0) {
+                            onLinkClick(pressedLinkFinal, layout, yOffset);
+                        } else if (which == 1) {
+                            AndroidUtilities.addToClipboard(url);
+                            if (AndroidUtilities.shouldShowClipboardToast()) {
+                                if (url.startsWith("@")) {
+                                    BulletinFactory.of(parentFragment).createSimpleBulletin(R.raw.copy, LocaleController.getString(R.string.UsernameCopied)).show();
+                                } else if (url.startsWith("#") || url.startsWith("$")) {
+                                    BulletinFactory.of(parentFragment).createSimpleBulletin(R.raw.copy, LocaleController.getString(R.string.HashtagCopied)).show();
+                                } else {
+                                    BulletinFactory.of(parentFragment).createSimpleBulletin(R.raw.copy, LocaleController.getString(R.string.LinkCopied)).show();
+                                }
                             }
                         }
-                    }
-                });
-                builder.setOnPreDismissListener(di -> resetPressedLink());
-                builder.show();
+                    });
+                    builder.setOnPreDismissListener(di -> resetPressedLink());
+                    builder.show();
+                }
 
                 pressedLink = null;
             }
@@ -521,7 +523,7 @@ public class AboutLinkCell extends FrameLayout {
         } : null;
         if (pressedLink instanceof URLSpanNoUnderline) {
             String url = ((URLSpanNoUnderline) pressedLink).getURL();
-            if (url.startsWith("@") || url.startsWith("#") || url.startsWith("/")) {
+            if (url.startsWith("@") || url.startsWith("#") || url.startsWith("$") || url.startsWith("/")) {
                 didPressUrl(url, currentProgress);
             }
         } else {

@@ -46,6 +46,7 @@ import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.Switch;
 import org.telegram.ui.FilterCreateActivity;
 import org.telegram.ui.PeerColorActivity;
+import org.telegram.ui.Stories.recorder.HintView2;
 
 public class TextCell extends FrameLayout {
 
@@ -400,7 +401,7 @@ public class TextCell extends FrameLayout {
         }
     }
 
-    public void setTextAndIcon(String text, Drawable drawable, boolean divider) {
+    public void setTextAndIcon(CharSequence text, Drawable drawable, boolean divider) {
         offsetFromImage = 71;
         imageLeft = 18;
         textView.setText(text);
@@ -414,6 +415,29 @@ public class TextCell extends FrameLayout {
         }
         imageView.setVisibility(VISIBLE);
         valueTextView.setVisibility(GONE);
+        valueImageView.setVisibility(GONE);
+        imageView.setPadding(0, dp(6), 0, 0);
+        needDivider = divider;
+        setWillNotDraw(!needDivider);
+        if (emojiDrawable != null) {
+            emojiDrawable.set((Drawable) null, false);
+        }
+    }
+
+    public void setTextAndValueAndIcon(CharSequence text, CharSequence value, Drawable drawable, boolean divider) {
+        offsetFromImage = 71;
+        imageLeft = 18;
+        textView.setText(text);
+        textView.setRightDrawable(null);
+        valueTextView.setText(valueText = value, false);
+        imageView.setColorFilter(null);
+        if (drawable instanceof RLottieDrawable) {
+            imageView.setAnimation((RLottieDrawable) drawable);
+        } else {
+            imageView.setImageDrawable(drawable);
+        }
+        imageView.setVisibility(VISIBLE);
+        valueTextView.setVisibility(VISIBLE);
         valueImageView.setVisibility(GONE);
         imageView.setPadding(0, dp(6), 0, 0);
         needDivider = divider;
@@ -440,7 +464,8 @@ public class TextCell extends FrameLayout {
         offsetFromImage = getOffsetFromImage(false);
         textView.setText(text);
         textView.setRightDrawable(null);
-        valueTextView.setText(TextUtils.ellipsize(valueText = value, valueTextView.getPaint(), AndroidUtilities.displaySize.x / 2.5f, TextUtils.TruncateAt.END), animated);
+        valueText = value;
+        valueTextView.setText(valueText == null ? null : TextUtils.ellipsize(valueText, valueTextView.getPaint(), AndroidUtilities.displaySize.x / 2.5f, TextUtils.TruncateAt.END), animated);
         valueTextView.setVisibility(VISIBLE);
         valueSpoilersTextView.setVisibility(GONE);
         imageView.setVisibility(GONE);
@@ -455,7 +480,7 @@ public class TextCell extends FrameLayout {
         }
     }
 
-    public void setValue(String value, boolean animated) {
+    public void setValue(CharSequence value, boolean animated) {
         valueTextView.setText(value == null ? "" : TextUtils.ellipsize(valueText = value, valueTextView.getPaint(), AndroidUtilities.displaySize.x / 2.5f, TextUtils.TruncateAt.END), animated);
     }
 
@@ -474,6 +499,31 @@ public class TextCell extends FrameLayout {
         if (checkBox != null) {
             checkBox.setVisibility(GONE);
         }
+        if (emojiDrawable != null) {
+            emojiDrawable.set((Drawable) null, false);
+        }
+    }
+
+    public void setTextAndCheckAndColorfulIcon(CharSequence text, boolean checked, int resId, int color, boolean divider) {
+        imageLeft = 21;
+        offsetFromImage = getOffsetFromImage(false);
+        textView.setText(text);
+        textView.setRightDrawable(null);
+        valueTextView.setVisibility(GONE);
+        valueSpoilersTextView.setVisibility(GONE);
+        valueImageView.setVisibility(GONE);
+        setColorfulIcon(color, resId);
+        if (checkBox == null) {
+            checkBox = new Switch(getContext(), resourcesProvider);
+            checkBox.setColors(Theme.key_switchTrack, Theme.key_switchTrackChecked, Theme.key_windowBackgroundWhite, Theme.key_windowBackgroundWhite);
+            addView(checkBox, LayoutHelper.createFrame(37, 20, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, 22, 0, 22, 0));
+        }
+        if (checkBox != null) {
+            checkBox.setVisibility(VISIBLE);
+            checkBox.setChecked(checked, false);
+        }
+        needDivider = divider;
+        setWillNotDraw(!needDivider);
         if (emojiDrawable != null) {
             emojiDrawable.set((Drawable) null, false);
         }
@@ -532,11 +582,16 @@ public class TextCell extends FrameLayout {
         offsetFromImage = getOffsetFromImage(false);
         textView.setText(text);
         textView.setRightDrawable(null);
-        valueTextView.setText(value == null ? "" : TextUtils.ellipsize(valueText = value, valueTextView.getPaint(), AndroidUtilities.displaySize.x / 2.5f, TextUtils.TruncateAt.END), animated);
+        imageView.setVisibility(VISIBLE);
+        if (value != null) {
+            int availableWidth = (int) Math.max(1, AndroidUtilities.displaySize.x - (dp(offsetFromImage) + HintView2.measureCorrectly(text, textView.getTextPaint()) + dp(16)));
+            valueTextView.setText(value == null ? "" : TextUtils.ellipsize(valueText = value, valueTextView.getPaint(), availableWidth, TextUtils.TruncateAt.END), animated);
+        } else {
+            valueTextView.setText("", animated);
+        }
         valueTextView.setVisibility(VISIBLE);
         valueSpoilersTextView.setVisibility(GONE);
         valueImageView.setVisibility(GONE);
-        imageView.setVisibility(VISIBLE);
         imageView.setTranslationX(0);
         imageView.setTranslationY(0);
         imageView.setPadding(0, dp(7), 0, 0);
@@ -632,7 +687,7 @@ public class TextCell extends FrameLayout {
         }
     }
 
-    public void setTextAndValueDrawable(String text, Drawable drawable, boolean divider) {
+    public void setTextAndValueDrawable(CharSequence text, Drawable drawable, boolean divider) {
         imageLeft = 21;
         offsetFromImage = getOffsetFromImage(false);
         textView.setText(text);

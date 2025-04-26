@@ -1,12 +1,9 @@
 package org.telegram.ui.Cells;
 
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.text.Layout;
 import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -56,19 +53,19 @@ public class ExpiredStoryView {
         } else {
             forwardedNameWidth = (int) (parent.getParentWidth()  * 0.4f);
         }
-        String from = LocaleController.getString("From", R.string.From);
+        String from = LocaleController.getString(R.string.From);
         int fromWidth = (int) Math.ceil(Theme.chat_forwardNamePaint.measureText(from + " "));
 
         if (fromName == null) {
             fromName = "";
         }
         fromName = (String) TextUtils.ellipsize(fromName.replace('\n', ' '), Theme.chat_replyNamePaint, forwardedNameWidth - fromWidth, TextUtils.TruncateAt.END);
-        String fromString = LocaleController.getString("FromFormatted", R.string.FromFormatted);
+        String fromString = LocaleController.getString(R.string.FromFormatted);
         int idx = fromString.indexOf("%1$s");
         CharSequence subtitle = String.format(fromString, fromName);
         if (idx >= 0) {
             SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(subtitle);
-            spannableStringBuilder.setSpan(new TypefaceSpan(AndroidUtilities.getTypeface("fonts/rmedium.ttf")), idx, idx + fromName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannableStringBuilder.setSpan(new TypefaceSpan(AndroidUtilities.bold()), idx, idx + fromName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             subtitle = spannableStringBuilder;
         }
         TextPaint titlePaint = Theme.chat_replyTextPaint;

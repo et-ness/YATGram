@@ -22,9 +22,13 @@ uniform vec3 specColor;
 uniform vec2 resolution;
 uniform vec4 gradientPosition;
 uniform int modelIndex;
+uniform int type;
 uniform bool night;
 uniform float time;
 uniform mat4 world;
+
+#define TYPE_COIN 1
+#define TYPE_DEAL 3
 
 void main() {
     vec2 uv = vUV;
@@ -55,11 +59,22 @@ void main() {
             vec3(0.39608, 0.18824, 0.98039),
             diagonal
         );
+    } else if (type == TYPE_DEAL) {
+        baseColor = mix(
+            vec3(0.91373, 0.62353, 0.99608),
+            vec3(0.67451, 0.58824, 1.00000),
+            clamp((uv.y - .1) / .8, 0.0, 1.0)
+        ) * 1.05;
+
+        baseColor = mix(baseColor, vec3(1.0), .1 + .25 * texture2D(u_Texture, vUV).a);
+        if (night) {
+            baseColor = mix(baseColor, vec3(.0), .06);
+        }
     } else {
         baseColor = mix(
             vec3(0.91373, 0.62353, 0.99608),
             vec3(0.67451, 0.58824, 1.00000),
-            clamp((uv.y - .2) / .6, 0.0, 1.0)
+            clamp((uv.y - .1) / .8, 0.0, 1.0)
         );
 
         baseColor = mix(baseColor, vec3(1.0), .1 + .45 * texture2D(u_Texture, vUV).a);
@@ -75,7 +90,7 @@ void main() {
     vec3 flecksLightDir = normalize(flecksLightPos - pos);
     vec3 flecksReflectDir = reflect(-flecksLightDir, norm);
     float flecksSpec = pow(max(dot(normalize(vec3(0.0) - pos), flecksReflectDir), 0.0), 8.0);
-    vec3 flecksNormal = normalize(texture2D(u_NormalMap, uv * 1.3 + vec2(.02, .06) * time).xyz * 2.0 - 1.0);
+    vec3 flecksNormal = normalize(texture2D(u_NormalMap, (uv * 1.3 + vec2(.02, .06) * time) * 2.0).xyz * 2.0 - 1.0);
     float flecks = max(flecksNormal.x, flecksNormal.y) * flecksSpec;
     norm += flecksSpec * flecksNormal;
     norm = normalize(norm);

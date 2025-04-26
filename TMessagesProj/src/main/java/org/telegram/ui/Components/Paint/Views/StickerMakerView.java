@@ -23,7 +23,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -35,7 +34,6 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
-import org.checkerframework.checker.units.qual.A;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.EmuDetector;
@@ -62,7 +60,6 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Paint.ObjectDetectionEmojis;
 import org.telegram.ui.Components.ThanosEffect;
-import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import org.telegram.ui.Stories.recorder.DownloadButton;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 
@@ -811,6 +808,174 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
         }
         this.containerWidth = containerWidth;
         this.containerHeight = containerHeight;
+        if (segmentingLoaded) {
+            return;
+        }
+        if (segmentingLoading || source == null) return;
+        if (Build.VERSION.SDK_INT < 24) return;
+        sourceBitmap = source;
+        this.orientation = orientation;
+        detectedEmoji = null;
+        /*segment(source, orientation, subjects -> {
+            final ArrayList<SegmentedObject> finalObjects = new ArrayList<>();
+
+            Utilities.themeQueue.postRunnable(() -> {
+                if (sourceBitmap == null || segmentingLoaded) return;
+                Matrix matrix = new Matrix();
+                matrix.postScale(1f / sourceBitmap.getWidth(), 1f / sourceBitmap.getHeight());
+                matrix.postTranslate(-.5f, -.5f);
+                matrix.postRotate(orientation);
+                matrix.postTranslate(.5f, .5f);
+                if (orientation / 90 % 2 != 0) {
+                    matrix.postScale(sourceBitmap.getHeight(), sourceBitmap.getWidth());
+                } else {
+                    matrix.postScale(sourceBitmap.getWidth(), sourceBitmap.getHeight());
+                }
+                if (subjects.isEmpty()) {
+                    SegmentedObject o = new SegmentedObject();
+                    o.bounds.set(0, 0, sourceBitmap.getWidth(), sourceBitmap.getHeight());
+                    o.rotatedBounds.set(o.bounds);
+                    matrix.mapRect(o.rotatedBounds);
+                    o.orientation = orientation;
+                    o.image = createSmoothEdgesSegmentedImage(0, 0, sourceBitmap, false);
+                    if (o.image == null) {
+                        FileLog.e(new RuntimeException("createSmoothEdgesSegmentedImage failed on empty image"));
+                        return;
+                    }
+                    o.darkMaskImage = o.makeDarkMaskImage();
+                    createSegmentImagePath(o, this.containerWidth, this.containerHeight);
+                    segmentBorderImageWidth = o.borderImageWidth;
+                    segmentBorderImageHeight = o.borderImageHeight;
+
+                    finalObjects.add(o);
+                    AndroidUtilities.runOnUIThread(() -> {
+                        empty = true;
+                        objects = finalObjects.toArray(new SegmentedObject[0]);
+                        whenEmpty.run(o);
+                    });
+                    selectedObject = o;
+                    segmentingLoaded = true;
+                    segmentingLoading = false;
+                    return;
+                } else {
+                    for (int i = 0; i < subjects.size(); ++i) {
+                        SubjectMock subject = subjects.get(i);
+                        SegmentedObject o = new SegmentedObject();
+                        o.bounds.set(subject.startX, subject.startY, subject.startX + subject.width, subject.startY + subject.height);
+                        o.rotatedBounds.set(o.bounds);
+                        matrix.mapRect(o.rotatedBounds);
+                        o.orientation = orientation;
+                        o.image = createSmoothEdgesSegmentedImage(subject.startX, subject.startY, subject.bitmap, false);
+                        if (o.image == null) continue;
+                        o.darkMaskImage = o.makeDarkMaskImage();
+                        createSegmentImagePath(o, this.containerWidth, this.containerHeight);
+                        segmentBorderImageWidth = o.borderImageWidth;
+                        segmentBorderImageHeight = o.borderImageHeight;
+
+                        finalObjects.add(o);
+                    }
+                }
+                selectedObject = null;
+
+                segmentingLoaded = true;
+                segmentingLoading = false;
+                AndroidUtilities.runOnUIThread(() -> {
+                    empty = false;
+                    objects = finalObjects.toArray(new SegmentedObject[0]);
+                    if (objects.length > 0) {
+                        stickerCutOutBtn.setScaleX(0.3f);
+                        stickerCutOutBtn.setScaleY(0.3f);
+                        stickerCutOutBtn.setAlpha(0f);
+                        stickerCutOutBtn.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(250).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+                    }
+                });
+
+            });
+        }, whenEmpty); */
+    }
+
+    private static class SubjectMock {
+        public Bitmap bitmap;
+        public int startX, startY, width, height;
+        public static SubjectMock of(Subject subject) {
+            SubjectMock m = new SubjectMock();
+            m.bitmap = subject.getBitmap();
+            m.startX = subject.getStartX();
+            m.startY = subject.getStartY();
+            m.width = subject.getWidth();
+            m.height = subject.getHeight();
+            return m;
+        }
+        public static SubjectMock mock(Bitmap source) {
+            SubjectMock m = new SubjectMock();
+            m.width = m.height = (int) (Math.min(source.getWidth(), source.getHeight()) * .4f);
+            m.bitmap = Bitmap.createBitmap(m.width, m.height, Bitmap.Config.ARGB_8888);
+            new Canvas(m.bitmap).drawRect(0, 0, m.width, m.height, Theme.DEBUG_RED);
+            m.startX = (source.getWidth() - m.width) / 2;
+            m.startY = (source.getHeight() - m.height) / 2;
+            return m;
+        }
+    }
+
+    private void segment(Bitmap bitmap, int orientation, Utilities.Callback<List<SubjectMock>> whenDone, Utilities.Callback<SegmentedObject> whenEmpty) {
+        segmentingLoading = true;
+        SubjectSegmenter segmenter = SubjectSegmentation.getClient(
+            new SubjectSegmenterOptions.Builder()
+                .enableMultipleSubjects(
+                    new SubjectSegmenterOptions.SubjectResultOptions.Builder()
+                        .enableSubjectBitmap()
+                        .build()
+                )
+                .build()
+        );
+        if (EmuDetector.with(getContext()).detect()) {
+            ArrayList<SubjectMock> list = new ArrayList<>();
+            list.add(SubjectMock.mock(sourceBitmap));
+            whenDone.run(list);
+            return;
+        }
+        InputImage inputImage = InputImage.fromBitmap(bitmap, orientation);
+        segmenter.process(inputImage)
+            .addOnSuccessListener(result -> {
+                ArrayList<SubjectMock> list = new ArrayList<>();
+                for (int i = 0; i < result.getSubjects().size(); ++i) {
+                    list.add(SubjectMock.of(result.getSubjects().get(i)));
+                }
+                whenDone.run(list);
+            })
+            .addOnFailureListener(error -> {
+                segmentingLoading = false;
+                FileLog.e(error);
+                if (isWaitingMlKitError(error) && isAttachedToWindow()) {
+                    AndroidUtilities.runOnUIThread(() -> segmentImage(bitmap, orientation, containerWidth, containerHeight, whenEmpty), 2000);
+                } else {
+                    whenDone.run(new ArrayList<>());
+                }
+            });
+
+
+        if (detectedEmoji == null) {
+            ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
+                .process(inputImage)
+                .addOnSuccessListener(labels -> {
+                    if (labels.size() <= 0) {
+                        FileLog.d("objimg: no objects");
+                        return;
+                    }
+                    detectedEmoji = ObjectDetectionEmojis.labelToEmoji(labels.get(0).getIndex());
+                    FileLog.d("objimg: detected #" + labels.get(0).getIndex() + " " + detectedEmoji + " " + labels.get(0).getText());
+                    Emoji.getEmojiDrawable(detectedEmoji); // preload
+                })
+                .addOnFailureListener(e -> {
+                });
+        }
+
+        // preload emojis
+        List<TLRPC.TL_availableReaction> defaultReactions = MediaDataController.getInstance(currentAccount).getEnabledReactionsList();
+        for (int i = 0; i < Math.min(defaultReactions.size(), 9); ++i) {
+            Emoji.getEmojiDrawable(defaultReactions.get(i).reaction);
+        }
+>>>>>>> telegram/master
     }
 
     private void createSegmentImagePath(SegmentedObject object, int containerWidth, int containerHeight) {
@@ -1195,7 +1360,7 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
                 stickerUploader.finalPath = message.attachPath = StoryEntry.makeCacheFile(UserConfig.selectedAccount, "webm").getAbsolutePath();
                 stickerUploader.messageObject = new MessageObject(UserConfig.selectedAccount, message, (MessageObject) null, false, false);
                 stickerUploader.messageObject.videoEditedInfo = videoEditedInfo;
-                MediaController.getInstance().scheduleVideoConvert(stickerUploader.messageObject, false, false);
+                MediaController.getInstance().scheduleVideoConvert(stickerUploader.messageObject, false, false, false);
             } else {
                 FileLoader.getInstance(currentAccount).uploadFile(path, false, true, ConnectionsManager.FileTypeFile);
             }

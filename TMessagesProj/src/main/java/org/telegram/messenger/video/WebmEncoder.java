@@ -11,15 +11,12 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.opengl.GLES20;
-import android.opengl.GLUtils;
 import android.os.Build;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -29,32 +26,22 @@ import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
-import com.google.common.collect.BiMap;
-
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.Bitmaps;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.Utilities;
 import org.telegram.messenger.VideoEditedInfo;
-import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimatedFileDrawable;
-import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.Paint.Views.EditTextOutline;
 import org.telegram.ui.Components.Paint.Views.PaintTextOptionsView;
 import org.telegram.ui.Components.RLottieDrawable;
 
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-
-import javax.microedition.khronos.opengles.GL10;
 
 public class WebmEncoder {
 
@@ -290,7 +277,7 @@ public class WebmEncoder {
                 };
                 ((Spannable) text).setSpan(span, e.offset, e.offset + e.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
-            text = Emoji.replaceEmoji(text, editText.getPaint().getFontMetricsInt(), (int) (editText.getTextSize() * .8f), false);
+            text = Emoji.replaceEmoji(text, editText.getPaint().getFontMetricsInt(), false);
             if (text instanceof Spanned) {
                 Emoji.EmojiSpan[] spans = ((Spanned) text).getSpans(0, text.length(), Emoji.EmojiSpan.class);
                 if (spans != null) {
@@ -403,30 +390,11 @@ public class WebmEncoder {
                 if (!TextUtils.isEmpty(entity.segmentedPath) && (entity.subType & 16) != 0) {
                     path = entity.segmentedPath;
                 }
-                if (Build.VERSION.SDK_INT >= 19) {
-                    BitmapFactory.Options opts = new BitmapFactory.Options();
-                    if (entity.type == VideoEditedInfo.MediaEntity.TYPE_PHOTO) {
-                        opts.inMutable = true;
-                    }
-                    entity.bitmap = BitmapFactory.decodeFile(path, opts);
-                } else {
-                    try {
-                        File filePath = new File(path);
-                        RandomAccessFile file = new RandomAccessFile(filePath, "r");
-                        ByteBuffer buffer = file.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, filePath.length());
-                        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-                        bmOptions.inJustDecodeBounds = true;
-                        Utilities.loadWebpImage(null, buffer, buffer.limit(), bmOptions, true);
-                        if (entity.type == VideoEditedInfo.MediaEntity.TYPE_PHOTO) {
-                            bmOptions.inMutable = true;
-                        }
-                        entity.bitmap = Bitmaps.createBitmap(bmOptions.outWidth, bmOptions.outHeight, Bitmap.Config.ARGB_8888);
-                        Utilities.loadWebpImage(entity.bitmap, buffer, buffer.limit(), null, true);
-                        file.close();
-                    } catch (Throwable e) {
-                        FileLog.e(e);
-                    }
+                BitmapFactory.Options opts = new BitmapFactory.Options();
+                if (entity.type == VideoEditedInfo.MediaEntity.TYPE_PHOTO) {
+                    opts.inMutable = true;
                 }
+                entity.bitmap = BitmapFactory.decodeFile(path, opts);
                 if (entity.type == VideoEditedInfo.MediaEntity.TYPE_PHOTO && entity.bitmap != null) {
                     entity.roundRadius = AndroidUtilities.dp(12) / (float) Math.min(entity.viewWidth, entity.viewHeight);
                     Pair<Integer, Integer> orientation = AndroidUtilities.getImageOrientation(entity.text);

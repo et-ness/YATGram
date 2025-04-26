@@ -202,10 +202,19 @@ public class EditTextEffects extends EditText {
         super.setText(text, type);
     }
 
+    private int lastTextColor;
+    private Integer emojiColor;
+    public void setEmojiColor(Integer emojiColor) {
+        this.emojiColor = emojiColor;
+        animatedEmojiColorFilter = new PorterDuffColorFilter(emojiColor == null ? lastTextColor : emojiColor, PorterDuff.Mode.SRC_IN);
+        invalidate();
+    }
+
     @Override
     public void setTextColor(int color) {
+        lastTextColor = color;
         super.setTextColor(color);
-        animatedEmojiColorFilter = new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN);
+        animatedEmojiColorFilter = new PorterDuffColorFilter(emojiColor == null ? color : emojiColor, PorterDuff.Mode.SRC_IN);
     }
 
     @Override
@@ -223,6 +232,9 @@ public class EditTextEffects extends EditText {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
+        if (QuoteSpan.onTouch(event, getPaddingTop() - getScrollY(), quoteBlocks, () -> invalidateQuotes(true))) {
+            return true;
+        }
         boolean detector = false;
         if (shouldRevealSpoilersByTouch && clickDetector != null && clickDetector.onTouchEvent(event)) {
             int act = event.getActionMasked();
@@ -304,7 +316,7 @@ public class EditTextEffects extends EditText {
         canvas.clipPath(path, Region.Op.DIFFERENCE);
         invalidateQuotes(false);
         for (int i = 0; i < quoteBlocks.size(); ++i) {
-            quoteBlocks.get(i).draw(canvas, 0, getWidth(), quoteColor, 1f);
+            quoteBlocks.get(i).draw(canvas, 0, getWidth(), quoteColor, 1f, getPaint());
         }
         updateAnimatedEmoji(false);
         if (wrapCanvasToFixClipping) {
@@ -374,8 +386,14 @@ public class EditTextEffects extends EditText {
     private int lastText2Length;
     private int quoteUpdatesTries;
     private boolean[] quoteUpdateLayout;
+    private boolean quoteBlocksUpdating;
+    private boolean editedWhileQuoteUpdating;
 
     public void invalidateQuotes(boolean force) {
+        if (quoteBlocksUpdating) {
+            editedWhileQuoteUpdating = true;
+            return;
+        }
         int newTextLength = (getLayout() == null || getLayout().getText() == null) ? 0 : getLayout().getText().length();
         if (force || lastText2Length != newTextLength) {
             quoteUpdatesTries = 2;
@@ -386,11 +404,19 @@ public class EditTextEffects extends EditText {
                 quoteUpdateLayout = new boolean[1];
             }
             quoteUpdateLayout[0] = false;
-            quoteBlocks = QuoteSpan.updateQuoteBlocks(getLayout(), quoteBlocks, quoteUpdateLayout);
+            editedWhileQuoteUpdating = false;
+            quoteBlocksUpdating = true;
+            quoteBlocks = QuoteSpan.updateQuoteBlocks(this, getLayout(), quoteBlocks, quoteUpdateLayout);
+            if (editedWhileQuoteUpdating) {
+                quoteBlocks = QuoteSpan.updateQuoteBlocks(this, getLayout(), quoteBlocks, quoteUpdateLayout);
+            }
+            quoteBlocksUpdating = false;
+            editedWhileQuoteUpdating = false;
             if (quoteUpdateLayout[0]) {
                 resetFontMetricsCache();
             }
             quoteUpdatesTries--;
+            lastText2Length = (getLayout() == null || getLayout().getText() == null) ? 0 : getLayout().getText().length();
         }
     }
 
@@ -438,5 +464,9 @@ public class EditTextEffects extends EditText {
 
     public void setClipToPadding(boolean clipToPadding) {
         this.clipToPadding = clipToPadding;
+    }
+
+    public CharSequence getTextToUse() {
+        return QuoteSpan.stripNewlineHacks(getText());
     }
 }

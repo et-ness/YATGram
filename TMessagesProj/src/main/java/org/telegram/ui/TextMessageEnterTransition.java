@@ -24,7 +24,6 @@ import android.text.SpannableString;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 
@@ -198,7 +197,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
                 layoutH = chatActivityEnterView.getEditField().getLayout().getLineBottom(chatActivityEnterView.getEditField().getLayout().getLineForOffset(newStart[0] + trimmedStr.length())) - linesOffset;
             }
             text = AnimatedEmojiSpan.cloneSpans(text);
-            text = Emoji.replaceEmoji(editText, textPaint.getFontMetricsInt(), emojiSize, false);
+            text = Emoji.replaceEmoji(editText, textPaint.getFontMetricsInt(), false);
         }
 
         scaleFrom = chatActivityEnterView.getEditField().getTextSize() / textPaint.getTextSize();
@@ -444,7 +443,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
             return;
         } else {
             messageViewX = messageView.getX() + listView.getX() - container.getX();
-            messageViewY = messageView.getTop() + listView.getTop() - container.getY();
+            messageViewY = messageView.getTop() + messageView.getPaddingTop() + listView.getTop() - container.getY();
             messageViewY += enterView.getTopViewHeight();
 
             lastMessageX = messageViewX;
@@ -526,6 +525,8 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         messageView.drawNamesLayout(canvas, alphaProgress);
         messageView.drawCommentButton(canvas, alphaProgress);
         messageView.drawCaptionLayout(canvas, false, alphaProgress);
+        messageView.drawReactionsLayout(canvas, alphaProgress, null);
+        messageView.drawCommentLayout(canvas, alphaProgress);
         messageView.drawLinkPreview(canvas, alphaProgress);
         canvas.restore();
 
@@ -734,7 +735,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         }
 
         canvas.save();
-        canvas.translate(fromX * (1f - progressX) + (toX - toXOffset) * progressX, fromY * (1f - progress) + (toY + textLayoutBlock.textYOffset) * progress);
+        canvas.translate(fromX * (1f - progressX) + (toX - toXOffset) * progressX, fromY * (1f - progress) + (toY + textLayoutBlock.textYOffset(messageView.getMessageObject().textLayoutBlocks, messageView.transitionParams)) * progress);
         canvas.scale(scale, scale * scale2, 0, 0);
 
         if (drawBitmaps) {
@@ -765,7 +766,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
 
         if (rtlLayout != null) {
             canvas.save();
-            canvas.translate(fromX * (1f - progressX) + (toX - toXOffsetRtl) * progressX, fromY * (1f - progress) + (toY + textLayoutBlock.textYOffset) * progress);
+            canvas.translate(fromX * (1f - progressX) + (toX - toXOffsetRtl) * progressX, fromY * (1f - progress) + (toY + textLayoutBlock.textYOffset(messageView.getMessageObject().textLayoutBlocks, messageView.transitionParams)) * progress);
             canvas.scale(scale, scale * scale2, 0, 0);
             if (drawBitmaps) {
                 if (crossfade) {

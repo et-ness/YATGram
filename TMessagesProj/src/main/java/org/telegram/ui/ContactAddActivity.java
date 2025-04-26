@@ -169,9 +169,9 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
         if (addContact) {
-            actionBar.setTitle(LocaleController.getString("NewContact", R.string.NewContact));
+            actionBar.setTitle(LocaleController.getString(R.string.NewContact));
         } else {
-            actionBar.setTitle(LocaleController.getString("EditContact", R.string.EditContact));
+            actionBar.setTitle(LocaleController.getString(R.string.EditContact));
         }
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -200,7 +200,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         });
 
         ActionBarMenu menu = actionBar.createMenu();
-        doneButton = menu.addItem(done_button, LocaleController.getString("Done", R.string.Done).toUpperCase());
+        doneButton = menu.addItem(done_button, LocaleController.getString(R.string.Done).toUpperCase());
 
         fragmentView = new ScrollView(context);
         fragmentView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
@@ -247,7 +247,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         nameTextView.setSingleLine(true);
         nameTextView.setEllipsize(TextUtils.TruncateAt.END);
         nameTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT));
-        nameTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        nameTextView.setTypeface(AndroidUtilities.bold());
         frameLayout.addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 80, 3, LocaleController.isRTL ? 80 : 0, 0));
 
         onlineTextView = new TextView(context);
@@ -277,7 +277,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         firstNameField.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
         firstNameField.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_AUTO_CORRECT);
         firstNameField.setImeOptions(EditorInfo.IME_ACTION_NEXT);
-        firstNameField.setHint(LocaleController.getString("FirstName", R.string.FirstName));
+        firstNameField.setHint(LocaleController.getString(R.string.FirstName));
         firstNameField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
         firstNameField.setCursorSize(AndroidUtilities.dp(20));
         firstNameField.setCursorWidth(1.5f);
@@ -319,7 +319,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         lastNameField.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
         lastNameField.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_AUTO_CORRECT);
         lastNameField.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        lastNameField.setHint(LocaleController.getString("LastName", R.string.LastName));
+        lastNameField.setHint(LocaleController.getString(R.string.LastName));
         lastNameField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
         lastNameField.setCursorSize(AndroidUtilities.dp(20));
         lastNameField.setCursorWidth(1.5f);
@@ -358,8 +358,8 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
                 checkBoxCell = new CheckBoxCell(getParentActivity(), 0);
                 checkBoxCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
                 CharSequence firstName = UserObject.getFirstName(user);
-                firstName = Emoji.replaceEmoji(firstName, infoTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(12), false);
-                checkBoxCell.setText(AndroidUtilities.replaceCharSequence("%1$s", AndroidUtilities.replaceTags(LocaleController.getString("SharePhoneNumberWith", R.string.SharePhoneNumberWith)), firstName), "", true, false);
+                firstName = Emoji.replaceEmoji(firstName, infoTextView.getPaint().getFontMetricsInt(), false);
+                checkBoxCell.setText(AndroidUtilities.replaceCharSequence("%1$s", AndroidUtilities.replaceTags(LocaleController.getString(R.string.SharePhoneNumberWith)), firstName), "", true, false);
                 checkBoxCell.setPadding(AndroidUtilities.dp(7), 0, AndroidUtilities.dp(7), 0);
                 checkBoxCell.setOnClickListener(v -> checkBoxCell.setChecked(!checkBoxCell.isChecked(), true));
                 linearLayout.addView(checkBoxCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 10, 0, 0));
@@ -444,15 +444,15 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
             }
             oldAvatarView.setForUserOrChat(user.photo, avatarDrawable);
             oldPhotoCell.addView(oldAvatarView, LayoutHelper.createFrame(30, 30, Gravity.CENTER_VERTICAL, 21, 0, 21, 0));
-            oldPhotoCell.setText(LocaleController.getString("ResetToOriginalPhoto", R.string.ResetToOriginalPhoto), false);
+            oldPhotoCell.setText(LocaleController.getString(R.string.ResetToOriginalPhoto), false);
             oldPhotoCell.getImageView().setVisibility(View.VISIBLE);
             oldPhotoCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
             oldPhotoCell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
             oldPhotoCell.setOnClickListener(v -> {
                 AlertsCreator.createSimpleAlert(context,
-                        LocaleController.getString("ResetToOriginalPhotoTitle", R.string.ResetToOriginalPhotoTitle),
+                        LocaleController.getString(R.string.ResetToOriginalPhotoTitle),
                         LocaleController.formatString("ResetToOriginalPhotoMessage", R.string.ResetToOriginalPhotoMessage, user.first_name),
-                        LocaleController.getString("Reset", R.string.Reset), () -> {
+                        LocaleController.getString(R.string.Reset), () -> {
                             avatar = null;
                             sendPhotoChangedRequest(null, null,null, null, null, 0, TYPE_SET);
 
@@ -572,10 +572,10 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
             return;
         }
         if (TextUtils.isEmpty(getPhone())) {
-            nameTextView.setText(LocaleController.getString("MobileHidden", R.string.MobileHidden));
+            nameTextView.setText(LocaleController.getString(R.string.MobileHidden));
             CharSequence firstName = UserObject.getFirstName(user);
-            firstName = Emoji.replaceEmoji(firstName, infoTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(12), false);
-            infoTextView.setText(AndroidUtilities.replaceCharSequence("%1$s", AndroidUtilities.replaceTags(LocaleController.getString("MobileHiddenExceptionInfo", R.string.MobileHiddenExceptionInfo)), firstName));
+            firstName = Emoji.replaceEmoji(firstName, infoTextView.getPaint().getFontMetricsInt(), false);
+            infoTextView.setText(AndroidUtilities.replaceCharSequence("%1$s", AndroidUtilities.replaceTags(LocaleController.getString(R.string.MobileHiddenExceptionInfo)), firstName));
         } else {
             nameTextView.setText(PhoneFormat.getInstance().format("+" + getPhone()));
             if (needAddException) {
@@ -857,7 +857,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
     }
 
     @Override
-    public void didStartUpload(boolean isVideo) {
+    public void didStartUpload(boolean fromAvatarConstructor, boolean isVideo) {
         if (avatarProgressView == null) {
             return;
         }

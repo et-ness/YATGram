@@ -59,7 +59,7 @@ public class SliderView extends View {
 
         currentType = type;
 
-        text.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        text.setTypeface(AndroidUtilities.bold());
         text.setAnimationProperties(.3f, 0, 40, CubicBezierInterpolator.EASE_OUT_QUINT);
         text.setCallback(this);
         text.setTextColor(0xffffffff);
@@ -80,7 +80,7 @@ public class SliderView extends View {
             text2 = new AnimatedTextView.AnimatedTextDrawable(false, true, true);
             text2.setOverrideFullWidth(AndroidUtilities.displaySize.x);
             text2.setTextSize(dp(14));
-            text2.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+            text2.setTypeface(AndroidUtilities.bold());
             text2.setAnimationProperties(.3f, 0, 40, CubicBezierInterpolator.EASE_OUT_QUINT);
             text2.setCallback(this);
             text2.setTextColor(0xffffffff);
@@ -215,8 +215,7 @@ public class SliderView extends View {
                 if (volume <= this.minVolume && pastVolume > volume || volume >= this.maxVolume && pastVolume < volume) {
                     try {
                         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
-                    } catch (Exception ignore) {
-                    }
+                    } catch (Exception ignored) {}
                 } else if (Math.floor(pastVolume * 5) != Math.floor(volume * 5)) {
                     AndroidUtilities.vibrateCursor(this);
                 }
@@ -251,6 +250,8 @@ public class SliderView extends View {
     private int w, h;
     private final TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
+    public int fixWidth;
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         if (currentType == TYPE_DIMMING) {
@@ -260,7 +261,10 @@ public class SliderView extends View {
         }
         textPaint.setTextSize(dp(16));
         text.setTextSize(dp(15));
-        if (currentType == TYPE_VOLUME) {
+        if (fixWidth > 0) {
+            w = fixWidth;
+            h = dp(48);
+        } else if (currentType == TYPE_VOLUME) {
             // TODO: fix this nonsense
             w = (int) Math.min(textPaint.measureText(LocaleController.getString(R.string.StoryAudioRemove)) + dp(88), MeasureSpec.getSize(widthMeasureSpec));
             h = dp(48);

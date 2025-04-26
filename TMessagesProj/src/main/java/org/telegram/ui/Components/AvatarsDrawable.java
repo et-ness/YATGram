@@ -17,6 +17,8 @@ import androidx.core.graphics.ColorUtils;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
@@ -25,6 +27,7 @@ import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.GroupCallUserCell;
 import org.telegram.ui.Stories.StoriesGradientTools;
@@ -37,8 +40,8 @@ public class AvatarsDrawable {
     public final static int STYLE_MESSAGE_SEEN = 11;
     private boolean showSavedMessages;
 
-    DrawingState[] currentStates = new DrawingState[3];
-    DrawingState[] animatingStates = new DrawingState[3];
+    public DrawingState[] currentStates = new DrawingState[3];
+    public DrawingState[] animatingStates = new DrawingState[3];
     boolean wasDraw;
 
     float transitionProgress = 1f;
@@ -237,14 +240,14 @@ public class AvatarsDrawable {
         overrideAlpha = alpha;
     }
 
-    private static class DrawingState {
+    public static class DrawingState {
 
         public static final int ANIMATION_TYPE_NONE = -1;
         public static final int ANIMATION_TYPE_IN = 0;
         public static final int ANIMATION_TYPE_OUT = 1;
         public static final int ANIMATION_TYPE_MOVE = 2;
 
-        private AvatarDrawable avatarDrawable;
+        public AvatarDrawable avatarDrawable;
         private GroupCallUserCell.AvatarWavesDrawable wavesDrawable;
         private long lastUpdateTime;
         private long lastSpeakTime;
@@ -341,14 +344,35 @@ public class AvatarsDrawable {
                 animatingStates[index].avatarDrawable.setInfo(account, currentUser);
             }
             animatingStates[index].id = currentUser.id;
-        } else {
+        } else if (object instanceof TLRPC.Chat) {
             currentChat = (TLRPC.Chat) object;
             animatingStates[index].avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_NORMAL);
             animatingStates[index].avatarDrawable.setScaleSize(1f);
             animatingStates[index].avatarDrawable.setInfo(account, currentChat);
             animatingStates[index].id = -currentChat.id;
         }
-        if (currentUser != null) {
+        int size = getSize();
+        if (object instanceof TL_stories.StoryItem) {
+            TL_stories.StoryItem story = (TL_stories.StoryItem) object;
+            animatingStates[index].id = story.id;
+            if (story.media.document != null) {
+                TLRPC.PhotoSize photoSize1 = FileLoader.getClosestPhotoSizeWithSize(story.media.document.thumbs, 50, true, null, false);
+                TLRPC.PhotoSize photoSize2 = FileLoader.getClosestPhotoSizeWithSize(story.media.document.thumbs, 50, true, photoSize1, true);
+                animatingStates[index].imageReceiver.setImage(
+                    ImageLocation.getForDocument(photoSize2, story.media.document), size + "_" + size,
+                    ImageLocation.getForDocument(photoSize1, story.media.document), size + "_" + size,
+                    0, null, story, 0
+                );
+            } else if (story.media.photo != null) {
+                TLRPC.PhotoSize photoSize1 = FileLoader.getClosestPhotoSizeWithSize(story.media.photo.sizes, 50, true, null, false);
+                TLRPC.PhotoSize photoSize2 = FileLoader.getClosestPhotoSizeWithSize(story.media.photo.sizes, 50, true, photoSize1, true);
+                animatingStates[index].imageReceiver.setImage(
+                    ImageLocation.getForPhoto(photoSize2, story.media.photo), size + "_" + size,
+                    ImageLocation.getForPhoto(photoSize1, story.media.photo), size + "_" + size,
+                    0, null, story, 0
+                );
+            }
+        } else if (currentUser != null) {
             if (currentUser.self && showSavedMessages) {
                 animatingStates[index].imageReceiver.setImageBitmap(animatingStates[index].avatarDrawable);
             } else {
@@ -357,11 +381,12 @@ public class AvatarsDrawable {
         } else {
             animatingStates[index].imageReceiver.setForUserOrChat(currentChat, animatingStates[index].avatarDrawable);
         }
-        int size = getSize();
         animatingStates[index].imageReceiver.setRoundRadius(size / 2);
         animatingStates[index].imageReceiver.setImageCoords(0, 0, size, size);
         invalidate();
     }
+
+    public float maxX;
 
     public void onDraw(Canvas canvas) {
         wasDraw = true;
@@ -404,6 +429,7 @@ public class AvatarsDrawable {
             }
             canvas.saveLayerAlpha(-padding, -padding, width + padding, height + padding, 255, Canvas.ALL_SAVE_FLAG);
         }
+        maxX = 0;
         if (drawStoriesCircle) {
             for (int a = 2; a >= 0; a--) {
                 for (int k = 0; k < 2; k++) {
@@ -477,7 +503,6 @@ public class AvatarsDrawable {
                     continue;
                 }
                 DrawingState[] states = k == 0 ? animatingStates : currentStates;
-
 
                 if (k == 1 && transitionProgress != 1f && states[a].animationType != DrawingState.ANIMATION_TYPE_OUT) {
                     continue;
@@ -615,6 +640,7 @@ public class AvatarsDrawable {
                 } else {
                     imageReceiver.draw(canvas);
                 }
+                maxX = Math.max(maxX, imageReceiver.getCenterX() + imageReceiver.getImageWidth() / 2.0f * avatarScale);
                 if (needRestore) {
                     canvas.restore();
                 }
@@ -623,6 +649,10 @@ public class AvatarsDrawable {
         if (useAlphaLayer) {
             canvas.restore();
         }
+    }
+
+    public float getMaxX() {
+        return maxX;
     }
 
     public int getSize() {

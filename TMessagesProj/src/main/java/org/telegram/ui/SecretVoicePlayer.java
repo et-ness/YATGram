@@ -4,7 +4,6 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.StateListAnimator;
 import android.animation.ValueAnimator;
 import android.app.Dialog;
 import android.content.Context;
@@ -18,7 +17,6 @@ import android.graphics.Insets;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RadialGradient;
@@ -30,7 +28,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Layout;
-import android.util.AndroidRuntimeException;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.TextureView;
@@ -45,10 +42,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.ChatListItemAnimator;
 
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
@@ -72,14 +67,11 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EarListener;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ScaleStateListAnimator;
-import org.telegram.ui.Components.SeekBar;
 import org.telegram.ui.Components.SeekBarWaveform;
-import org.telegram.ui.Components.Text;
 import org.telegram.ui.Components.ThanosEffect;
 import org.telegram.ui.Components.TimerParticles;
 import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.Stories.recorder.HintView2;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 
 import java.io.File;
 
@@ -204,7 +196,7 @@ public class SecretVoicePlayer extends Dialog {
                         Insets r = insets.getInsets(WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.systemBars());
                         SecretVoicePlayer.this.insets.set(r.left, r.top, r.right, r.bottom);
                     } else {
-                        SecretVoicePlayer.this.insets.set(insets.getStableInsetLeft(), insets.getStableInsetTop(), insets.getStableInsetRight(), insets.getStableInsetBottom());
+                        SecretVoicePlayer.this.insets.set(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
                     }
                     containerView.setPadding(SecretVoicePlayer.this.insets.left, SecretVoicePlayer.this.insets.top, SecretVoicePlayer.this.insets.right, SecretVoicePlayer.this.insets.bottom);
                     windowView.requestLayout();
@@ -364,7 +356,7 @@ public class SecretVoicePlayer extends Dialog {
             final int finalHeight = height;
             videoDp = (int) Math.ceil(Math.min(width, height) * .92f / AndroidUtilities.density);
 
-            myCell = new ChatMessageCell(getContext(), false, null, cell.getResourcesProvider()) {
+            myCell = new ChatMessageCell(getContext(), UserConfig.selectedAccount, false, null, cell.getResourcesProvider()) {
 
                 @Override
                 public int getBoundsLeft() {
@@ -696,7 +688,7 @@ public class SecretVoicePlayer extends Dialog {
         }
         closeButton = new TextView(context);
         closeButton.setTextColor(0xFFFFFFFF);
-        closeButton.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        closeButton.setTypeface(AndroidUtilities.bold());
         if (Theme.isCurrentThemeDark()) {
             closeButton.setBackground(Theme.createSimpleSelectorRoundRectDrawable(64, 0x20ffffff, 0x33ffffff));
         } else {
@@ -718,6 +710,7 @@ public class SecretVoicePlayer extends Dialog {
 
     @Override
     public void show() {
+        if (!AndroidUtilities.isSafeToShow(getContext())) return;
         super.show();
 
         prepareBlur(cell);
@@ -845,7 +838,7 @@ public class SecretVoicePlayer extends Dialog {
             AndroidUtilities.runOnUIThread(this.closeAction);
             this.closeAction = null;
 
-            myCell.setInvalidateCallback(() -> {});
+//            myCell.setOverrideInvalidate(() -> {});
             thanosEffect = new ThanosEffect(context, null);
             windowView.addView(thanosEffect, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
             thanosEffect.animate(myCell, 1.5f, super::dismiss);

@@ -11,13 +11,11 @@ import android.graphics.Paint;
 import android.graphics.Shader;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
-import android.util.Log;
 
 import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.RLottieDrawable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -46,6 +44,8 @@ public class Icon3D {
     private int xOffsetHandle;
     private int alphaHandle;
     private int mTextureDataHandle;
+    private int whiteHandle;
+    private int goldenHandle;
     float xOffset;
 
     int[] trianglesCount;
@@ -72,6 +72,7 @@ public class Icon3D {
     int resolutionHandle;
     int gradientPositionHandle;
     int modelIndexHandle;
+    int typeHandle;
     int nightHandle;
     int timeHandle;
 
@@ -83,13 +84,23 @@ public class Icon3D {
 
     public static final int TYPE_STAR = 0;
     public static final int TYPE_COIN = 1;
+    public static final int TYPE_GOLDEN_STAR = 2;
+    public static final int TYPE_DEAL = 3;
 
-    private static final String[] starModel = new String[] { "models/star.binobj" };
+    private static final String[] starModel = new String[] {
+        "models/star.binobj"
+    };
     private static final String[] coinModel = new String[] {
         "models/coin_outer.binobj",
         "models/coin_inner.binobj",
         "models/coin_logo.binobj",
         "models/coin_stars.binobj"
+    };
+    private static final String[] dealModel = new String[] {
+            "models/coin_outer.binobj",
+            "models/coin_inner.binobj",
+            "models/deal_logo.binobj",
+            "models/coin_stars.binobj"
     };
 
     public Icon3D(Context context, int type) {
@@ -97,8 +108,12 @@ public class Icon3D {
         String[] modelPaths;
         if (type == TYPE_COIN) {
             modelPaths = coinModel;
-        } else {
+        } else if (type == TYPE_DEAL) {
+            modelPaths = dealModel;
+        } else if (type == TYPE_STAR || type == TYPE_GOLDEN_STAR) {
             modelPaths = starModel;
+        } else {
+            modelPaths = new String[0];
         }
 
         N = modelPaths.length;
@@ -132,7 +147,13 @@ public class Icon3D {
         int[] linked = new int[1];
 
         vertexShader = GLIconRenderer.loadShader(GLES20.GL_VERTEX_SHADER, loadFromAsset(context, "shaders/vertex2.glsl"));
-        fragmentShader = GLIconRenderer.loadShader(GLES20.GL_FRAGMENT_SHADER, loadFromAsset(context, type == TYPE_COIN ? "shaders/fragment3.glsl" : "shaders/fragment2.glsl"));
+        String fragmentShaderSource;
+        if (type == TYPE_STAR || type == TYPE_GOLDEN_STAR) {
+            fragmentShaderSource = "shaders/fragment4.glsl";
+        } else {
+            fragmentShaderSource = "shaders/fragment3.glsl";
+        }
+        fragmentShader = GLIconRenderer.loadShader(GLES20.GL_FRAGMENT_SHADER, loadFromAsset(context, fragmentShaderSource));
 
         programObject = GLES20.glCreateProgram();
         GLES20.glAttachShader(programObject, vertexShader);
@@ -161,6 +182,8 @@ public class Icon3D {
         alphaHandle = GLES20.glGetUniformLocation(mProgramObject, "f_alpha");
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgramObject, "uMVPMatrix");
         mWorldMatrixHandle = GLES20.glGetUniformLocation(mProgramObject, "world");
+        whiteHandle = GLES20.glGetUniformLocation(mProgramObject, "white");
+        goldenHandle = GLES20.glGetUniformLocation(mProgramObject, "golden");
 
         specHandleTop = GLES20.glGetUniformLocation(mProgramObject, "spec1");
         specHandleBottom = GLES20.glGetUniformLocation(mProgramObject, "spec2");
@@ -173,6 +196,7 @@ public class Icon3D {
         resolutionHandle = GLES20.glGetUniformLocation(mProgramObject, "resolution");
         gradientPositionHandle = GLES20.glGetUniformLocation(mProgramObject, "gradientPosition");
         modelIndexHandle = GLES20.glGetUniformLocation(mProgramObject, "modelIndex");
+        typeHandle = GLES20.glGetUniformLocation(mProgramObject, "type");
         nightHandle = GLES20.glGetUniformLocation(mProgramObject, "night");
         timeHandle = GLES20.glGetUniformLocation(mProgramObject, "time");
 
@@ -228,30 +252,15 @@ public class Icon3D {
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBackgroundTextureHandle);
 
-        if (type == TYPE_STAR) {
-            Bitmap bitmap = SvgHelper.getBitmap(R.raw.start_texture, 80, 80, Color.WHITE);
-            Utilities.stackBlurBitmap(bitmap, 3);
-
-            final int[] texture = new int[1];
-            GLES20.glGenTextures(1, texture, 0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
-
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-            bitmap.recycle();
-
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
-            GLES20.glUniform1i(mTextureUniformHandle, 0);
-
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, normalMap[0]);
-            GLES20.glUniform1i(mNormalMapUniformHandle, 1);
+        Bitmap bitmap = null;
+        if (type == TYPE_STAR || type == TYPE_GOLDEN_STAR) {
+            bitmap = SvgHelper.getBitmap(R.raw.start_texture, 240, 240, Color.WHITE);
         } else if (type == TYPE_COIN) {
-            Bitmap bitmap = getBitmapFromAsset(context, "models/coin_border.png");
-
+            bitmap = getBitmapFromAsset(context, "models/coin_border.png");
+        } else if (type == TYPE_DEAL) {
+            bitmap = getBitmapFromAsset(context, "models/deal_border.png");
+        }
+        if (bitmap != null) {
             final int[] texture = new int[1];
             GLES20.glGenTextures(1, texture, 0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
@@ -296,7 +305,7 @@ public class Icon3D {
 
     private float time = 0f;
 
-    public void draw(float[] mvpMatrix, float[] worldMatrix, int width, int height, float gradientStartX, float gradientScaleX, float gradientStartY, float gradientScaleY, float dt) {
+    public void draw(float[] mvpMatrix, float[] worldMatrix, int width, int height, float gradientStartX, float gradientScaleX, float gradientStartY, float gradientScaleY, float white, float golden, float dt) {
         if (backgroundBitmap != null) {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBackgroundTextureHandle);
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, backgroundBitmap, 0);
@@ -305,6 +314,8 @@ public class Icon3D {
         GLES20.glUniform1i(mTextureUniformHandle, 0);
         GLES20.glUniform1f(xOffsetHandle, xOffset);
         GLES20.glUniform1f(alphaHandle, enterAlpha);
+        GLES20.glUniform1f(whiteHandle, white);
+        GLES20.glUniform1f(goldenHandle, golden);
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
         GLES20.glUniformMatrix4fv(mWorldMatrixHandle, 1, false, worldMatrix, 0);
 
@@ -332,6 +343,7 @@ public class Icon3D {
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, buffers[3 * i + 2]);
             GLES20.glVertexAttribPointer(mVerticesHandle, 3, GLES20.GL_FLOAT, false, 0, 0);
             GLES20.glUniform1i(modelIndexHandle, i);
+            GLES20.glUniform1i(typeHandle, type);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, trianglesCount[i] / 3);
         }
 

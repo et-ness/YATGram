@@ -9,10 +9,12 @@ import android.text.TextPaint;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
+import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChannelMonetizationLayout;
 import org.telegram.ui.Charts.data.ChartData;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
+import org.telegram.ui.Stars.StarsIntroActivity;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -43,7 +45,7 @@ public class ChartHorizontalLinesData {
                 v = round(newMaxHeight);
             }
 
-            int step = Math.max(1, (int) Math.ceil(v / 5.0));
+            long step = Math.max(1, (long) Math.ceil(v / 5.0));
 
             int n;
             if (v < 6) {
@@ -71,7 +73,7 @@ public class ChartHorizontalLinesData {
                 if (k > 0) {
                     float v2 = (values[i] / k);
                     if (skipFloatValues) {
-                        if (v2 - ((int) v2) < 0.01f || formatter == ChartData.FORMATTER_TON) {
+                        if (v2 - ((long) v2) < 0.01f || formatter == ChartData.FORMATTER_TON || formatter == ChartData.FORMATTER_XTR) {
                             valuesStr2[i] = format(1, secondTextPaint, (long) v2, formatter);
                         } else {
                             valuesStr2[i] = "";
@@ -114,12 +116,12 @@ public class ChartHorizontalLinesData {
             }
             boolean skipFloatValues = step / k < 1;
             for (int i = 0; i < n; i++) {
-                values[i] = newMinHeight + (int) (i * step);
+                values[i] = newMinHeight + (long) (i * step);
                 valuesStr[i] = format(0, firstTextPaint, newMinHeight + (long) (i * step), formatter);
                 if (k > 0) {
                     float v = (values[i] / k);
                     if (skipFloatValues) {
-                        if (v - ((int) v) < 0.01f || formatter == ChartData.FORMATTER_TON) {
+                        if (v - ((long) v) < 0.01f || formatter == ChartData.FORMATTER_TON || formatter == ChartData.FORMATTER_XTR) {
                             valuesStr2[i] = format(1, secondTextPaint, (long) v, formatter);
                         } else {
                             valuesStr2[i] = "";
@@ -136,7 +138,7 @@ public class ChartHorizontalLinesData {
     public CharSequence format(int a, TextPaint paint, long v, int formatter) {
         if (formatter == ChartData.FORMATTER_TON) {
             if (a == 1) {
-                return "~" + BillingController.getInstance().formatCurrency(v, "USD");
+                return "≈" + BillingController.getInstance().formatCurrency(v, "USD");
             }
             if (formatterTON == null) {
                 DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
@@ -148,17 +150,22 @@ public class ChartHorizontalLinesData {
             }
             formatterTON.setMaximumFractionDigits(v > 1_000_000_000 ? 2 : 6);
             return ChannelMonetizationLayout.replaceTON("TON " + formatterTON.format(v / 1_000_000_000.0), paint, .8f, -dp(.66f), false);
+        } else if (formatter == ChartData.FORMATTER_XTR) {
+            if (a == 1) {
+                return "≈" + BillingController.getInstance().formatCurrency(v, "USD");
+            }
+            return StarsIntroActivity.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(v, ' '), .65f);
         }
         return AndroidUtilities.formatWholeNumber((int) v, 0);
     }
 
-    public static int lookupHeight(long maxValue) {
+    public static long lookupHeight(long maxValue) {
         long v = maxValue;
         if (maxValue > 100) {
             v = round(maxValue);
         }
 
-        int step = (int) Math.ceil(v / 5f);
+        long step = (long) Math.ceil(v / 5f);
         return step * 5;
     }
 

@@ -47,6 +47,7 @@ import org.telegram.ui.ContentPreviewViewer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 
 public class SuggestEmojiView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
@@ -124,7 +125,7 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
                     Spannable spannable = SpannableStringBuilder.valueOf(MessageObject.findAnimatedEmojiEmoticon(document));
                     spannable.setSpan(new AnimatedEmojiSpan(document, null), 0, spannable.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     if (AndroidUtilities.addToClipboard(spannable) && enterView != null) {
-                        BulletinFactory.of(enterView.getParentFragment()).createCopyBulletin(LocaleController.getString("EmojiCopied", R.string.EmojiCopied)).show();
+                        BulletinFactory.of(enterView.getParentFragment()).createCopyBulletin(LocaleController.getString(R.string.EmojiCopied)).show();
                     }
                 }
 
@@ -146,34 +147,35 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
 
                 @Override
                 public void setAsEmojiStatus(TLRPC.Document document, Integer until) {
-                    TLRPC.EmojiStatus status;
+                    final TLRPC.EmojiStatus emojiStatus;
                     if (document == null) {
-                        status = new TLRPC.TL_emojiStatusEmpty();
-                    } else if (until != null) {
-                        status = new TLRPC.TL_emojiStatusUntil();
-                        ((TLRPC.TL_emojiStatusUntil) status).document_id = document.id;
-                        ((TLRPC.TL_emojiStatusUntil) status).until = until;
+                        emojiStatus = new TLRPC.TL_emojiStatusEmpty();
                     } else {
-                        status = new TLRPC.TL_emojiStatus();
-                        ((TLRPC.TL_emojiStatus) status).document_id = document.id;
+                        final TLRPC.TL_emojiStatus status = new TLRPC.TL_emojiStatus();
+                        status.document_id = document.id;
+                        if (until != null) {
+                            status.flags |= 1;
+                            status.until = until;
+                        }
+                        emojiStatus = status;
                     }
-                    TLRPC.User user = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser();
+                    final TLRPC.User user = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser();
                     final TLRPC.EmojiStatus previousEmojiStatus = user == null ? new TLRPC.TL_emojiStatusEmpty() : user.emoji_status;
-                    MessagesController.getInstance(currentAccount).updateEmojiStatus(status);
+                    MessagesController.getInstance(currentAccount).updateEmojiStatus(emojiStatus);
 
-                    Runnable undoAction = () -> MessagesController.getInstance(currentAccount).updateEmojiStatus(previousEmojiStatus);
-                    BaseFragment fragment = enterView == null ? null : enterView.getParentFragment();
+                    final Runnable undoAction = () -> MessagesController.getInstance(currentAccount).updateEmojiStatus(previousEmojiStatus);
+                    final BaseFragment fragment = enterView == null ? null : enterView.getParentFragment();
                     if (fragment != null) {
                         if (document == null) {
                             final Bulletin.SimpleLayout layout = new Bulletin.SimpleLayout(getContext(), resourcesProvider);
-                            layout.textView.setText(LocaleController.getString("RemoveStatusInfo", R.string.RemoveStatusInfo));
+                            layout.textView.setText(LocaleController.getString(R.string.RemoveStatusInfo));
                             layout.imageView.setImageResource(R.drawable.msg_settings_premium);
                             Bulletin.UndoButton undoButton = new Bulletin.UndoButton(getContext(), true, resourcesProvider);
                             undoButton.setUndoAction(undoAction);
                             layout.setButton(undoButton);
                             Bulletin.make(fragment, layout, Bulletin.DURATION_SHORT).show();
                         } else {
-                            BulletinFactory.of(fragment).createEmojiBulletin(document, LocaleController.getString("SetAsEmojiStatusInfo", R.string.SetAsEmojiStatusInfo), LocaleController.getString("Undo", R.string.Undo), undoAction).show();
+                            BulletinFactory.of(fragment).createEmojiBulletin(document, LocaleController.getString(R.string.SetAsEmojiStatusInfo), LocaleController.getString(R.string.Undo), undoAction).show();
                         }
                     }
                 }
@@ -487,6 +489,7 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
         return lastLang;
     }
 
+    private MediaDataController.SearchStickersKey loadingKey;
     private void searchKeywords(String query) {
         if (query == null) {
             return;
@@ -500,6 +503,10 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
             return;
         }
         final int id = ++lastQueryId;
+        if (loadingKey != null) {
+            MediaDataController.getInstance(currentAccount).cancelSearchStickers(loadingKey);
+            loadingKey = null;
+        }
 
         String[] lang = detectKeyboardLangThrottleFirstWithDelay();
         if (lastLang == null || !Arrays.equals(lang, lastLang)) {
@@ -512,11 +519,22 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
             searchRunnable = null;
         }
         searchRunnable = () -> {
-            MediaDataController.getInstance(currentAccount).getEmojiSuggestions(lang, query, true, (param, alias) -> {
-                if (id == lastQueryId) {
+            final HashSet<String> addedToResult = new HashSet<>();
+            final ArrayList<MediaDataController.KeywordResult> result = new ArrayList<>();
+//            Runnable localSearch = () -> {
+                MediaDataController.getInstance(currentAccount).getEmojiSuggestions(lang, query, true, (param, alias) -> {
+                    if (id != lastQueryId) return;
                     lastQueryType = 1;
                     lastQuery = query;
-                    if (param != null && !param.isEmpty()) {
+                    if (param != null) {
+                        for (MediaDataController.KeywordResult r : param) {
+                            if (!addedToResult.contains(r.emoji)) {
+                                addedToResult.add(r.emoji);
+                                result.add(r);
+                            }
+                        }
+                    }
+                    if (!result.isEmpty()) {
                         clear = false;
                         forceClose = false;
                         createListView();
@@ -538,8 +556,29 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
                         clear = true;
                         forceClose();
                     }
-                }
-            }, SharedConfig.suggestAnimatedEmoji && UserConfig.getInstance(currentAccount).isPremium());
+                }, SharedConfig.suggestAnimatedEmoji && UserConfig.getInstance(currentAccount).isPremium());
+//            };
+//            Runnable serverSearch = () -> {
+//                if (ConnectionsManager.getInstance(currentAccount).getConnectionState() != ConnectionsManager.ConnectionStateConnected) {
+//                    localSearch.run();
+//                    return;
+//                }
+//                loadingKey = MediaDataController.getInstance(currentAccount).searchStickers(true, query, lang == null ? "" : lang[0], emojis -> {
+//                    if (id != lastQueryId) return;
+//                    AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).putDocuments(emojis);
+//                    for (TLRPC.Document doc : emojis) {
+//                        final String emoji = "animated_" + doc.id;
+//                        if (!addedToResult.contains(emoji)) {
+//                            MediaDataController.KeywordResult keywordResult = new MediaDataController.KeywordResult();
+//                            keywordResult.emoji = emoji;
+//                            addedToResult.add(emoji);
+//                            result.add(keywordResult);
+//                        }
+//                    }
+//                    localSearch.run();
+//                });
+//            };
+//            serverSearch.run();
         };
         if (keywordResults == null || keywordResults.isEmpty()) {
             AndroidUtilities.runOnUIThread(searchRunnable, 600);
@@ -629,7 +668,7 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
             }
         } else {
             emoji = emojiSource;
-            emoji = Emoji.replaceEmoji(emoji, fontMetricsInt, AndroidUtilities.dp(20), true);
+            emoji = Emoji.replaceEmoji(emoji, fontMetricsInt, true);
         }
         return emoji;
     }
@@ -676,7 +715,8 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
                             editable.removeSpan(emojiSpans[j]);
                         }
                     }
-                    editable.replace(i, i + replacingLength, emoji);
+                    editable.replace(i, i + replacingLength, "");
+                    editable.insert(i, emoji);
                 } else {
                     break;
                 }

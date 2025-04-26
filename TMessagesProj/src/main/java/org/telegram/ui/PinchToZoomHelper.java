@@ -176,7 +176,7 @@ public class PinchToZoomHelper {
             setFullImage(messageObject);
 
             imageX = image.getImageX();
-            imageY = image.getImageY();
+            imageY = image.getImageY() + child.getPaddingTop();
             imageHeight = image.getImageHeight();
             imageWidth = image.getImageWidth();
             fullImageHeight = image.getBitmapHeight();
@@ -213,7 +213,7 @@ public class PinchToZoomHelper {
                 if (callback != null) {
                     overlayView.backupImageView.setImageBitmap(callback.getCurrentTextureView().getBitmap((int) fullImageWidth, (int) fullImageHeight));
                     overlayView.backupImageView.setSize((int) fullImageWidth, (int) fullImageHeight);
-                    overlayView.backupImageView.getImageReceiver().setRoundRadius(image.getRoundRadius());
+                    overlayView.backupImageView.getImageReceiver().setRoundRadius(image.getRoundRadius(true));
                 }
                 overlayView.videoPlayerContainer.setVisibility(View.VISIBLE);
             } else {
@@ -231,9 +231,10 @@ public class PinchToZoomHelper {
                 }
                 this.childImage.setImageCoords(imageX, imageY, imageWidth, imageHeight);
                 this.childImage.setAspectFit(image.isAspectFit());
-                this.childImage.setRoundRadius(image.getRoundRadius());
+                this.childImage.setRoundRadius(image.getRoundRadius(true));
 
-                this.fullImage.setRoundRadius(image.getRoundRadius());
+                this.fullImage.setRoundRadius(image.getRoundRadius(true));
+                this.fullImage.setAspectFit(image.isAspectFit());
                 overlayView.videoPlayerContainer.setVisibility(View.GONE);
             }
         }
@@ -445,7 +446,7 @@ public class PinchToZoomHelper {
                     public void getOutline(View view, Outline outline) {
                         ImageReceiver imageReceiver = (ImageReceiver) view.getTag(R.id.parent_tag);
                         if (imageReceiver != null) {
-                            int[] rad = imageReceiver.getRoundRadius();
+                            int[] rad = imageReceiver.getRoundRadius(true);
                             int maxRad = 0;
                             for (int a = 0; a < 4; a++) {
                                 maxRad = Math.max(maxRad, rad[a]);
@@ -468,7 +469,7 @@ public class PinchToZoomHelper {
                         aspectPath.reset();
                         ImageReceiver imageReceiver = (ImageReceiver) getTag(R.id.parent_tag);
                         if (imageReceiver != null) {
-                            int[] rad = imageReceiver.getRoundRadius();
+                            int[] rad = imageReceiver.getRoundRadius(true);
                             int maxRad = 0;
                             for (int a = 0; a < 4; a++) {
                                 maxRad = Math.max(maxRad, rad[a]);
@@ -605,12 +606,18 @@ public class PinchToZoomHelper {
             if (!isHardwareVideo) {
                 if (childImage != null) {
                     if (progressToFullView != 1f) {
+                        if (childImage.getLottieAnimation() != null || childImage.getAnimation() != null || fullImage.getLottieAnimation() != null || fullImage.getAnimation() != null) {
+                            invalidate();
+                        }
                         childImage.draw(canvas);
                         fullImage.setImageCoords(childImage.getImageX(), childImage.getImageY(), childImage.getImageWidth(), childImage.getImageHeight());
                         fullImage.draw(canvas);
                     } else {
                         fullImage.setImageCoords(childImage.getImageX(), childImage.getImageY(), childImage.getImageWidth(), childImage.getImageHeight());
                         fullImage.draw(canvas);
+                        if (fullImage.getLottieAnimation() != null || fullImage.getAnimation() != null) {
+                            invalidate();
+                        }
                     }
                 }
                 if (childTextureViewContainer != null) {
@@ -644,11 +651,11 @@ public class PinchToZoomHelper {
 
             if (hasMediaSpoiler) {
                 blurImage.setAlpha(childImage.getAlpha());
-                blurImage.setRoundRadius(childImage.getRoundRadius());
+                blurImage.setRoundRadius(childImage.getRoundRadius(true));
                 blurImage.setImageCoords(childImage.getImageX(), childImage.getImageY(), childImage.getImageWidth(), childImage.getImageHeight());
                 blurImage.draw(canvas);
 
-                int[] rad = childImage.getRoundRadius();
+                int[] rad = childImage.getRoundRadius(true);
                 spoilerRadii[0] = spoilerRadii[1] = rad[0];
                 spoilerRadii[2] = spoilerRadii[3] = rad[1];
                 spoilerRadii[4] = spoilerRadii[5] = rad[2];
@@ -806,13 +813,10 @@ public class PinchToZoomHelper {
                 pinchTranslationY = 0f;
                 child.getParent().requestDisallowInterceptTouchEvent(true);
                 startZoom(child, image, textureViewContainer, textureView, messageObject, spoilerEffect2Index);
-
             }
 
             float newPinchCenterX = (ev.getX(index1) + ev.getX(index2)) / 2.0f;
             float newPinchCenterY = (ev.getY(index1) + ev.getY(index2)) / 2.0f;
-
-
 
             float moveDx = pinchStartCenterX - newPinchCenterX;
             float moveDy = pinchStartCenterY - newPinchCenterY;

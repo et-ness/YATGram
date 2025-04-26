@@ -25,7 +25,6 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.StateSet;
-import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -52,9 +51,10 @@ public class SeekBarView extends FrameLayout {
     private int thumbSize;
     private int selectorWidth;
     private int thumbX;
-    private AnimatedFloat animatedThumbX = new AnimatedFloat(this, 0, 80, CubicBezierInterpolator.EASE_OUT);
+    private AnimatedFloat animatedThumbX = new AnimatedFloat(this, 0, 60, CubicBezierInterpolator.EASE_OUT);
     private int thumbDX;
     private float progressToSet = -100;
+    private float minProgress = -1;
     private boolean pressed, pressedDelayed;
     public SeekBarViewDelegate delegate;
     private boolean reportChanges;
@@ -79,6 +79,10 @@ public class SeekBarView extends FrameLayout {
         }
         default int getStepsCount() {
             return 0;
+        }
+
+        default boolean needVisuallyDivideSteps() {
+            return false;
         }
     }
 
@@ -186,6 +190,14 @@ public class SeekBarView extends FrameLayout {
         reportChanges = value;
     }
 
+    public void setMinProgress(float progress) {
+        minProgress = progress;
+        if (getProgress() < minProgress) {
+            setProgress(minProgress, false);
+        }
+        invalidate();
+    }
+
     public void setDelegate(SeekBarViewDelegate seekBarViewDelegate) {
         delegate = seekBarViewDelegate;
     }
@@ -205,8 +217,8 @@ public class SeekBarView extends FrameLayout {
                     int additionWidth = (getMeasuredHeight() - thumbSize) / 2;
                     if (!(thumbX - additionWidth <= ev.getX() && ev.getX() <= thumbX + thumbSize + additionWidth)) {
                         thumbX = (int) ev.getX() - thumbSize / 2;
-                        if (thumbX < 0) {
-                            thumbX = 0;
+                        if (thumbX < minThumbX()) {
+                            thumbX = minThumbX();
                         } else if (thumbX > getMeasuredWidth() - selectorWidth) {
                             thumbX = getMeasuredWidth() - selectorWidth;
                         }
@@ -250,8 +262,8 @@ public class SeekBarView extends FrameLayout {
                     if (ev.getY() >= 0 && ev.getY() <= getMeasuredHeight()) {
                         if (!(thumbX - additionWidth <= ev.getX() && ev.getX() <= thumbX + thumbSize + additionWidth)) {
                             thumbX = (int) ev.getX() - thumbSize / 2;
-                            if (thumbX < 0) {
-                                thumbX = 0;
+                            if (thumbX < minThumbX()) {
+                                thumbX = minThumbX();
                             } else if (thumbX > getMeasuredWidth() - selectorWidth) {
                                 thumbX = getMeasuredWidth() - selectorWidth;
                             }
@@ -270,8 +282,8 @@ public class SeekBarView extends FrameLayout {
             } else {
                 if (pressed) {
                     thumbX = (int) (ev.getX() - thumbDX);
-                    if (thumbX < 0) {
-                        thumbX = 0;
+                    if (thumbX < minThumbX()) {
+                        thumbX = minThumbX();
                     } else if (thumbX > getMeasuredWidth() - selectorWidth) {
                         thumbX = getMeasuredWidth() - selectorWidth;
                     }
@@ -296,6 +308,10 @@ public class SeekBarView extends FrameLayout {
             }
         }
         return false;
+    }
+
+    private int minThumbX() {
+        return Math.max((int) (minProgress * (getMeasuredWidth() - selectorWidth)), 0);
     }
 
     public void setLineWidth(int dp) {
@@ -351,8 +367,8 @@ public class SeekBarView extends FrameLayout {
                 transitionProgress = 0f;
             }
             thumbX = newThumbX;
-            if (thumbX < 0) {
-                thumbX = 0;
+            if (thumbX < minThumbX()) {
+                thumbX = minThumbX();
             } else if (thumbX > getMeasuredWidth() - selectorWidth) {
                 thumbX = getMeasuredWidth() - selectorWidth;
             }
@@ -389,6 +405,9 @@ public class SeekBarView extends FrameLayout {
         if (!twoSided && separatorsCount > 1) {
             float step = (getMeasuredWidth() - selectorWidth) / ((float) separatorsCount - 1f);
             thumbX = (int) animatedThumbX.set(Math.round((thumbX) / step) * step);
+        } else if (delegate != null && delegate.needVisuallyDivideSteps()) {
+            float step = (getMeasuredWidth() - selectorWidth) / ((float) delegate.getStepsCount() - 1f);
+            thumbX = (int) (Math.round((thumbX) / step) * step);
         }
         int y = (getMeasuredHeight() - thumbSize) / 2;
         innerPaint1.setColor(getThemedColor(Theme.key_player_progressBackground));
@@ -412,8 +431,18 @@ public class SeekBarView extends FrameLayout {
                 canvas.drawRect(thumbX + selectorWidth / 2, getMeasuredHeight() / 2 - AndroidUtilities.dp(1), getMeasuredWidth() / 2, getMeasuredHeight() / 2 + AndroidUtilities.dp(1), outerPaint1);
             }
         } else {
-            rect.set(left, top, selectorWidth / 2 + thumbX, bottom);
-            drawProgressBar(canvas, rect, outerPaint1);
+            if (minProgress >= 0) {
+                rect.set(left + minProgress * (right - left), top, left + thumbX, bottom);
+                drawProgressBar(canvas, rect, outerPaint1);
+                int wasAlpha = outerPaint1.getAlpha();
+                rect.set(left, top, left + minProgress * (right - left), bottom);
+                outerPaint1.setAlpha((int) (0.50f * wasAlpha));
+                drawProgressBar(canvas, rect, outerPaint1);
+                outerPaint1.setAlpha(wasAlpha);
+            } else {
+                rect.set(left, top, left + thumbX, bottom);
+                drawProgressBar(canvas, rect, outerPaint1);
+            }
         }
 
         if (hoverDrawable != null) {
@@ -564,7 +593,7 @@ public class SeekBarView extends FrameLayout {
                     float position = seconds * 1000L / (float) duration;
                     String label = link.label;
                     SpannableStringBuilder builder = new SpannableStringBuilder(label);
-                    Emoji.replaceEmoji(builder, timestampLabelPaint.getFontMetricsInt(), AndroidUtilities.dp(14), false);
+                    Emoji.replaceEmoji(builder, timestampLabelPaint.getFontMetricsInt(), false);
                     timestamps.add(new Pair<>(position, builder));
                 }
             }

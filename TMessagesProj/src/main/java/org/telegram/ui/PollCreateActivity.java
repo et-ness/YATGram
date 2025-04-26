@@ -1,6 +1,7 @@
 package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
+import static org.telegram.messenger.AndroidUtilities.hideKeyboard;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -226,9 +227,9 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
     public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         if (quizOnly == 1) {
-            actionBar.setTitle(LocaleController.getString("NewQuiz", R.string.NewQuiz));
+            actionBar.setTitle(LocaleController.getString(R.string.NewQuiz));
         } else {
-            actionBar.setTitle(LocaleController.getString("NewPoll", R.string.NewPoll));
+            actionBar.setTitle(LocaleController.getString(R.string.NewPoll));
         }
         if (AndroidUtilities.isTablet()) {
             actionBar.setOccupyStatusBar(false);
@@ -328,7 +329,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         });
 
         ActionBarMenu menu = actionBar.createMenu();
-        doneItem = menu.addItem(done_button, LocaleController.getString("Create", R.string.Create).toUpperCase());
+        doneItem = menu.addItem(done_button, LocaleController.getString(R.string.Create).toUpperCase());
 
         listAdapter = new ListAdapter(context);
 
@@ -347,13 +348,19 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                 measureChildWithMargins(actionBar, widthMeasureSpec, 0, heightMeasureSpec, 0);
 
                 int keyboardSize = measureKeyboardHeight();
-                if (keyboardSize > AndroidUtilities.dp(20) && !emojiViewVisible) {
+                if (keyboardSize > AndroidUtilities.dp(20) && !emojiViewVisible && !isEmojiSearchOpened) {
                     ignoreLayout = true;
                     hideEmojiView();
                     ignoreLayout = false;
                 }
 
-                int keyboardPad = keyboardSize <= AndroidUtilities.dp(20) && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet() ? getEmojiPadding() : 0;
+                int keyboardPad = 0;
+                if (keyboardSize <= AndroidUtilities.dp(20) && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet()) {
+                    keyboardPad = getEmojiPadding();
+                }
+                if (keyboardSize > AndroidUtilities.dp(20) && isEmojiSearchOpened) {
+                    keyboardPad = AndroidUtilities.dp(120);
+                }
                 int childCount = getChildCount();
                 for (int i = 0; i < childCount; i++) {
                     View child = getChildAt(i);
@@ -598,7 +605,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         });
 
         hintView = new HintView(context, 4);
-        hintView.setText(LocaleController.getString("PollTapToSelect", R.string.PollTapToSelect));
+        hintView.setText(LocaleController.getString(R.string.PollTapToSelect));
         hintView.setAlpha(0.0f);
         hintView.setVisibility(View.INVISIBLE);
         frameLayout.addView(hintView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 19, 0, 19, 0));
@@ -625,6 +632,11 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
             hideEmojiPopup(false);
             if (suggestEmojiPanel != null) {
                 suggestEmojiPanel.forceClose();
+            }
+            if (currentCell != null) {
+                currentCell.setEmojiButtonVisibility(false);
+                currentCell.getTextView().clearFocus();
+                hideKeyboard(currentCell.getEditField());
             }
         }
     }
@@ -760,7 +772,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
     public boolean onBackPressed() {
         if (emojiViewVisible) {
             hideEmojiPopup(true);
-            return true;
+            return false;
         }
         return checkDiscard();
     }
@@ -777,10 +789,10 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         }
         if (!allowDiscard) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setTitle(LocaleController.getString("CancelPollAlertTitle", R.string.CancelPollAlertTitle));
-            builder.setMessage(LocaleController.getString("CancelPollAlertText", R.string.CancelPollAlertText));
-            builder.setPositiveButton(LocaleController.getString("PassportDiscard", R.string.PassportDiscard), (dialogInterface, i) -> finishFragment());
-            builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+            builder.setTitle(LocaleController.getString(R.string.CancelPollAlertTitle));
+            builder.setMessage(LocaleController.getString(R.string.CancelPollAlertText));
+            builder.setPositiveButton(LocaleController.getString(R.string.PassportDiscard), (dialogInterface, i) -> finishFragment());
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
             showDialog(builder.create());
         }
         return allowDiscard;
@@ -822,10 +834,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
     }
 
     private void addNewField() {
-        if (emojiView != null) {
-            emojiView.scrollEmojiToTop();
-        }
-        hideEmojiPopup(false);
         resetSuggestEmojiPanel();
         answersChecks[answersCount] = false;
         answersCount++;
@@ -871,15 +879,22 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
 
         if (emojiViewVisible) {
             int newHeight = (isWidthGreater ? keyboardHeightLand : keyboardHeight);
+            if (isEmojiSearchOpened) {
+                newHeight += AndroidUtilities.dp(120);
+            }
 
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) emojiView.getLayoutParams();
-            if (layoutParams.width != AndroidUtilities.displaySize.x || layoutParams.height != newHeight) {
+            if (layoutParams.width != AndroidUtilities.displaySize.x || layoutParams.height != newHeight || wasEmojiSearchOpened != isEmojiSearchOpened) {
                 layoutParams.width = AndroidUtilities.displaySize.x;
                 layoutParams.height = newHeight;
                 emojiView.setLayoutParams(layoutParams);
                 emojiPadding = layoutParams.height;
                 keyboardNotifier.fire();
                 sizeNotifierFrameLayout.requestLayout();
+                if (wasEmojiSearchOpened != isEmojiSearchOpened) {
+                    animateEmojiViewTranslationY(wasEmojiSearchOpened ? -AndroidUtilities.dp(120) : AndroidUtilities.dp(120), 0);
+                }
+                wasEmojiSearchOpened = isEmojiSearchOpened;
             }
         }
 
@@ -913,6 +928,23 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         }
     }
 
+    private void animateEmojiViewTranslationY(float fromY, float toY) {
+        ValueAnimator animator = ValueAnimator.ofFloat(0, 1f);
+        animator.addUpdateListener(animation -> {
+            float v = (float) animation.getAnimatedValue();
+            emojiView.setTranslationY(AndroidUtilities.lerp(fromY, toY, v));
+        });
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                emojiView.setTranslationY(toY);
+            }
+        });
+        animator.setDuration(AdjustPanLayoutHelper.keyboardDuration);
+        animator.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
+        animator.start();
+    }
+
     public boolean isWaitingForKeyboardOpen() {
         return waitingForKeyboardOpen;
     }
@@ -920,15 +952,30 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
     private void onEmojiClicked(PollEditTextCell cell) {
         this.currentCell = cell;
         if (emojiViewVisible) {
+            collapseSearchEmojiView();
             openKeyboardInternal();
         } else {
             showEmojiPopup(1);
         }
     }
 
+    private void collapseSearchEmojiView() {
+        if (isEmojiSearchOpened) {
+            emojiView.closeSearch(false);
+            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) emojiView.getLayoutParams();
+            layoutParams.height -= AndroidUtilities.dp(120);
+            emojiView.setLayoutParams(layoutParams);
+            emojiPadding = layoutParams.height;
+            wasEmojiSearchOpened = isEmojiSearchOpened;
+            isEmojiSearchOpened = false;
+            animateEmojiViewTranslationY(-AndroidUtilities.dp(120), 0);
+        }
+    }
+
     private void openKeyboardInternal() {
         keyboardNotifier.awaitKeyboard();
         final EditTextBoldCursor editText = currentCell.getEditField();
+        editText.requestFocus();
         AndroidUtilities.showKeyboard(editText);
         showEmojiPopup(AndroidUtilities.usingHardwareInput ? 0 : 2);
 
@@ -1008,6 +1055,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
             if (emojiView != null) {
                 emojiViewWasVisible = emojiViewVisible;
                 emojiViewVisible = false;
+                isEmojiSearchOpened = false;
                 if (AndroidUtilities.usingHardwareInput || AndroidUtilities.isInMultiwindow) {
                     emojiView.setVisibility(View.GONE);
                 }
@@ -1020,11 +1068,40 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         }
     }
 
+    private void onCellFocusChanges(PollEditTextCell cell, boolean focused) {
+        if (isPremium && focused) {
+            if (currentCell == cell && emojiViewVisible && isEmojiSearchOpened) {
+                collapseSearchEmojiView();
+                emojiViewVisible = false;
+            }
+            PollEditTextCell prevCell = currentCell;
+            currentCell = cell;
+            cell.setEmojiButtonVisibility(true);
+            cell.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
+            updateSuggestEmojiPanelDelegate(listView.findContainingViewHolder(cell));
+            if (prevCell != null && prevCell != cell) {
+                if (emojiViewVisible) {
+                    collapseSearchEmojiView();
+                    hideEmojiPopup(false);
+                    openKeyboardInternal();
+                }
+                prevCell.setEmojiButtonVisibility(false);
+                prevCell.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
+            }
+        }
+    }
+
     private void hideEmojiPopup(boolean byBackButton) {
         if (!isPremium) {
             return;
         }
         if (emojiViewVisible) {
+            emojiView.scrollEmojiToTop();
+            emojiView.closeSearch(false);
+            if (byBackButton) {
+                emojiView.hideSearchKeyboard();
+            }
+            isEmojiSearchOpened = false;
             showEmojiPopup(0);
         }
         if (byBackButton) {
@@ -1086,6 +1163,9 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         return emojiPadding;
     }
 
+
+    boolean wasEmojiSearchOpened;
+    boolean isEmojiSearchOpened;
     private void createEmojiView() {
         if (emojiView != null && emojiView.currentAccount != UserConfig.selectedAccount) {
             sizeNotifierFrameLayout.removeView(emojiView);
@@ -1094,7 +1174,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         if (emojiView != null) {
             return;
         }
-        emojiView = new EmojiView(null, true, false, false, getContext(), false, null, null, true, resourceProvider, false);
+        emojiView = new EmojiView(null, true, false, false, getContext(), true, null, null, true, resourceProvider, false);
         emojiView.fixBottomTabContainerTranslation = false;
         emojiView.allowEmojisForNonPremium(false);
         emojiView.setVisibility(View.GONE);
@@ -1123,7 +1203,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                     i = 0;
                 }
                 try {
-                    CharSequence localCharSequence = Emoji.replaceEmoji(symbol, editText.getPaint().getFontMetricsInt(), AndroidUtilities.dp(18), false);
+                    CharSequence localCharSequence = Emoji.replaceEmoji(symbol, editText.getPaint().getFontMetricsInt(), false);
                     editText.setText(editText.getText().insert(i, localCharSequence));
                     int j = i + localCharSequence.length();
                     editText.setSelection(j, j);
@@ -1163,11 +1243,22 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
             @Override
             public void onClearEmojiRecent() {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), resourceProvider);
-                builder.setTitle(LocaleController.getString("ClearRecentEmojiTitle", R.string.ClearRecentEmojiTitle));
-                builder.setMessage(LocaleController.getString("ClearRecentEmojiText", R.string.ClearRecentEmojiText));
-                builder.setPositiveButton(LocaleController.getString("ClearButton", R.string.ClearButton), (dialogInterface, i) -> emojiView.clearRecentEmoji());
-                builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+                builder.setTitle(LocaleController.getString(R.string.ClearRecentEmojiTitle));
+                builder.setMessage(LocaleController.getString(R.string.ClearRecentEmojiText));
+                builder.setPositiveButton(LocaleController.getString(R.string.ClearButton), (dialogInterface, i) -> emojiView.clearRecentEmoji());
+                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                 builder.show();
+            }
+
+            @Override
+            public void onSearchOpenClose(int type) {
+                isEmojiSearchOpened = type != 0;
+                sizeNotifierFrameLayout.requestLayout();
+            }
+
+            @Override
+            public boolean isSearchOpened() {
+                return isEmojiSearchOpened;
             }
         });
         sizeNotifierFrameLayout.addView(emojiView);
@@ -1192,15 +1283,15 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                 case 0: {
                     HeaderCell cell = (HeaderCell) holder.itemView;
                     if (position == questionHeaderRow) {
-                        cell.setText(LocaleController.getString("PollQuestion", R.string.PollQuestion));
+                        cell.setText(LocaleController.getString(R.string.PollQuestion));
                     } else if (position == answerHeaderRow) {
                         if (quizOnly == 1) {
-                            cell.setText(LocaleController.getString("QuizAnswers", R.string.QuizAnswers));
+                            cell.setText(LocaleController.getString(R.string.QuizAnswers));
                         } else {
-                            cell.setText(LocaleController.getString("AnswerOptions", R.string.AnswerOptions));
+                            cell.setText(LocaleController.getString(R.string.AnswerOptions));
                         }
                     } else if (position == settingsHeaderRow) {
-                        cell.setText(LocaleController.getString("Settings", R.string.Settings));
+                        cell.setText(LocaleController.getString(R.string.Settings));
                     }
                     break;
                 }
@@ -1209,16 +1300,16 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                     cell.setFixedSize(0);
                     cell.setBackgroundDrawable(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                     if (position == solutionInfoRow) {
-                        cell.setText(LocaleController.getString("AddAnExplanationInfo", R.string.AddAnExplanationInfo));
+                        cell.setText(LocaleController.getString(R.string.AddAnExplanationInfo));
                     } else if (position == settingsSectionRow) {
                         if (quizOnly != 0) {
                             cell.setFixedSize(12);
                             cell.setText(null);
                         } else {
-                            cell.setText(LocaleController.getString("QuizInfo", R.string.QuizInfo));
+                            cell.setText(LocaleController.getString(R.string.QuizInfo));
                         }
                     } else if (10 - answersCount <= 0) {
-                        cell.setText(LocaleController.getString("AddAnOptionInfoMax", R.string.AddAnOptionInfoMax));
+                        cell.setText(LocaleController.getString(R.string.AddAnOptionInfoMax));
                     } else {
                         cell.setText(LocaleController.formatString("AddAnOptionInfo", R.string.AddAnOptionInfo, LocaleController.formatPluralString("Option", 10 - answersCount)));
                     }
@@ -1232,19 +1323,19 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                     drawable1.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_switchTrackChecked), PorterDuff.Mode.MULTIPLY));
                     drawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_checkboxCheck), PorterDuff.Mode.MULTIPLY));
                     CombinedDrawable combinedDrawable = new CombinedDrawable(drawable1, drawable2);
-                    textCell.setTextAndIcon(LocaleController.getString("AddAnOption", R.string.AddAnOption), combinedDrawable, false);
+                    textCell.setTextAndIcon(LocaleController.getString(R.string.AddAnOption), combinedDrawable, false);
                     break;
                 }
                 case 6: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     if (position == anonymousRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("PollAnonymous", R.string.PollAnonymous), anonymousPoll, multipleRow != -1 || quizRow != -1);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.PollAnonymous), anonymousPoll, multipleRow != -1 || quizRow != -1);
                         checkCell.setEnabled(true, null);
                     } else if (position == multipleRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("PollMultiple", R.string.PollMultiple), multipleChoise, quizRow != -1);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.PollMultiple), multipleChoise, quizRow != -1);
                         checkCell.setEnabled(true, null);
                     } else if (position == quizRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("PollQuiz", R.string.PollQuiz), quizPoll, false);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.PollQuiz), quizPoll, false);
                         checkCell.setEnabled(quizOnly == 0, null);
                     }
                 }
@@ -1257,7 +1348,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
             if (viewType == 4) {
                 PollEditTextCell textCell = (PollEditTextCell) holder.itemView;
                 textCell.setTag(1);
-                textCell.setTextAndHint(questionString != null ? questionString : "", LocaleController.getString("QuestionHint", R.string.QuestionHint), false);
+                textCell.setTextAndHint(questionString != null ? questionString : "", LocaleController.getString(R.string.QuestionHint), false);
                 textCell.setTag(null);
                 setTextLeft(holder.itemView, holder.getAdapterPosition());
             } else if (viewType == 5) {
@@ -1265,7 +1356,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                 PollEditTextCell textCell = (PollEditTextCell) holder.itemView;
                 textCell.setTag(1);
                 int index = position - answerStartRow;
-                textCell.setTextAndHint(answers[index], LocaleController.getString("OptionHint", R.string.OptionHint), true);
+                textCell.setTextAndHint(answers[index], LocaleController.getString(R.string.OptionHint), true);
                 textCell.setTag(null);
                 if (requestFieldFocusAtPosition == position) {
                     EditTextBoldCursor editText = textCell.getTextView();
@@ -1277,7 +1368,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
             } else if (viewType == 7) {
                 PollEditTextCell textCell = (PollEditTextCell) holder.itemView;
                 textCell.setTag(1);
-                textCell.setTextAndHint(solutionString != null ? solutionString : "", LocaleController.getString("AddAnExplanation", R.string.AddAnExplanation), false);
+                textCell.setTextAndHint(solutionString != null ? solutionString : "", LocaleController.getString(R.string.AddAnExplanation), false);
                 textCell.setTag(null);
                 setTextLeft(holder.itemView, holder.getAdapterPosition());
             }
@@ -1340,19 +1431,10 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                         }
 
                         @Override
-                        protected void onFieldTouchUp(EditTextBoldCursor editText) {
-                            super.onFieldTouchUp(editText);
-                            if (isPremium) {
-                                PollEditTextCell p = (PollEditTextCell) editText.getParent();
-                                currentCell = p;
-                                if (emojiView != null) {
-                                    emojiView.scrollEmojiToTop();
-                                }
-                                p.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
-                                hideEmojiPopup(false);
-                                updateSuggestEmojiPanelDelegate(listView.findContainingViewHolder(this));
-                            }
+                        protected void onEditTextFocusChanged(boolean focused) {
+                            onCellFocusChanges(this, focused);
                         }
+
 
                         @Override
                         protected void onEmojiButtonClicked(PollEditTextCell cell1) {
@@ -1384,7 +1466,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                                     for (ImageSpan span : spans) {
                                         s.removeSpan(span);
                                     }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), AndroidUtilities.dp(18), false);
+                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
 
                                     suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
                                     suggestEmojiPanel.setDelegate(cell);
@@ -1425,18 +1507,8 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                         }
 
                         @Override
-                        protected void onFieldTouchUp(EditTextBoldCursor editText) {
-                            super.onFieldTouchUp(editText);
-                            if (isPremium) {
-                                PollEditTextCell p = (PollEditTextCell) editText.getParent();
-                                currentCell = p;
-                                if (emojiView != null) {
-                                    emojiView.scrollEmojiToTop();
-                                }
-                                p.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
-                                hideEmojiPopup(false);
-                                updateSuggestEmojiPanelDelegate(listView.findContainingViewHolder(this));
-                            }
+                        protected void onEditTextFocusChanged(boolean focused) {
+                            onCellFocusChanges(this, focused);
                         }
                     };
                     cell.createErrorTextView();
@@ -1464,7 +1536,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                                     for (ImageSpan span : spans) {
                                         s.removeSpan(span);
                                     }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), AndroidUtilities.dp(18), false);
+                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
 
                                     suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
                                     suggestEmojiPanel.setDelegate(cell);
@@ -1508,26 +1580,11 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                                 if (holder != null && holder.itemView instanceof PollEditTextCell) {
                                     PollEditTextCell editTextCell = (PollEditTextCell) holder.itemView;
                                     editTextCell.getTextView().requestFocus();
-                                    if (isPremium) {
-                                        if (emojiViewVisible) {
-                                            currentCell = editTextCell;
-                                            editTextCell.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.KEYBOARD, false);
-                                        } else {
-                                            editTextCell.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
-                                            hideEmojiPopup(false);
-                                        }
-                                    }
                                 } else if (editText.isFocused()) {
                                     AndroidUtilities.hideKeyboard(editText);
-                                    if (isPremium) {
-                                        hideEmojiPopup(false);
-                                    }
-                                }
-                                if (isPremium) {
-                                    if (emojiView != null) {
-                                        emojiView.scrollEmojiToTop();
-                                    }
-                                    p.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
+                                    hideEmojiPopup(true);
+                                } else if (isEmojiSearchOpened) {
+                                    hideEmojiPopup(true);
                                 }
                                 editText.clearFocus();
                                 checkDoneButton();
@@ -1540,20 +1597,9 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                             }
                         }
                     }) {
-
                         @Override
-                        protected void onFieldTouchUp(EditTextBoldCursor editText) {
-                            super.onFieldTouchUp(editText);
-                            if (isPremium) {
-                                PollEditTextCell p = (PollEditTextCell) editText.getParent();
-                                currentCell = p;
-                                if (emojiView != null) {
-                                    emojiView.scrollEmojiToTop();
-                                }
-                                hideEmojiPopup(false);
-                                p.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
-                                updateSuggestEmojiPanelDelegate(listView.findContainingViewHolder(this));
-                            }
+                        protected void onEditTextFocusChanged(boolean focused) {
+                            onCellFocusChanges(this, focused);
                         }
 
                         @Override
@@ -1642,7 +1688,7 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                                     for (ImageSpan span : spans) {
                                         s.removeSpan(span);
                                     }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), AndroidUtilities.dp(18), false);
+                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
                                     float y = holder.itemView.getY() - AndroidUtilities.dp(166) + holder.itemView.getMeasuredHeight();
                                     if (y > 0) {
                                         suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_BOTTOM);

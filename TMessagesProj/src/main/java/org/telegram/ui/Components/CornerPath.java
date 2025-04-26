@@ -25,6 +25,8 @@ public class CornerPath extends Path {
     protected boolean useCornerPathImplementation = true;
     private float rectsUnionDiffDelta = 0f;
 
+    private int paddingX, paddingY;
+
     public CornerPath() {
         rects = new ArrayList<>(1);
     }
@@ -33,10 +35,15 @@ public class CornerPath extends Path {
         rects = new ArrayList<>(initialRectsCapacity);
     }
 
+    public void setPadding(int padX, int padY) {
+        paddingX = padX;
+        paddingY = padY;
+    }
+
     @Override
     public void addRect(@NonNull RectF rect, @NonNull Direction dir) {
         if (Build.VERSION.SDK_INT < 34 || !useCornerPathImplementation) {
-            super.addRect(rect.left, rect.top, rect.right, rect.bottom, dir);
+            super.addRect(rect.left - paddingX, rect.top - paddingY, rect.right + paddingX, rect.bottom + paddingY, dir);
         } else {
             if (rects.size() > 0 && rects.get(rects.size() - 1).contains(rect)) {
                 return;
@@ -62,7 +69,7 @@ public class CornerPath extends Path {
     @Override
     public void addRect(float left, float top, float right, float bottom, @NonNull Direction dir) {
         if (Build.VERSION.SDK_INT < 34 || !useCornerPathImplementation) {
-            super.addRect(left, top, right, bottom, dir);
+            super.addRect(left - paddingX, top - paddingY, right + paddingX, bottom + paddingY, dir);
         } else {
             if (rects.size() > 0 && rects.get(rects.size() - 1).contains(left, top, right, bottom)) {
                 return;
@@ -131,45 +138,45 @@ public class CornerPath extends Path {
             return;
         }
         if (rects.size() == 1) {
-            super.addRect(rects.get(0).left, rects.get(0).top, rects.get(0).right, rects.get(0).bottom, Path.Direction.CW);
+            super.addRect(rects.get(0).left - paddingX, rects.get(0).top - paddingY, rects.get(0).right + paddingX, rects.get(0).bottom + paddingY, Path.Direction.CW);
             return;
         }
         RectF prev = rects.get(0);
         RectF current;
         int lastContourIndex = rects.size() - 1;
-        super.moveTo(prev.left, prev.top);
+        super.moveTo(prev.left - paddingX, prev.top - paddingY);
         boolean hasGap = false;
         for (int i = 1; i < rects.size(); i++) {
             current = rects.get(i);
             if (current.width() == 0) {
                 continue;
             }
-            if (prev.bottom < current.top || prev.left > current.right || prev.right < current.left) {
+            if (prev.bottom + paddingY < current.top - paddingY || prev.left > current.right || prev.right < current.left) {
                 // end of the current contour
                 hasGap = true;
                 lastContourIndex = i;
                 break;
             }
             if (prev.left != current.left) {
-                super.lineTo(prev.left, current.top);
-                super.lineTo(current.left, current.top);
+                super.lineTo(prev.left - paddingX, current.top);
+                super.lineTo(current.left - paddingX, current.top);
             }
             prev = current;
         }
-        super.lineTo(prev.left, prev.bottom);
-        super.lineTo(prev.right, prev.bottom);
+        super.lineTo(prev.left - paddingX, prev.bottom + paddingY);
+        super.lineTo(prev.right + paddingX, prev.bottom + paddingY);
         for (int i = lastContourIndex - 1; i >= 0; i--) {
             current = rects.get(i);
             if (current.width() == 0) {
                 continue;
             }
             if (prev.right != current.right) {
-                super.lineTo(prev.right, prev.top);
-                super.lineTo(current.right, prev.top);
+                super.lineTo(prev.right + paddingX, prev.top);
+                super.lineTo(current.right + paddingX, prev.top);
             }
             prev = current;
         }
-        super.lineTo(prev.right, prev.top);
+        super.lineTo(prev.right + paddingX, prev.top - paddingY);
         super.close();
         if (hasGap) {
             createClosedPathsFromRects(rects.subList(lastContourIndex, rects.size()));

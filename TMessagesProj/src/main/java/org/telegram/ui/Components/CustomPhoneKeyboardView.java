@@ -43,8 +43,10 @@ public class CustomPhoneKeyboardView extends ViewGroup {
         checkFindEditText();
         if (editText == null || editText.length() == 0 && !dispatchBackWhenEmpty) return;
 
-        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-        playSoundEffect(SoundEffectConstants.CLICK);
+        try {
+            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            playSoundEffect(SoundEffectConstants.CLICK);
+        } catch (Exception ignore) {}
         editText.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL));
         editText.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
 
@@ -106,7 +108,9 @@ public class CustomPhoneKeyboardView extends ViewGroup {
                 checkFindEditText();
                 if (editText == null) return;
 
-                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                try {
+                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                } catch (Exception ignore) {}
                 if (editText instanceof EditTextBoldCursor) {
                     ((EditTextBoldCursor) editText).setTextWatchersSuppressed(true, false);
                 }

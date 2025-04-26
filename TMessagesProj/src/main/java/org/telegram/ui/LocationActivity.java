@@ -65,6 +65,9 @@ import android.widget.TextView;
 
 import androidx.collection.LongSparseArray;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.NestedScrollingParent3;
+import androidx.core.view.NestedScrollingParentHelper;
+import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -92,6 +95,7 @@ import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.LocationController;
 import org.telegram.messenger.MessageObject;
@@ -100,6 +104,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -111,6 +116,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.LocationActivityAdapter;
 import org.telegram.ui.Adapters.LocationActivitySearchAdapter;
+import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.LocationCell;
 import org.telegram.ui.Cells.LocationDirectionCell;
@@ -122,23 +128,21 @@ import org.telegram.ui.Cells.SharingLiveLocationCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
-import org.telegram.ui.Components.ChatAttachAlert;
 import org.telegram.ui.Components.ChatAttachAlertLocationLayout;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EditTextBoldCursor;
-import org.telegram.ui.Components.HintView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MapPlaceholderDrawable;
 import org.telegram.ui.Components.ProximitySheet;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.Components.SharedMediaLayout;
+import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.io.File;
-import java.net.URLEncoder;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -160,6 +164,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     private ActionBarMenuItem searchItem;
     private MapOverlayView overlayView;
     private HintView2 hintView;
+    public boolean fromStories;
 
     private UndoView[] undoView = new UndoView[2];
     private boolean canUndo;
@@ -345,11 +350,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             lastPressedMarkerView.setOnClickListener(v -> {
                 if (parentFragment != null && parentFragment.isInScheduleMode()) {
                     AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate) -> {
-                        delegate.didSelectLocation(location.venue, locationType, notify, scheduleDate);
+                        delegate.didSelectLocation(location.venue, locationType, notify, scheduleDate, 0);
                         finishFragment();
                     });
                 } else {
-                    delegate.didSelectLocation(location.venue, locationType, true, 0);
+                    delegate.didSelectLocation(location.venue, locationType, true, 0, 0);
                     finishFragment();
                 }
             });
@@ -360,7 +365,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             nameTextView.setEllipsize(TextUtils.TruncateAt.END);
             nameTextView.setSingleLine(true);
             nameTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
-            nameTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+            nameTextView.setTypeface(AndroidUtilities.bold());
             nameTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
             lastPressedMarkerView.addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), 18, 10, 18, 0));
 
@@ -374,7 +379,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             lastPressedMarkerView.addView(addressTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), 18, 32, 18, 0));
 
             nameTextView.setText(location.venue.title);
-            addressTextView.setText(LocaleController.getString("TapToSendLocation", R.string.TapToSendLocation));
+            addressTextView.setText(LocaleController.getString(R.string.TapToSendLocation));
 
             FrameLayout iconLayout = new FrameLayout(context);
             iconLayout.setBackground(Theme.createCircleDrawable(dp(36), LocationCell.getColorForIndex(location.num)));
@@ -452,13 +457,22 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     }
 
     public interface LocationActivityDelegate {
-        void didSelectLocation(TLRPC.MessageMedia location, int live, boolean notify, int scheduleDate);
+        void didSelectLocation(TLRPC.MessageMedia location, int live, boolean notify, int scheduleDate, long payStars);
     }
 
     public LocationActivity(int type) {
         super();
         locationType = type;
         AndroidUtilities.fixGoogleMapsBug();
+    }
+
+    private SharedMediaLayout sharedMediaLayout;
+    private GraySectionCell sharedMediaHeader;
+    private TL_stories.MediaArea searchStoriesArea;
+
+    public LocationActivity searchStories(TL_stories.MediaArea area) {
+        searchStoriesArea = area;
+        return this;
     }
 
     private boolean initialMaxZoom;
@@ -589,29 +603,29 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
 
         ActionBarMenu menu = actionBar.createMenu();
         if (chatLocation != null) {
-            actionBar.setTitle(LocaleController.getString("ChatLocation", R.string.ChatLocation));
+            actionBar.setTitle(LocaleController.getString(R.string.ChatLocation));
         } else if (messageObject != null) {
             if (messageObject.isLiveLocation()) {
-                actionBar.setTitle(LocaleController.getString("AttachLiveLocation", R.string.AttachLiveLocation));
+                actionBar.setTitle(LocaleController.getString(R.string.AttachLiveLocation));
                 otherItem = menu.addItem(0, R.drawable.ic_ab_other, getResourceProvider());
-                otherItem.addSubItem(get_directions, R.drawable.filled_directions, LocaleController.getString("GetDirections", R.string.GetDirections));
+                otherItem.addSubItem(get_directions, R.drawable.filled_directions, LocaleController.getString(R.string.GetDirections));
             } else {
                 if (messageObject.messageOwner.media.title != null && messageObject.messageOwner.media.title.length() > 0) {
-                    actionBar.setTitle(LocaleController.getString("SharedPlace", R.string.SharedPlace));
+                    actionBar.setTitle(LocaleController.getString(R.string.SharedPlace));
                 } else {
-                    actionBar.setTitle(LocaleController.getString("ChatLocation", R.string.ChatLocation));
+                    actionBar.setTitle(LocaleController.getString(R.string.ChatLocation));
                 }
                 if (locationType != 3) {
                     otherItem = menu.addItem(0, R.drawable.ic_ab_other, getResourceProvider());
-                    otherItem.addSubItem(open_in, R.drawable.msg_openin, LocaleController.getString("OpenInExternalApp", R.string.OpenInExternalApp));
+                    otherItem.addSubItem(open_in, R.drawable.msg_openin, LocaleController.getString(R.string.OpenInExternalApp));
                     if (!getLocationController().isSharingLocation(dialogId) && isSharingAllowed) {
-                        otherItem.addSubItem(share_live_location, R.drawable.msg_location, LocaleController.getString("SendLiveLocationMenu", R.string.SendLiveLocationMenu));
+                        otherItem.addSubItem(share_live_location, R.drawable.msg_location, LocaleController.getString(R.string.SendLiveLocationMenu));
                     }
-                    otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
+                    otherItem.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
                 }
             }
         } else {
-            actionBar.setTitle(LocaleController.getString("ShareLocation", R.string.ShareLocation));
+            actionBar.setTitle(LocaleController.getString(R.string.ShareLocation));
 
             if (locationType != LOCATION_TYPE_GROUP) {
                 overlayView = new MapOverlayView(context);
@@ -672,8 +686,8 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                         searchAdapter.searchDelayed(text, userLocation);
                     }
                 });
-                searchItem.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));
-                searchItem.setContentDescription(LocaleController.getString("Search", R.string.Search));
+                searchItem.setSearchFieldHint(LocaleController.getString(R.string.Search));
+                searchItem.setContentDescription(LocaleController.getString(R.string.Search));
                 EditTextBoldCursor editText = searchItem.getSearchField();
                 editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
                 editText.setCursorColor(getThemedColor(Theme.key_dialogTextBlack));
@@ -681,30 +695,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             }
         }
 
-        fragmentView = new FrameLayout(context) {
-            private boolean first = true;
-
-            @Override
-            protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-                super.onLayout(changed, left, top, right, bottom);
-
-                if (changed) {
-                    fixLayoutInternal(first);
-                    first = false;
-                } else {
-                    updateClipView(true);
-                }
-            }
-
-            @Override
-            protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-                boolean result = super.drawChild(canvas, child, drawingTime);
-                if (child == actionBar && parentLayout != null) {
-                    parentLayout.drawHeaderShadow(canvas, actionBar.getMeasuredHeight());
-                }
-                return result;
-            }
-        };
+        fragmentView = new NestedFrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;
         fragmentView.setBackgroundColor(getThemedColor(Theme.key_dialogBackground));
 
@@ -758,7 +749,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             searchAreaButton.setBackgroundDrawable(drawable);
             searchAreaButton.setTextColor(getThemedColor(Theme.key_location_actionActiveIcon));
             searchAreaButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            searchAreaButton.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+            searchAreaButton.setTypeface(AndroidUtilities.bold());
             searchAreaButton.setGravity(Gravity.CENTER);
             searchAreaButton.setPadding(dp(20), 0, dp(20), 0);
             mapViewClip.addView(searchAreaButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, Build.VERSION.SDK_INT >= 21 ? 40 : 44, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 80, 12, 80, 0));
@@ -793,7 +784,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         mapTypeButton.addSubItem(map_list_menu_osm, R.drawable.msg_map, "Standard OSM", getResourceProvider());
         mapTypeButton.addSubItem(map_list_menu_wiki, R.drawable.msg_map, "Wikimedia", getResourceProvider());
         mapTypeButton.addSubItem(map_list_menu_cartodark, R.drawable.msg_map, "Carto Dark", getResourceProvider());
-        mapTypeButton.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
+        mapTypeButton.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
         Drawable drawable = Theme.createSimpleSelectorCircleDrawable(dp(40), getThemedColor(Theme.key_location_actionBackground), getThemedColor(Theme.key_location_actionPressedBackground));
         if (Build.VERSION.SDK_INT < 21) {
             Drawable shadowDrawable = context.getResources().getDrawable(R.drawable.floating_shadow_profile).mutate();
@@ -877,7 +868,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         locationButton.setScaleType(ImageView.ScaleType.CENTER);
         locationButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_location_actionActiveIcon), PorterDuff.Mode.MULTIPLY));
         locationButton.setTag(Theme.key_location_actionActiveIcon);
-        locationButton.setContentDescription(LocaleController.getString("AccDescrMyLocation", R.string.AccDescrMyLocation));
+        locationButton.setContentDescription(LocaleController.getString(R.string.AccDescrMyLocation));
         FrameLayout.LayoutParams layoutParams1 = LayoutHelper.createFrame(Build.VERSION.SDK_INT >= 21 ? 40 : 44, Build.VERSION.SDK_INT >= 21 ? 40 : 44, Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 12, 12);
         layoutParams1.bottomMargin += layoutParams.height - padding.top;
         mapViewClip.addView(locationButton, layoutParams1);
@@ -944,7 +935,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         proximityButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_location_actionIcon), PorterDuff.Mode.MULTIPLY));
         proximityButton.setBackgroundDrawable(drawable);
         proximityButton.setScaleType(ImageView.ScaleType.CENTER);
-        proximityButton.setContentDescription(LocaleController.getString("AccDescrLocationNotify", R.string.AccDescrLocationNotify));
+        proximityButton.setContentDescription(LocaleController.getString(R.string.AccDescrLocationNotify));
         mapViewClip.addView(proximityButton, LayoutHelper.createFrame(Build.VERSION.SDK_INT >= 21 ? 40 : 44, Build.VERSION.SDK_INT >= 21 ? 40 : 44, Gravity.RIGHT | Gravity.TOP, 0, 12 + 50, 12, 0));
         proximityButton.setOnClickListener(v -> {
             if (getParentActivity() == null || myLocation == null || !checkGpsEnabled() || mapView == null) {
@@ -1024,9 +1015,9 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         emptyTitleTextView = new TextView(context);
         emptyTitleTextView.setTextColor(getThemedColor(Theme.key_dialogEmptyText));
         emptyTitleTextView.setGravity(Gravity.CENTER);
-        emptyTitleTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        emptyTitleTextView.setTypeface(AndroidUtilities.bold());
         emptyTitleTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 17);
-        emptyTitleTextView.setText(LocaleController.getString("NoPlacesFound", R.string.NoPlacesFound));
+        emptyTitleTextView.setText(LocaleController.getString(R.string.NoPlacesFound));
         emptyView.addView(emptyTitleTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 11, 0, 0));
 
         emptySubtitleTextView = new TextView(context);
@@ -1037,7 +1028,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         emptyView.addView(emptySubtitleTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 6, 0, 0));
 
         listView = new RecyclerListView(context);
-        listView.setAdapter(adapter = new LocationActivityAdapter(context, locationType, dialogId, false, getResourceProvider(), false, locationType == ChatAttachAlertLocationLayout.LOCATION_TYPE_BIZ) {
+        listView.setAdapter(adapter = new LocationActivityAdapter(context, locationType, dialogId, false, getResourceProvider(), false, fromStories, locationType == ChatAttachAlertLocationLayout.LOCATION_TYPE_BIZ) {
             @Override
             protected void onDirectionClick() {
                 openDirections(null);
@@ -1066,10 +1057,84 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 super.setLiveLocations(liveLocations);
             }
         });
+        listView.setLayoutManager(layoutManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
+        if (searchStoriesArea != null) {
+            sharedMediaHeader = new GraySectionCell(context, resourceProvider);
+            sharedMediaLayout = new SharedMediaLayout(context, 0, new SharedMediaLayout.SharedMediaPreloader(this), 0, null, null, null, SharedMediaLayout.TAB_STORIES, this, new SharedMediaLayout.Delegate() {
+                @Override
+                public void scrollToSharedMedia() {
+
+                }
+
+                @Override
+                public boolean onMemberClick(TLRPC.ChatParticipant participant, boolean b, boolean resultOnly, View view) {
+                    return false;
+                }
+
+                @Override
+                public TLRPC.Chat getCurrentChat() {
+                    return null;
+                }
+
+                @Override
+                public boolean isFragmentOpened() {
+                    return true;
+                }
+
+                @Override
+                public RecyclerListView getListView() {
+                    return listView;
+                }
+
+                @Override
+                public boolean canSearchMembers() {
+                    return false;
+                }
+
+                @Override
+                public void updateSelectedMediaTabText() {
+                    final int count = sharedMediaLayout == null ? 0 : sharedMediaLayout.getStoriesCount(SharedMediaLayout.TAB_STORIES);
+                    sharedMediaHeader.setText(LocaleController.formatPluralString("LocationStories", count));
+                    if (adapter.setSharedMediaLayoutVisible(count > 0)) {
+                        listView.smoothScrollBy(0, dp(200));
+                    }
+                }
+            }, SharedMediaLayout.VIEW_TYPE_MEDIA_ACTIVITY, getResourceProvider()) {
+                @Override
+                public TL_stories.MediaArea getStoriesArea() {
+                    return searchStoriesArea;
+                }
+
+                @Override
+                protected boolean customTabs() {
+                    return true;
+                }
+
+                @Override
+                public int mediaPageTopMargin() {
+                    return 32;
+                }
+
+                @Override
+                public int overrideColumnsCount() {
+                    return 3;
+                }
+            };
+            sharedMediaLayout.setBackgroundColor(getThemedColor(Theme.key_dialogBackground));
+            sharedMediaLayout.addView(sharedMediaHeader, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 32, Gravity.TOP | Gravity.FILL_HORIZONTAL));
+            adapter.setSharedMediaLayout(sharedMediaLayout);
+            listView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+            DefaultItemAnimator itemAnimator = new DefaultItemAnimator();
+            itemAnimator.setSupportsChangeAnimations(false);
+            itemAnimator.setDelayAnimations(false);
+            itemAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+            itemAnimator.setDurations(350);
+            listView.setItemAnimator(itemAnimator);
+        }
         adapter.setMyLocationDenied(locationDenied, false);
         adapter.setUpdateRunnable(() -> updateClipView(false));
         listView.setVerticalScrollBarEnabled(false);
-        listView.setLayoutManager(layoutManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
         if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.media != null && !TextUtils.isEmpty(messageObject.messageOwner.media.address)) {
             adapter.setAddressNameOverride(messageObject.messageOwner.media.address);
@@ -1103,7 +1168,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                     ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(context);
                     ActionBarMenuSubItem cell = new ActionBarMenuSubItem(getParentActivity(), true, true, getResourceProvider());
                     cell.setMinimumWidth(dp(200));
-                    cell.setTextAndIcon(LocaleController.getString("GetDirections", R.string.GetDirections), R.drawable.filled_directions);
+                    cell.setTextAndIcon(LocaleController.getString(R.string.GetDirections), R.drawable.filled_directions);
                     cell.setOnClickListener(e -> {
                         openDirections(location);
                         if (popupWindow != null) {
@@ -1143,7 +1208,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                         return;
                     }
                     if (dialogId == 0) {
-                        delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0);
+                        delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0, 0);
                         finishFragment();
                     } else {
                         final AlertDialog[] progressDialog = new AlertDialog[]{new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER)};
@@ -1160,7 +1225,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
 
                             }
                             progressDialog[0] = null;
-                            delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0);
+                            delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0, 0);
                             finishFragment();
                         }));
                         progressDialog[0].setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(requestId, true));
@@ -1188,11 +1253,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                         location.geo._long = AndroidUtilities.fixLocationCoord(userLocation.getLongitude());
                         if (parentFragment != null && parentFragment.isInScheduleMode()) {
                             AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate) -> {
-                                delegate.didSelectLocation(location, locationType, notify, scheduleDate);
+                                delegate.didSelectLocation(location, locationType, notify, scheduleDate, 0);
                                 finishFragment();
                             });
                         } else {
-                            delegate.didSelectLocation(location, locationType, true, 0);
+                            delegate.didSelectLocation(location, locationType, true, 0, 0);
                             finishFragment();
                         }
                     }
@@ -1216,11 +1281,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 if (object instanceof TLRPC.TL_messageMediaVenue) {
                     if (parentFragment != null && parentFragment.isInScheduleMode()) {
                         AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate) -> {
-                            delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, notify, scheduleDate);
+                            delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, notify, scheduleDate, 0);
                             finishFragment();
                         });
                     } else {
-                        delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, true, 0);
+                        delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, true, 0, 0);
                         finishFragment();
                     }
                 } else if (object instanceof LiveLocation) {
@@ -1387,11 +1452,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 } else if (object != null && delegate != null) {
                     if (parentFragment != null && parentFragment.isInScheduleMode()) {
                         AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate) -> {
-                            delegate.didSelectLocation(object, locationType, notify, scheduleDate);
+                            delegate.didSelectLocation(object, locationType, notify, scheduleDate, 0);
                             finishFragment();
                         });
                     } else {
-                        delegate.didSelectLocation(object, locationType, true, 0);
+                        delegate.didSelectLocation(object, locationType, true, 0, 0);
                         finishFragment();
                     }
                 }
@@ -1575,8 +1640,21 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             Paint roundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             RectF bitmapRect = new RectF();
             canvas.save();
+
+            canvas.save();
+            AvatarDrawable avatarDrawable = new AvatarDrawable();
+            if (liveLocation.user != null) {
+                avatarDrawable.setInfo(currentAccount, liveLocation.user);
+            } else if (liveLocation.chat != null) {
+                avatarDrawable.setInfo(currentAccount, liveLocation.chat);
+            }
+            canvas.translate(dp(6), dp(6));
+            avatarDrawable.setBounds(0, 0, dp(50), dp(50));
+            avatarDrawable.draw(canvas);
+            canvas.restore();
+
             if (photo != null) {
-                File path = getFileLoader().getPathToAttach(photo, true);
+                File path = ImageReceiver.getAvatarLocalFile(currentAccount, liveLocation.user != null ? liveLocation.user : liveLocation.chat);
                 Bitmap bitmap = BitmapFactory.decodeFile(path.toString());
                 if (bitmap != null) {
                     BitmapShader shader = new BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
@@ -1589,17 +1667,8 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                     bitmapRect.set(dp(6), dp(6), dp(50 + 6), dp(50 + 6));
                     canvas.drawRoundRect(bitmapRect, dp(25), dp(25), roundPaint);
                 }
-            } else {
-                AvatarDrawable avatarDrawable = new AvatarDrawable();
-                if (liveLocation.user != null) {
-                    avatarDrawable.setInfo(currentAccount, liveLocation.user);
-                } else if (liveLocation.chat != null) {
-                    avatarDrawable.setInfo(currentAccount, liveLocation.chat);
-                }
-                canvas.translate(dp(6), dp(6));
-                avatarDrawable.setBounds(0, 0, dp(50), dp(50));
-                avatarDrawable.draw(canvas);
             }
+
             canvas.restore();
             try {
                 canvas.setBitmap(null);
@@ -1663,10 +1732,10 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             LocationController.SharingLocationInfo info = getLocationController().getSharingLocationInfo(dialogId);
             if (info == null) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setTitle(LocaleController.getString("ShareLocationAlertTitle", R.string.ShareLocationAlertTitle));
-                builder.setMessage(LocaleController.getString("ShareLocationAlertText", R.string.ShareLocationAlertText));
-                builder.setPositiveButton(LocaleController.getString("ShareLocationAlertButton", R.string.ShareLocationAlertButton), (dialog, id) -> shareLiveLocation(user, 900, radius));
-                builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+                builder.setTitle(LocaleController.getString(R.string.ShareLocationAlertTitle));
+                builder.setMessage(LocaleController.getString(R.string.ShareLocationAlertText));
+                builder.setPositiveButton(LocaleController.getString(R.string.ShareLocationAlertButton), (dialog, id) -> shareLiveLocation(user, 900, radius));
+                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                 showDialog(builder.create());
                 return false;
             }
@@ -1771,7 +1840,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         location.period = period;
         location.proximity_notification_radius = radius;
         location.flags |= 8;
-        delegate.didSelectLocation(location, locationType, true, 0);
+        delegate.didSelectLocation(location, locationType, true, 0, 0);
         if (radius > 0) {
             proximitySheet.setRadiusSet();
             proximityButton.setImageResource(R.drawable.msg_location_alert2);
@@ -2148,8 +2217,8 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setTopAnimation(R.raw.permission_request_location, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, getThemedColor(Theme.key_dialogTopBackground));
-                builder.setMessage(LocaleController.getString("GpsDisabledAlertText", R.string.GpsDisabledAlertText));
-                builder.setPositiveButton(LocaleController.getString("ConnectingToProxyEnable", R.string.ConnectingToProxyEnable), (dialog, id) -> {
+                builder.setMessage(LocaleController.getString(R.string.GpsDisabledAlertText));
+                builder.setPositiveButton(LocaleController.getString(R.string.ConnectingToProxyEnable), (dialog, id) -> {
                     if (getParentActivity() == null) {
                         return;
                     }
@@ -2159,7 +2228,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
 
                     }
                 });
-                builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
                 showDialog(builder.create());
                 return false;
             }
@@ -2210,11 +2279,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         builder.setTopAnimation(R.raw.permission_request_location, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, getThemedColor(Theme.key_dialogTopBackground));
         if (byButton) {
-            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.getString("PermissionNoLocationNavigation", R.string.PermissionNoLocationNavigation)));
+            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.PermissionNoLocationNavigation)));
         } else {
-            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.getString("PermissionNoLocationFriends", R.string.PermissionNoLocationFriends)));
+            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.PermissionNoLocationFriends)));
         }
-        builder.setNegativeButton(LocaleController.getString("PermissionOpenSettings", R.string.PermissionOpenSettings), (dialog, which) -> {
+        builder.setNegativeButton(LocaleController.getString(R.string.PermissionOpenSettings), (dialog, which) -> {
             if (getParentActivity() == null) {
                 return;
             }
@@ -2226,7 +2295,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 FileLog.e(e);
             }
         });
-        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
+        builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
         showDialog(builder.create());
     }
 
@@ -2274,7 +2343,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 TLRPC.User user = getMessagesController().getUser(dialogId);
                 hintView.setText(LocaleController.formatString("ProximityTooltioUser", R.string.ProximityTooltioUser, UserObject.getFirstName(user)));
             } else {
-                hintView.setText(LocaleController.getString("ProximityTooltioGroup", R.string.ProximityTooltioGroup));
+                hintView.setText(LocaleController.getString(R.string.ProximityTooltioGroup));
             }
             hintView.show();
         }
@@ -2376,6 +2445,9 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 overScrollHeight = viewHeight - dp(66 + 7) - height;
             } else {
                 overScrollHeight = viewHeight - dp(66) - height;
+            }
+            if (sharedMediaLayout != null && sharedMediaLayout.getStoriesCount(SharedMediaLayout.TAB_STORIES) > 0) {
+                overScrollHeight -= dp(200);
             }
 
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) listView.getLayoutParams();
@@ -2542,7 +2614,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         int date = getConnectionsManager().getCurrentTime();
         for (int a = 0; a < messages.size(); a++) {
             TLRPC.Message message = messages.get(a);
-            if (message.date + message.media.period > date) {
+            if (message.date + message.media.period > date || message.media.period == 0x7FFFFFFF) {
                 if (firstFocus) {
                     GeoPoint latLng = new GeoPoint(message.media.geo.lat, message.media.geo._long);
                     geoPoints.add(latLng);
@@ -2754,7 +2826,6 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         } else if (id == NotificationCenter.liveLocationsChanged) {
             if (adapter != null) {
                 adapter.notifyDataSetChanged();
-                adapter.updateLiveLocationCell();
             }
         } else if (id == NotificationCenter.didReceiveNewMessages) {
             boolean scheduled = (Boolean) args[2];
@@ -2829,7 +2900,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 }
             }
             if (updated && adapter != null) {
-                adapter.updateLiveLocations();
+                adapter.notifyDataSetChanged();
                 if (proximitySheet != null) {
                     proximitySheet.updateText(true, true);
                 }
@@ -3101,4 +3172,151 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     public boolean isLightStatusBar() {
         return ColorUtils.calculateLuminance(getThemedColor(Theme.key_windowBackgroundWhite)) > 0.7f;
     }
+
+    private class NestedFrameLayout extends SizeNotifierFrameLayout implements NestedScrollingParent3 {
+
+        private NestedScrollingParentHelper nestedScrollingParentHelper;
+
+        private boolean first = true;
+
+        @Override
+        protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+            super.onLayout(changed, left, top, right, bottom);
+
+            if (changed) {
+                fixLayoutInternal(first);
+                first = false;
+            } else {
+                updateClipView(true);
+            }
+        }
+
+        @Override
+        protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
+            boolean result = super.drawChild(canvas, child, drawingTime);
+            if (child == actionBar && parentLayout != null) {
+                parentLayout.drawHeaderShadow(canvas, actionBar.getMeasuredHeight());
+            }
+            return result;
+        }
+
+        public NestedFrameLayout(Context context) {
+            super(context);
+            nestedScrollingParentHelper = new NestedScrollingParentHelper(this);
+        }
+
+        @Override
+        public void onNestedScroll(View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, int[] consumed) {
+            try {
+                if (target == listView && sharedMediaLayout != null && sharedMediaLayout.isAttachedToWindow()) {
+                    RecyclerListView innerListView = sharedMediaLayout.getCurrentListView();
+                    int top = sharedMediaLayout.getTop();
+                    if (top == 0) {
+                        consumed[1] = dyUnconsumed;
+                        innerListView.scrollBy(0, dyUnconsumed);
+                    }
+                }
+            } catch (Throwable e) {
+                FileLog.e(e);
+                AndroidUtilities.runOnUIThread(() -> {
+                    try {
+                        RecyclerListView innerListView = sharedMediaLayout.getCurrentListView();
+                        if (innerListView != null && innerListView.getAdapter() != null) {
+                            innerListView.getAdapter().notifyDataSetChanged();
+                        }
+                    } catch (Throwable e2) {
+
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onNestedScroll(View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {
+
+        }
+
+        @Override
+        public boolean onNestedPreFling(View target, float velocityX, float velocityY) {
+            return super.onNestedPreFling(target, velocityX, velocityY);
+        }
+
+        @Override
+        public void onNestedPreScroll(View target, int dx, int dy, int[] consumed, int type) {
+            if (target == listView && sharedMediaLayout != null && sharedMediaLayout.isAttachedToWindow()) {
+                boolean searchVisible = actionBar.isSearchFieldVisible();
+                int t = sharedMediaLayout.getTop();
+                if (dy < 0) {
+                    boolean scrolledInner = false;
+                    if (t <= 0) {
+                        RecyclerListView innerListView = sharedMediaLayout.getCurrentListView();
+                        if (innerListView != null) {
+                            LinearLayoutManager linearLayoutManager = (LinearLayoutManager) innerListView.getLayoutManager();
+                            int pos = linearLayoutManager.findFirstVisibleItemPosition();
+                            if (pos != RecyclerView.NO_POSITION) {
+                                RecyclerView.ViewHolder holder = innerListView.findViewHolderForAdapterPosition(pos);
+                                int top = holder != null ? holder.itemView.getTop() : -1;
+                                int paddingTop = innerListView.getPaddingTop();
+                                if (top != paddingTop || pos != 0) {
+                                    consumed[1] = pos != 0 ? dy : Math.max(dy, (top - paddingTop));
+                                    innerListView.scrollBy(0, dy);
+                                    scrolledInner = true;
+                                }
+                            }
+                        }
+                    }
+                    if (searchVisible) {
+                        if (!scrolledInner && t < 0) {
+                            consumed[1] = dy - Math.max(t, dy);
+                        } else {
+                            consumed[1] = dy;
+                        }
+                    }
+                } else {
+                    if (searchVisible) {
+                        RecyclerListView innerListView = sharedMediaLayout.getCurrentListView();
+                        consumed[1] = dy;
+                        if (t > 0) {
+                            consumed[1] -= dy;
+                        }
+                        if (innerListView != null && consumed[1] > 0) {
+                            innerListView.scrollBy(0, consumed[1]);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean onStartNestedScroll(View child, View target, int axes, int type) {
+            return sharedMediaLayout != null && axes == ViewCompat.SCROLL_AXIS_VERTICAL;
+        }
+
+        @Override
+        public void onNestedScrollAccepted(View child, View target, int axes, int type) {
+            nestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes);
+        }
+
+        @Override
+        public void onStopNestedScroll(View target, int type) {
+            nestedScrollingParentHelper.onStopNestedScroll(target);
+        }
+
+        @Override
+        public void onStopNestedScroll(View child) {
+
+        }
+
+        @Override
+        protected void drawList(Canvas blurCanvas, boolean top, ArrayList<IViewWithInvalidateCallback> views) {
+            super.drawList(blurCanvas, top, views);
+            if (sharedMediaLayout != null) {
+                blurCanvas.save();
+                blurCanvas.translate(0, listView.getY());
+                sharedMediaLayout.drawListForBlur(blurCanvas, views);
+                blurCanvas.restore();
+            }
+        }
+    }
+
 }

@@ -337,8 +337,8 @@ public class CameraController implements MediaRecorder.OnInfoListener {
 
             // Break if the marker is EXIF in APP1.
             if (marker == 0xE1 && length >= 8 &&
-                    pack(jpeg, offset + 2, 4, false) == 0x45786966 &&
-                    pack(jpeg, offset + 6, 2, false) == 0) {
+                pack(jpeg, offset + 2, 4, false) == 0x45786966 &&
+                pack(jpeg, offset + 6, 2, false) == 0) {
                 offset += 8;
                 length -= 8;
                 break;
@@ -553,6 +553,22 @@ public class CameraController implements MediaRecorder.OnInfoListener {
                     camera = session.cameraInfo.camera = Camera.open(session.cameraInfo.cameraId);
                 }
                 Camera.Parameters params = camera.getParameters();
+
+                List<String> rawFlashModes = params.getSupportedFlashModes();
+                session.availableFlashModes.clear();
+                if (rawFlashModes != null) {
+                    for (int a = 0; a < rawFlashModes.size(); a++) {
+                        String rawFlashMode = rawFlashModes.get(a);
+                        if (rawFlashMode.equals(Camera.Parameters.FLASH_MODE_OFF) || rawFlashMode.equals(Camera.Parameters.FLASH_MODE_ON) || rawFlashMode.equals(Camera.Parameters.FLASH_MODE_AUTO)) {
+                            session.availableFlashModes.add(rawFlashMode);
+                        }
+                    }
+                    if (!TextUtils.equals(session.getCurrentFlashMode(), params.getFlashMode()) || !session.availableFlashModes.contains(session.getCurrentFlashMode())) {
+                        session.checkFlashMode(session.availableFlashModes.get(0));
+                    } else {
+                        session.checkFlashMode(session.getCurrentFlashMode());
+                    }
+                }
 
                 session.configureRoundCamera(true);
                 if (configureCallback != null) {

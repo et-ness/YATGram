@@ -34,6 +34,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.Vector;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
@@ -105,8 +106,8 @@ public class MessageSeenView extends FrameLayout {
         }
         long finalFromId = fromId;
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (error == null) {
-                TLRPC.Vector vector = (TLRPC.Vector) response;
+            if (error == null && response instanceof Vector) {
+                Vector vector = (Vector) response;
                 ArrayList<Long> unknownUsers = new ArrayList<>();
                 ArrayList<Long> unknownChats = new ArrayList<>();
                 HashMap<Long, TLObject> usersLocal = new HashMap<>();
@@ -271,7 +272,7 @@ public class MessageSeenView extends FrameLayout {
             titleView.setText(ContactsController.formatName(users.get(0)));
         } else {
             if (peerIds.size() == 0) {
-                titleView.setText(LocaleController.getString("NobodyViewed", R.string.NobodyViewed));
+                titleView.setText(LocaleController.getString(R.string.NobodyViewed));
             } else {
                 titleView.setText(LocaleController.formatPluralString(isVoice ? "MessagePlayed" : "MessageSeen", peerIds.size()));
             }

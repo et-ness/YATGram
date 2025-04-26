@@ -43,6 +43,7 @@ import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.PopupSwipeBackLayout;
 
@@ -97,7 +98,9 @@ public class ActionBarPopupWindow extends PopupWindow {
         public final static int FLAG_USE_SWIPEBACK = 1;
         public final static int FLAG_SHOWN_FROM_BOTTOM = 2;
         public boolean updateAnimation;
+        public boolean clipChildren;
         public boolean swipeBackGravityRight;
+        public boolean swipeBackGravityBottom;
 
         private OnDispatchKeyEventListener mOnDispatchKeyEventListener;
         private float backScaleX = 1;
@@ -111,7 +114,7 @@ public class ActionBarPopupWindow extends PopupWindow {
         private HashMap<View, Integer> positions = new HashMap<>();
         private int gapStartY = -1000000;
         private int gapEndY = -1000000;
-        private Rect bgPaddings = new Rect();
+        private final Rect bgPaddings = new Rect();
         private onSizeChangedListener onSizeChangedListener;
         private float reactionsEnterProgress = 1f;
 
@@ -129,6 +132,10 @@ public class ActionBarPopupWindow extends PopupWindow {
 
         public int subtractBackgroundHeight;
         Rect rect;
+
+        public Rect getPadding() {
+            return bgPaddings;
+        }
 
         public ActionBarPopupWindowLayout(Context context) {
             this(context, null);
@@ -281,6 +288,9 @@ public class ActionBarPopupWindow extends PopupWindow {
 
         @Keep
         public void setBackAlpha(int value) {
+            if (backAlpha != value) {
+                invalidate();
+            }
             backAlpha = value;
         }
 
@@ -440,6 +450,9 @@ public class ActionBarPopupWindow extends PopupWindow {
                     setTranslationY(yOffset);
                 }
             }
+            if (swipeBackGravityBottom) {
+                setTranslationY(getMeasuredHeight() * (1f - backScaleY));
+            }
             if (backgroundDrawable != null) {
                 int start = gapStartY - scrollView.getScrollY();
                 int end = gapEndY - scrollView.getScrollY();
@@ -454,14 +467,12 @@ public class ActionBarPopupWindow extends PopupWindow {
                     if (a == 1 && start < -AndroidUtilities.dp(16)) {
                         break;
                     }
-                    boolean needRestore = false;
+                    int saveCount = canvas.getSaveCount();
                     boolean applyAlpha = true;
                     if (hasGap && backAlpha != 255) {
                         canvas.saveLayerAlpha(0, bgPaddings.top, getMeasuredWidth(), getMeasuredHeight(), backAlpha, Canvas.ALL_SAVE_FLAG);
-                        needRestore = true;
                         applyAlpha = false;
                     }  else if (gapStartY != -1000000) {
-                        needRestore = true;
                         canvas.save();
                         canvas.clipRect(0, bgPaddings.top, getMeasuredWidth(), getMeasuredHeight());
                     }
@@ -508,6 +519,13 @@ public class ActionBarPopupWindow extends PopupWindow {
                     }
                     backgroundDrawable.setBounds(AndroidUtilities.rectTmp2);
                     backgroundDrawable.draw(canvas);
+                    if (clipChildren) {
+                        AndroidUtilities.rectTmp2.left += bgPaddings.left;
+                        AndroidUtilities.rectTmp2.top += bgPaddings.top;
+                        AndroidUtilities.rectTmp2.right -= bgPaddings.right;
+                        AndroidUtilities.rectTmp2.bottom -= bgPaddings.bottom;
+                        canvas.clipRect(AndroidUtilities.rectTmp2);
+                    }
                     if (hasGap) {
                         canvas.save();
                         AndroidUtilities.rectTmp.set(backgroundDrawable.getBounds());
@@ -540,9 +558,7 @@ public class ActionBarPopupWindow extends PopupWindow {
                         }
                         canvas.restore();
                     }
-                    if (needRestore) {
-                        canvas.restore();
-                    }
+                    canvas.restoreToCount(saveCount);
                 }
             }
             if (reactionsEnterProgress != 1f) {
@@ -845,10 +861,11 @@ public class ActionBarPopupWindow extends PopupWindow {
                 }
                 float at = AndroidUtilities.cascade(t, content.shownFromBottom ? count2 - 1 - a : a, count2, 4);
                 child.setTranslationY((1f - at) * AndroidUtilities.dp(-6));
-//                child.setAlpha(at * (child.isEnabled() ? 1f : 0.5f));
+                child.setAlpha(at * (child.isEnabled() ? 1f : 0.5f));
             }
         });
-        content.updateAnimation = true;
+        content.updateAnimation = false;
+        content.clipChildren = true;
         windowAnimatorSet.playTogether(
                 ObjectAnimator.ofFloat(content, "backScaleY", 0.0f, finalScaleY),
                 ObjectAnimator.ofInt(content, "backAlpha", 0, 255),
@@ -865,6 +882,7 @@ public class ActionBarPopupWindow extends PopupWindow {
                     if (child instanceof GapView) {
                         continue;
                     }
+                    child.setTranslationY(0);
                     child.setAlpha(child.isEnabled() ? 1f : 0.5f);
                 }
             }

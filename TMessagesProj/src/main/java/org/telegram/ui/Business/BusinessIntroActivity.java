@@ -28,6 +28,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -108,7 +109,7 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
     public View createView(Context context) {
         AndroidUtilities.requestAdjustResize(getParentActivity(), classGuid);
 
-        greetingsView = new ChatGreetingsView(context, getUserConfig().getCurrentUser(), 1, currentAccount, sticker, getResourceProvider()) {
+        greetingsView = new ChatGreetingsView(context, getUserConfig().getCurrentUser(), currentAccount, sticker, getResourceProvider()) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -174,7 +175,7 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
         previewContainer.addView(previewBackground, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
         previewContainer.addView(greetingsView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 42, 18, 42, 18));
 
-        titleEdit = new EditTextCell(context, getString(R.string.BusinessIntroTitleHint), false, getMessagesController().introTitleLengthLimit) {
+        titleEdit = new EditTextCell(context, getString(R.string.BusinessIntroTitleHint), false, false, getMessagesController().introTitleLengthLimit, resourceProvider) {
             @Override
             protected void onTextChanged(CharSequence newText) {
                 greetingsView.setPreview(titleEdit.getText().toString(), messageEdit.getText().toString());
@@ -193,7 +194,7 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
         titleEdit.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
         titleEdit.setDivider(true);
         titleEdit.hideKeyboardOnEnter();
-        messageEdit = new EditTextCell(context, getString(R.string.BusinessIntroMessageHint), true, getMessagesController().introDescriptionLengthLimit) {
+        messageEdit = new EditTextCell(context, getString(R.string.BusinessIntroMessageHint), true, false, getMessagesController().introDescriptionLengthLimit, resourceProvider) {
             @Override
             protected void onTextChanged(CharSequence newText) {
                 greetingsView.setPreview(titleEdit.getText().toString(), messageEdit.getText().toString());
@@ -231,7 +232,7 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
         Drawable checkmark = context.getResources().getDrawable(R.drawable.ic_ab_done).mutate();
         checkmark.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.MULTIPLY));
         doneButtonDrawable = new CrossfadeDrawable(checkmark, new CircularProgressDrawable(Theme.getColor(Theme.key_actionBarDefaultIcon)));
-        doneButton = actionBar.createMenu().addItemWithWidth(done_button, doneButtonDrawable, AndroidUtilities.dp(56), LocaleController.getString("Done", R.string.Done));
+        doneButton = actionBar.createMenu().addItemWithWidth(done_button, doneButtonDrawable, AndroidUtilities.dp(56), LocaleController.getString(R.string.Done));
         checkDone(false, true);
 
         listView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
@@ -433,10 +434,10 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
 
         doneButtonDrawable.animateToProgress(1f);
         TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
-        TLRPC.TL_account_updateBusinessIntro req = new TLRPC.TL_account_updateBusinessIntro();
+        TL_account.updateBusinessIntro req = new TL_account.updateBusinessIntro();
         if (!isEmpty()) {
             req.flags |= 1;
-            req.intro = new TLRPC.TL_inputBusinessIntro();
+            req.intro = new TL_account.TL_inputBusinessIntro();
             req.intro.title = titleEdit.getText().toString();
             req.intro.description = messageEdit.getText().toString();
             if (!stickerRandom && (sticker != null || inputSticker != null)) {
@@ -450,7 +451,7 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
 
             if (userFull != null) {
                 userFull.flags2 |= 16;
-                userFull.business_intro = new TLRPC.TL_businessIntro();
+                userFull.business_intro = new TL_account.TL_businessIntro();
                 userFull.business_intro.title = req.intro.title;
                 userFull.business_intro.description = req.intro.description;
                 if (!stickerRandom && sticker != null) {
@@ -488,8 +489,8 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
             builder.setTitle(LocaleController.getString(R.string.UnsavedChanges));
             builder.setMessage(LocaleController.getString(R.string.BusinessIntroUnsavedChanges));
-            builder.setPositiveButton(LocaleController.getString("ApplyTheme", R.string.ApplyTheme), (dialogInterface, i) -> processDone());
-            builder.setNegativeButton(LocaleController.getString("PassportDiscard", R.string.PassportDiscard), (dialog, which) -> finishFragment());
+            builder.setPositiveButton(LocaleController.getString(R.string.ApplyTheme), (dialogInterface, i) -> processDone());
+            builder.setNegativeButton(LocaleController.getString(R.string.PassportDiscard), (dialog, which) -> finishFragment());
             showDialog(builder.create());
             return false;
         }
@@ -543,7 +544,7 @@ public class BusinessIntroActivity extends UniversalFragment implements Notifica
             };
             chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
                 @Override
-                public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, boolean forceDocument) {
+                public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {
 
                 }
                 @Override

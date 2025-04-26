@@ -14,6 +14,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Editable;
@@ -52,6 +53,7 @@ import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
@@ -64,23 +66,27 @@ import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Cells.EditEmojiTextCell;
 import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.PollEditTextCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.UserCell;
 import org.telegram.ui.Components.AnimatedColor;
+import org.telegram.ui.Components.AnimatedEmojiDrawable;
+import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.BottomSheetWithRecyclerListView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.EditTextBoldCursor;
+import org.telegram.ui.Components.EditTextCaption;
+import org.telegram.ui.Components.EditTextEmoji;
+import org.telegram.ui.Components.EditTextSuggestionsFix;
+import org.telegram.ui.Components.EmojiView;
 import org.telegram.ui.Components.FolderBottomSheet;
 import org.telegram.ui.Components.HintView;
 import org.telegram.ui.Components.ItemOptions;
@@ -91,7 +97,10 @@ import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.QRCodeBottomSheet;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.Components.ScaleStateListAnimator;
+import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.UndoView;
+import org.telegram.ui.Components.spoilers.SpoilersTextView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -114,7 +123,8 @@ public class FilterCreateActivity extends BaseFragment {
     private MessagesController.DialogFilter filter;
     private boolean creatingNew;
     private boolean doNotCloseWhenSave;
-    private String newFilterName;
+    private CharSequence newFilterName;
+    private boolean newFilterAnimations = true;
     private int newFilterFlags;
     private int newFilterColor;
     private ArrayList<Long> newAlwaysShow;
@@ -122,6 +132,9 @@ public class FilterCreateActivity extends BaseFragment {
     private LongSparseIntArray newPinned;
     private CreateLinkCell createLinkCell;
     private HeaderCellColorPreview folderTagsHeader;
+    private HeaderCellWithRight nameHeaderCell;
+
+    private EditEmojiTextCell nameEditTextCell;
 
     private boolean canCreateLink() {
         return (
@@ -186,7 +199,13 @@ public class FilterCreateActivity extends BaseFragment {
             filter.color = (int) (Math.random() * 8);
             creatingNew = true;
         }
-        newFilterName = filter.name;
+        TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        paint.setTextSize(dp(17));
+        newFilterName = new SpannableStringBuilder(filter.name);
+        newFilterName = Emoji.replaceEmoji(newFilterName, paint.getFontMetricsInt(), false);
+        newFilterName = MessageObject.replaceAnimatedEmoji(newFilterName, filter.entities, paint.getFontMetricsInt());
+        newFilterAnimations = !filter.title_noanimate;
+        AnimatedEmojiDrawable.toggleAnimations(currentAccount, newFilterAnimations);
         newFilterFlags = filter.flags;
         newFilterColor = filter.color;
         newAlwaysShow = new ArrayList<>(filter.alwaysShow);
@@ -252,28 +271,43 @@ public class FilterCreateActivity extends BaseFragment {
         oldItems.addAll(items);
 
         items.clear();
+        items.add(ItemInner.asAnimatedHeader(LocaleController.getString(R.string.FilterNameHeader), hasAnimatedEmojis(newFilterName) ? LocaleController.getString(newFilterAnimations ? R.string.FilterNameAnimationsDisable : R.string.FilterNameAnimationsEnable) : null, v -> {
+            newFilterAnimations = !newFilterAnimations;
+            if (nameHeaderCell != null) {
+                nameHeaderCell.rightTextView.setText(hasAnimatedEmojis(newFilterName) ? LocaleController.getString(newFilterAnimations ? R.string.FilterNameAnimationsDisable : R.string.FilterNameAnimationsEnable) : null);
+            }
+            AnimatedEmojiDrawable.toggleAnimations(currentAccount, newFilterAnimations);
+            checkDoneButton(true);
 
-        items.add(new ItemInner(VIEW_TYPE_HINT, false));
+            if (actionBar != null) {
+                if (actionBar.getTitleTextView() != null) {
+                    actionBar.getTitleTextView().setEmojiCacheType(newFilterAnimations ? AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES : AnimatedEmojiDrawable.CACHE_TYPE_NOANIMATE_FOLDER);
+                }
+                if (actionBar.getTitleTextView2() != null) {
+                    actionBar.getTitleTextView2().setEmojiCacheType(newFilterAnimations ? AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES : AnimatedEmojiDrawable.CACHE_TYPE_NOANIMATE_FOLDER);
+                }
+            }
+        }));
         nameRow = items.size();
         items.add(ItemInner.asEdit());
         items.add(ItemInner.asShadow(null));
-        items.add(ItemInner.asHeader(LocaleController.getString("FilterInclude", R.string.FilterInclude)));
-        items.add(ItemInner.asButton(R.drawable.msg2_chats_add, LocaleController.getString("FilterAddChats", R.string.FilterAddChats), false).whenClicked(v -> selectChatsFor(true)));
+        items.add(ItemInner.asHeader(LocaleController.getString(R.string.FilterInclude)));
+        items.add(ItemInner.asButton(R.drawable.msg2_chats_add, LocaleController.getString(R.string.FilterAddChats), false).whenClicked(v -> selectChatsFor(true)));
 
         if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_CONTACTS) != 0) {
-            items.add(ItemInner.asChat(true, LocaleController.getString("FilterContacts", R.string.FilterContacts), "contacts", MessagesController.DIALOG_FILTER_FLAG_CONTACTS));
+            items.add(ItemInner.asChat(true, LocaleController.getString(R.string.FilterContacts), "contacts", MessagesController.DIALOG_FILTER_FLAG_CONTACTS));
         }
         if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS) != 0) {
-            items.add(ItemInner.asChat(true, LocaleController.getString("FilterNonContacts", R.string.FilterNonContacts), "non_contacts", MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS));
+            items.add(ItemInner.asChat(true, LocaleController.getString(R.string.FilterNonContacts), "non_contacts", MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS));
         }
         if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_GROUPS) != 0) {
-            items.add(ItemInner.asChat(true, LocaleController.getString("FilterGroups", R.string.FilterGroups), "groups", MessagesController.DIALOG_FILTER_FLAG_GROUPS));
+            items.add(ItemInner.asChat(true, LocaleController.getString(R.string.FilterGroups), "groups", MessagesController.DIALOG_FILTER_FLAG_GROUPS));
         }
         if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_CHANNELS) != 0) {
-            items.add(ItemInner.asChat(true, LocaleController.getString("FilterChannels", R.string.FilterChannels), "channels", MessagesController.DIALOG_FILTER_FLAG_CHANNELS));
+            items.add(ItemInner.asChat(true, LocaleController.getString(R.string.FilterChannels), "channels", MessagesController.DIALOG_FILTER_FLAG_CHANNELS));
         }
         if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_BOTS) != 0) {
-            items.add(ItemInner.asChat(true, LocaleController.getString("FilterBots", R.string.FilterBots), "bots", MessagesController.DIALOG_FILTER_FLAG_BOTS));
+            items.add(ItemInner.asChat(true, LocaleController.getString(R.string.FilterBots), "bots", MessagesController.DIALOG_FILTER_FLAG_BOTS));
         }
 
         if (!newAlwaysShow.isEmpty()) {
@@ -291,9 +325,9 @@ public class FilterCreateActivity extends BaseFragment {
                 );
             }
         }
-        items.add(ItemInner.asShadow(LocaleController.getString("FilterIncludeInfo", R.string.FilterIncludeInfo)));
+        items.add(ItemInner.asShadow(LocaleController.getString(R.string.FilterIncludeInfo)));
         if (!filter.isChatlist()) {
-            items.add(ItemInner.asHeader(LocaleController.getString("FilterExclude", R.string.FilterExclude)));
+            items.add(ItemInner.asHeader(LocaleController.getString(R.string.FilterExclude)));
             items.add(ItemInner.asButton(R.drawable.msg2_chats_add, LocaleController.getString(R.string.FilterRemoveChats), false).whenClicked(v -> selectChatsFor(false)));
             if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED) != 0) {
                 items.add(ItemInner.asChat(false, LocaleController.getString(R.string.FilterMuted), "muted", MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED));
@@ -319,7 +353,7 @@ public class FilterCreateActivity extends BaseFragment {
                     );
                 }
             }
-            items.add(ItemInner.asShadow(LocaleController.getString("FilterExcludeInfo", R.string.FilterExcludeInfo)));
+            items.add(ItemInner.asShadow(LocaleController.getString(R.string.FilterExcludeInfo)));
         }
 
         if (getMessagesController().folderTags || !getUserConfig().isPremium()) {
@@ -329,24 +363,24 @@ public class FilterCreateActivity extends BaseFragment {
         }
 
         if (invites.isEmpty()) {
-            items.add(ItemInner.asHeader(LocaleController.getString("FilterShareFolder", R.string.FilterShareFolder), true));
-            items.add(ItemInner.asButton(R.drawable.msg2_link2, LocaleController.getString("FilterShareFolderButton", R.string.FilterShareFolderButton), false));
-            items.add(ItemInner.asShadow(LocaleController.getString("FilterInviteLinksHintNew", R.string.FilterInviteLinksHintNew)));
+            items.add(ItemInner.asHeader(LocaleController.getString(R.string.FilterShareFolder), true));
+            items.add(ItemInner.asButton(R.drawable.msg2_link2, LocaleController.getString(R.string.FilterShareFolderButton), false));
+            items.add(ItemInner.asShadow(LocaleController.getString(R.string.FilterInviteLinksHintNew)));
         } else {
-            items.add(ItemInner.asHeader(LocaleController.getString("FilterInviteLinks", R.string.FilterInviteLinks), true));
+            items.add(ItemInner.asHeader(LocaleController.getString(R.string.FilterInviteLinks), true));
             items.add(ItemInner.asCreateLink());
             for (int i = 0; i < invites.size(); ++i) {
                 items.add(ItemInner.asLink(invites.get(i)));
             }
             items.add(ItemInner.asShadow(
                 filter != null && filter.isChatlist() ?
-                    LocaleController.getString("FilterInviteLinksHintNew", R.string.FilterInviteLinksHintNew) :
-                    LocaleController.getString("FilterInviteLinksHint", R.string.FilterInviteLinksHint)
+                    LocaleController.getString(R.string.FilterInviteLinksHintNew) :
+                    LocaleController.getString(R.string.FilterInviteLinksHint)
             ));
         }
 
         if (!creatingNew) {
-            items.add(ItemInner.asButton(0, LocaleController.getString("FilterDelete", R.string.FilterDelete), true).whenClicked(this::deleteFolder));
+            items.add(ItemInner.asButton(0, LocaleController.getString(R.string.FilterDelete), true).whenClicked(this::deleteFolder));
             items.add(ItemInner.asShadow(null));
         }
 
@@ -367,11 +401,22 @@ public class FilterCreateActivity extends BaseFragment {
         actionBar.setAllowOverlayTitle(true);
         ActionBarMenu menu = actionBar.createMenu();
         if (creatingNew) {
-            actionBar.setTitle(LocaleController.getString("FilterNew", R.string.FilterNew));
+            actionBar.setTitle(LocaleController.getString(R.string.FilterNew));
         } else {
-            TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-            paint.setTextSize(dp(20));
-            actionBar.setTitle(Emoji.replaceEmoji(filter.name, paint.getFontMetricsInt(), dp(20), false));
+            Paint.FontMetricsInt fontMetricsInt = actionBar.getTitleFontMetricsInt();
+            CharSequence title = filter.name;
+            title = Emoji.replaceEmoji(title, fontMetricsInt, false);
+            title = MessageObject.replaceAnimatedEmoji(title, filter.entities, fontMetricsInt);
+            actionBar.setTitle(title);
+
+            if (actionBar != null) {
+                if (actionBar.getTitleTextView() != null) {
+                    actionBar.getTitleTextView().setEmojiCacheType(newFilterAnimations ? AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES : AnimatedEmojiDrawable.CACHE_TYPE_NOANIMATE_FOLDER);
+                }
+                if (actionBar.getTitleTextView2() != null) {
+                    actionBar.getTitleTextView2().setEmojiCacheType(newFilterAnimations ? AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES : AnimatedEmojiDrawable.CACHE_TYPE_NOANIMATE_FOLDER);
+                }
+            }
         }
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -385,9 +430,97 @@ public class FilterCreateActivity extends BaseFragment {
                 }
             }
         });
-        doneItem = menu.addItem(done_button, LocaleController.getString("Save", R.string.Save).toUpperCase());
+        doneItem = menu.addItem(done_button, LocaleController.getString(R.string.Save).toUpperCase());
 
-        fragmentView = new FrameLayout(context);
+        fragmentView = new SizeNotifierFrameLayout(context) {
+            @Override
+            public void addView(View child) {
+                if (child instanceof EmojiView) {
+                    ViewGroup.LayoutParams lp = ((EmojiView) child).getLayoutParams();
+                    if (lp == null) {
+                        lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    }
+                    if (lp instanceof FrameLayout.LayoutParams) {
+                        ((LayoutParams) lp).gravity = Gravity.BOTTOM | Gravity.FILL_HORIZONTAL;
+                    }
+                    child.setLayoutParams(lp);
+                }
+                super.addView(child);
+            }
+
+            @Override
+            protected void onLayout(boolean changed, int l, int t, int r, int b) {final int count = getChildCount();
+
+                int keyboardSize = measureKeyboardHeight();
+                final int parentLeft = getPaddingLeft();
+                final int parentRight = r - l - getPaddingRight();
+
+                final int parentTop = getPaddingTop();
+                final int parentBottom = b - t - getPaddingBottom();
+
+                for (int i = 0; i < count; i++) {
+                    final View child = getChildAt(i);
+                    if (child.getVisibility() != GONE) {
+                        final LayoutParams lp = (LayoutParams) child.getLayoutParams();
+
+                        final int width = child.getMeasuredWidth();
+                        final int height = child.getMeasuredHeight();
+
+                        int childLeft;
+                        int childTop;
+
+                        int gravity = lp.gravity;
+                        if (gravity == -1) {
+                            gravity = Gravity.TOP | Gravity.LEFT;
+                        }
+
+                        final int layoutDirection = getLayoutDirection();
+                        final int absoluteGravity = Gravity.getAbsoluteGravity(gravity, layoutDirection);
+                        final int verticalGravity = gravity & Gravity.VERTICAL_GRAVITY_MASK;
+
+                        switch (absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
+                            case Gravity.CENTER_HORIZONTAL:
+                                childLeft = parentLeft + (parentRight - parentLeft - width) / 2 +
+                                        lp.leftMargin - lp.rightMargin;
+                                break;
+                            case Gravity.RIGHT:
+                                childLeft = parentRight - width - lp.rightMargin;
+                                break;
+                            case Gravity.LEFT:
+                            default:
+                                childLeft = parentLeft + lp.leftMargin;
+                        }
+
+                        switch (verticalGravity) {
+                            case Gravity.TOP:
+                                childTop = parentTop + lp.topMargin;
+                                break;
+                            case Gravity.CENTER_VERTICAL:
+                                childTop = parentTop + (parentBottom - parentTop - height) / 2 +
+                                        lp.topMargin - lp.bottomMargin;
+                                break;
+                            case Gravity.BOTTOM:
+                                childTop = parentBottom - height - lp.bottomMargin;
+                                break;
+                            default:
+                                childTop = parentTop + lp.topMargin;
+                        }
+
+                        if (child instanceof EmojiView) {
+                            if (AndroidUtilities.isTablet()) {
+                                childTop = b - t - height;
+                            } else {
+                                childTop = b - t + keyboardSize - height;
+                            }
+                        }
+
+                        child.layout(childLeft, childTop, childLeft + width, childTop + height);
+                    }
+                }
+
+                super.notifyHeightChanged();
+            }
+        };
         FrameLayout frameLayout = (FrameLayout) fragmentView;
         frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
 
@@ -438,9 +571,11 @@ public class FilterCreateActivity extends BaseFragment {
             } else if (item.viewType == VIEW_TYPE_CREATE_LINK || item.viewType == VIEW_TYPE_BUTTON && item.iconResId == R.drawable.msg2_link2) {
                 onClickCreateLink(view);
             } else if (item.viewType == VIEW_TYPE_EDIT) {
-                PollEditTextCell cell = (PollEditTextCell) view;
-                cell.getTextView().requestFocus();
-                AndroidUtilities.showKeyboard(cell.getTextView());
+//                PollEditTextCell cell = (PollEditTextCell) view;
+//                cell.getTextView().requestFocus();
+//                AndroidUtilities.showKeyboard(cell.getTextView());
+//                EditEmojiTextCell cell = (EditEmojiTextCell) view;
+//                cell.editTextEmoji.openKeyboard();
             }
         });
         listView.setOnItemLongClickListener((view, position) -> {
@@ -461,6 +596,20 @@ public class FilterCreateActivity extends BaseFragment {
         itemAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
         itemAnimator.setDurations(350);
         listView.setItemAnimator(itemAnimator);
+        listView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                if (listView.scrollingByUser) {
+                    if (nameEditTextCell != null && nameEditTextCell.editTextEmoji != null) {
+                        if (nameEditTextCell.editTextEmoji.isPopupShowing()) {
+                            nameEditTextCell.editTextEmoji.hidePopup(true);
+                        } else {
+                            nameEditTextCell.editTextEmoji.closeKeyboard();
+                        }
+                    }
+                }
+            }
+        });
 
         checkDoneButton(false);
 
@@ -469,6 +618,12 @@ public class FilterCreateActivity extends BaseFragment {
         return fragmentView;
     }
 
+    public boolean hasAnimatedEmojis(CharSequence cs) {
+        if (!(cs instanceof Spanned)) return false;
+        Spanned spanned = (Spanned) cs;
+        AnimatedEmojiSpan[] spans = spanned.getSpans(0, spanned.length(), AnimatedEmojiSpan.class);
+        return spans != null && spans.length > 0;
+    }
 
     public UndoView getUndoView() {
         if (getContext() == null) {
@@ -492,17 +647,17 @@ public class FilterCreateActivity extends BaseFragment {
             AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
             BotWebViewVibrationEffect.APP_ERROR.vibrate();
             if (TextUtils.isEmpty(newFilterName) && TextUtils.isEmpty(filter.name)) {
-                BulletinFactory.of(this).createErrorBulletin(LocaleController.getString("FilterInviteErrorEmptyName", R.string.FilterInviteErrorEmptyName)).show();
+                BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.FilterInviteErrorEmptyName)).show();
             } else if ((newFilterFlags & ~(MessagesController.DIALOG_FILTER_FLAG_CHATLIST | MessagesController.DIALOG_FILTER_FLAG_CHATLIST_ADMIN)) != 0) {
                 if (!newNeverShow.isEmpty()) {
-                    BulletinFactory.of(this).createErrorBulletin(LocaleController.getString("FilterInviteErrorTypesExcluded", R.string.FilterInviteErrorTypesExcluded)).show();
+                    BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.FilterInviteErrorTypesExcluded)).show();
                 } else {
-                    BulletinFactory.of(this).createErrorBulletin(LocaleController.getString("FilterInviteErrorTypes", R.string.FilterInviteErrorTypes)).show();
+                    BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.FilterInviteErrorTypes)).show();
                 }
             } else if (newAlwaysShow.isEmpty()) {
-                BulletinFactory.of(this).createErrorBulletin(LocaleController.getString("FilterInviteErrorEmpty", R.string.FilterInviteErrorEmpty)).show();
+                BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.FilterInviteErrorEmpty)).show();
             } else {
-                BulletinFactory.of(this).createErrorBulletin(LocaleController.getString("FilterInviteErrorExcluded", R.string.FilterInviteErrorExcluded)).show();
+                BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.FilterInviteErrorExcluded)).show();
             }
             return;
         }
@@ -577,7 +732,7 @@ public class FilterCreateActivity extends BaseFragment {
         };
         saveHintView.textView.setMaxWidth(AndroidUtilities.displaySize.x);
         saveHintView.setExtraTranslationY(AndroidUtilities.dp(-16));
-        saveHintView.setText(LocaleController.getString("FilterFinishCreating", R.string.FilterFinishCreating));
+        saveHintView.setText(LocaleController.getString(R.string.FilterFinishCreating));
         ViewGroup.MarginLayoutParams params = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.rightMargin = AndroidUtilities.dp(3);
         getParentLayout().getOverlayContainerView().addView(saveHintView, params);
@@ -642,10 +797,10 @@ public class FilterCreateActivity extends BaseFragment {
             });
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-            builder.setTitle(LocaleController.getString("FilterDelete", R.string.FilterDelete));
-            builder.setMessage(LocaleController.getString("FilterDeleteAlert", R.string.FilterDeleteAlert));
-            builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-            builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialog, which) -> {
+            builder.setTitle(LocaleController.getString(R.string.FilterDelete));
+            builder.setMessage(LocaleController.getString(R.string.FilterDeleteAlert));
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            builder.setPositiveButton(LocaleController.getString(R.string.Delete), (dialog, which) -> {
                 AlertDialog progressDialog = null;
                 if (getParentActivity() != null) {
                     progressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
@@ -760,6 +915,10 @@ public class FilterCreateActivity extends BaseFragment {
 
     @Override
     public boolean onBackPressed() {
+        if (nameEditTextCell != null && nameEditTextCell.editTextEmoji != null && nameEditTextCell.editTextEmoji.isPopupShowing()) {
+            nameEditTextCell.editTextEmoji.hidePopup(true);
+            return false;
+        }
         return checkDiscard();
     }
 
@@ -771,34 +930,34 @@ public class FilterCreateActivity extends BaseFragment {
         String newName = "";
         if ((flags & MessagesController.DIALOG_FILTER_FLAG_ALL_CHATS) == MessagesController.DIALOG_FILTER_FLAG_ALL_CHATS) {
             if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0) {
-                newName = LocaleController.getString("FilterNameUnread", R.string.FilterNameUnread);
+                newName = LocaleController.getString(R.string.FilterNameUnread);
             } else if ((newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED) != 0) {
-                newName = LocaleController.getString("FilterNameNonMuted", R.string.FilterNameNonMuted);
+                newName = LocaleController.getString(R.string.FilterNameNonMuted);
             }
         } else if ((flags & MessagesController.DIALOG_FILTER_FLAG_CONTACTS) != 0) {
             flags &=~ MessagesController.DIALOG_FILTER_FLAG_CONTACTS;
             if (flags == 0) {
-                newName = LocaleController.getString("FilterContacts", R.string.FilterContacts);
+                newName = LocaleController.getString(R.string.FilterContacts);
             }
         } else if ((flags & MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS) != 0) {
             flags &=~ MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS;
             if (flags == 0) {
-                newName = LocaleController.getString("FilterNonContacts", R.string.FilterNonContacts);
+                newName = LocaleController.getString(R.string.FilterNonContacts);
             }
         } else if ((flags & MessagesController.DIALOG_FILTER_FLAG_GROUPS) != 0) {
             flags &=~ MessagesController.DIALOG_FILTER_FLAG_GROUPS;
             if (flags == 0) {
-                newName = LocaleController.getString("FilterGroups", R.string.FilterGroups);
+                newName = LocaleController.getString(R.string.FilterGroups);
             }
         } else if ((flags & MessagesController.DIALOG_FILTER_FLAG_BOTS) != 0) {
             flags &=~ MessagesController.DIALOG_FILTER_FLAG_BOTS;
             if (flags == 0) {
-                newName = LocaleController.getString("FilterBots", R.string.FilterBots);
+                newName = LocaleController.getString(R.string.FilterBots);
             }
         } else if ((flags & MessagesController.DIALOG_FILTER_FLAG_CHANNELS) != 0) {
             flags &=~ MessagesController.DIALOG_FILTER_FLAG_CHANNELS;
             if (flags == 0) {
-                newName = LocaleController.getString("FilterChannels", R.string.FilterChannels);
+                newName = LocaleController.getString(R.string.FilterChannels);
             }
         }
         if (newName != null && newName.length() > MAX_NAME_LENGTH) {
@@ -806,7 +965,7 @@ public class FilterCreateActivity extends BaseFragment {
         }
         newFilterName = newName;
         if (folderTagsHeader != null) {
-            folderTagsHeader.setPreviewText((newFilterName == null ? "" : newFilterName).toUpperCase(), false);
+            folderTagsHeader.setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), false);
         }
         RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(nameRow);
         if (holder != null) {
@@ -818,15 +977,15 @@ public class FilterCreateActivity extends BaseFragment {
         if (doneItem.getAlpha() == 1.0f) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
             if (creatingNew) {
-                builder.setTitle(LocaleController.getString("FilterDiscardNewTitle", R.string.FilterDiscardNewTitle));
-                builder.setMessage(LocaleController.getString("FilterDiscardNewAlert", R.string.FilterDiscardNewAlert));
-                builder.setPositiveButton(LocaleController.getString("FilterDiscardNewSave", R.string.FilterDiscardNewSave), (dialogInterface, i) -> processDone());
+                builder.setTitle(LocaleController.getString(R.string.FilterDiscardNewTitle));
+                builder.setMessage(LocaleController.getString(R.string.FilterDiscardNewAlert));
+                builder.setPositiveButton(LocaleController.getString(R.string.FilterDiscardNewSave), (dialogInterface, i) -> processDone());
             } else {
-                builder.setTitle(LocaleController.getString("FilterDiscardTitle", R.string.FilterDiscardTitle));
-                builder.setMessage(LocaleController.getString("FilterDiscardAlert", R.string.FilterDiscardAlert));
-                builder.setPositiveButton(LocaleController.getString("ApplyTheme", R.string.ApplyTheme), (dialogInterface, i) -> processDone());
+                builder.setTitle(LocaleController.getString(R.string.FilterDiscardTitle));
+                builder.setMessage(LocaleController.getString(R.string.FilterDiscardAlert));
+                builder.setPositiveButton(LocaleController.getString(R.string.ApplyTheme), (dialogInterface, i) -> processDone());
             }
-            builder.setNegativeButton(LocaleController.getString("PassportDiscard", R.string.PassportDiscard), (dialog, which) -> finishFragment());
+            builder.setNegativeButton(LocaleController.getString(R.string.PassportDiscard), (dialog, which) -> finishFragment());
             showDialog(builder.create());
             return false;
         }
@@ -836,26 +995,26 @@ public class FilterCreateActivity extends BaseFragment {
     private void showRemoveAlert(ItemInner item, CharSequence name, Object object, boolean include) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         if (include) {
-            builder.setTitle(LocaleController.getString("FilterRemoveInclusionTitle", R.string.FilterRemoveInclusionTitle));
+            builder.setTitle(LocaleController.getString(R.string.FilterRemoveInclusionTitle));
             if (object instanceof String) {
-                builder.setMessage(LocaleController.formatString("FilterRemoveInclusionText", R.string.FilterRemoveInclusionText, name));
+                builder.setMessage(LocaleController.formatString(R.string.FilterRemoveInclusionText, name));
             } else if (object instanceof TLRPC.User) {
-                builder.setMessage(LocaleController.formatString("FilterRemoveInclusionUserText", R.string.FilterRemoveInclusionUserText, name));
+                builder.setMessage(LocaleController.formatString(R.string.FilterRemoveInclusionUserText, name));
             } else {
-                builder.setMessage(LocaleController.formatString("FilterRemoveInclusionChatText", R.string.FilterRemoveInclusionChatText, name));
+                builder.setMessage(LocaleController.formatString(R.string.FilterRemoveInclusionChatText, name));
             }
         } else {
-            builder.setTitle(LocaleController.getString("FilterRemoveExclusionTitle", R.string.FilterRemoveExclusionTitle));
+            builder.setTitle(LocaleController.getString(R.string.FilterRemoveExclusionTitle));
             if (object instanceof String) {
-                builder.setMessage(LocaleController.formatString("FilterRemoveExclusionText", R.string.FilterRemoveExclusionText, name));
+                builder.setMessage(LocaleController.formatString(R.string.FilterRemoveExclusionText, name));
             } else if (object instanceof TLRPC.User) {
-                builder.setMessage(LocaleController.formatString("FilterRemoveExclusionUserText", R.string.FilterRemoveExclusionUserText, name));
+                builder.setMessage(LocaleController.formatString(R.string.FilterRemoveExclusionUserText, name));
             } else {
-                builder.setMessage(LocaleController.formatString("FilterRemoveExclusionChatText", R.string.FilterRemoveExclusionChatText, name));
+                builder.setMessage(LocaleController.formatString(R.string.FilterRemoveExclusionChatText, name));
             }
         }
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-        builder.setPositiveButton(LocaleController.getString("StickersRemove", R.string.StickersRemove), (dialogInterface, i) -> {
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+        builder.setPositiveButton(LocaleController.getString(R.string.StickersRemove), (dialogInterface, i) -> {
             if (item.flags > 0) {
                 newFilterFlags &=~ item.flags;
             } else {
@@ -885,9 +1044,11 @@ public class FilterCreateActivity extends BaseFragment {
         save(true, () -> {
             if (doNotCloseWhenSave) {
                 doNotCloseWhenSave = false;
-                TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-                paint.setTextSize(dp(20));
-                actionBar.setTitleAnimated(Emoji.replaceEmoji(filter.name, paint.getFontMetricsInt(), dp(20), false), true, 220);
+                final Paint.FontMetricsInt fontMetricsInt = actionBar.getTitleFontMetricsInt();
+                CharSequence title = filter.name;
+                title = Emoji.replaceEmoji(title, fontMetricsInt, false);
+                title = MessageObject.replaceAnimatedEmoji(title, filter.entities, fontMetricsInt);
+                actionBar.setTitleAnimated(title, true, 220);
                 return;
             }
             finishFragment();
@@ -895,7 +1056,9 @@ public class FilterCreateActivity extends BaseFragment {
     }
 
     private void save(boolean progress, Runnable after) {
-        saveFilterToServer(filter, newFilterFlags, newFilterName, newFilterColor, newAlwaysShow, newNeverShow, newPinned, creatingNew, false, hasUserChanged, true, progress, this, () -> {
+        final CharSequence[] parsedTitle = new CharSequence[] { newFilterName };
+        final ArrayList<TLRPC.MessageEntity> entities = getMediaDataController().getEntities(parsedTitle, false);
+        saveFilterToServer(filter, newFilterFlags, parsedTitle[0].toString(), entities, !newFilterAnimations, newFilterColor, newAlwaysShow, newNeverShow, newPinned, creatingNew, false, hasUserChanged, true, progress, this, () -> {
 
             hasUserChanged = false;
             creatingNew = false;
@@ -910,7 +1073,7 @@ public class FilterCreateActivity extends BaseFragment {
         });
     }
 
-    private static void processAddFilter(MessagesController.DialogFilter filter, int newFilterFlags, String newFilterName, int newFilterColor, ArrayList<Long> newAlwaysShow, ArrayList<Long> newNeverShow, boolean creatingNew, boolean atBegin, boolean hasUserChanged, boolean resetUnreadCounter, BaseFragment fragment, Runnable onFinish) {
+    private static void processAddFilter(MessagesController.DialogFilter filter, int newFilterFlags, String newFilterName, ArrayList<TLRPC.MessageEntity> newFilterNameEntities, boolean newFilterNoanimate, int newFilterColor, ArrayList<Long> newAlwaysShow, ArrayList<Long> newNeverShow, boolean creatingNew, boolean atBegin, boolean hasUserChanged, boolean resetUnreadCounter, BaseFragment fragment, Runnable onFinish) {
         if (filter.flags != newFilterFlags || hasUserChanged) {
             filter.pendingUnreadCount = -1;
             if (resetUnreadCounter) {
@@ -919,9 +1082,11 @@ public class FilterCreateActivity extends BaseFragment {
         }
         filter.flags = newFilterFlags;
         filter.name = newFilterName;
+        filter.entities = newFilterNameEntities;
         filter.color = newFilterColor;
         filter.neverShow = newNeverShow;
         filter.alwaysShow = newAlwaysShow;
+        filter.title_noanimate = newFilterNoanimate;
         if (creatingNew) {
             fragment.getMessagesController().addFilter(filter, atBegin);
         } else {
@@ -941,7 +1106,7 @@ public class FilterCreateActivity extends BaseFragment {
         }
     }
 
-    public static void saveFilterToServer(MessagesController.DialogFilter filter, int newFilterFlags, String newFilterName, int newFilterColor, ArrayList<Long> newAlwaysShow, ArrayList<Long> newNeverShow, LongSparseIntArray newPinned, boolean creatingNew, boolean atBegin, boolean hasUserChanged, boolean resetUnreadCounter, boolean progress, BaseFragment fragment, Runnable onFinish) {
+    public static void saveFilterToServer(MessagesController.DialogFilter filter, int newFilterFlags, String newFilterName, ArrayList<TLRPC.MessageEntity> newFilterNameEntities, boolean newFilterNoanimate, int newFilterColor, ArrayList<Long> newAlwaysShow, ArrayList<Long> newNeverShow, LongSparseIntArray newPinned, boolean creatingNew, boolean atBegin, boolean hasUserChanged, boolean resetUnreadCounter, boolean progress, BaseFragment fragment, Runnable onFinish) {
         if (fragment == null || fragment.getParentActivity() == null) {
             return;
         }
@@ -966,7 +1131,10 @@ public class FilterCreateActivity extends BaseFragment {
         req.filter.exclude_read = (newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0;
         req.filter.exclude_archived = (newFilterFlags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED) != 0;
         req.filter.id = filter.id;
-        req.filter.title = newFilterName;
+        req.filter.title = new TLRPC.TL_textWithEntities();
+        req.filter.title.text = newFilterName;
+        req.filter.title.entities = newFilterNameEntities;
+        req.filter.title_noanimate = newFilterNoanimate;
         if (newFilterColor < 0) {
             req.filter.flags &=~ 134217728;
             req.filter.color = 0;
@@ -1049,13 +1217,13 @@ public class FilterCreateActivity extends BaseFragment {
                 } catch (Exception e) {
                     FileLog.e(e);
                 }
-                processAddFilter(filter, newFilterFlags, newFilterName, newFilterColor, newAlwaysShow, newNeverShow, creatingNew, atBegin, hasUserChanged, resetUnreadCounter, fragment, onFinish);
+                processAddFilter(filter, newFilterFlags, newFilterName, newFilterNameEntities, newFilterNoanimate, newFilterColor, newAlwaysShow, newNeverShow, creatingNew, atBegin, hasUserChanged, resetUnreadCounter, fragment, onFinish);
             } else if (onFinish != null) {
                 onFinish.run();
             }
         }));
         if (!progress) {
-            processAddFilter(filter, newFilterFlags, newFilterName, newFilterColor, newAlwaysShow, newNeverShow, creatingNew, atBegin, hasUserChanged, resetUnreadCounter, fragment, null);
+            processAddFilter(filter, newFilterFlags, newFilterName, newFilterNameEntities, newFilterNoanimate, newFilterColor, newAlwaysShow, newNeverShow, creatingNew, atBegin, hasUserChanged, resetUnreadCounter, fragment, null);
         }
     }
 
@@ -1087,6 +1255,9 @@ public class FilterCreateActivity extends BaseFragment {
                 hasUserChanged = true;
             }
         }
+        if (filter.title_noanimate != (!newFilterAnimations)) {
+            return true;
+        }
         if (!TextUtils.equals(filter.name, newFilterName)) {
             return true;
         }
@@ -1117,23 +1288,6 @@ public class FilterCreateActivity extends BaseFragment {
         }
     }
 
-    private void setTextLeft(View cell) {
-        if (cell instanceof PollEditTextCell) {
-            PollEditTextCell textCell = (PollEditTextCell) cell;
-            int left = MAX_NAME_LENGTH - (newFilterName != null ? newFilterName.length() : 0);
-            if (left <= MAX_NAME_LENGTH - MAX_NAME_LENGTH * 0.7f) {
-                textCell.setText2(String.format("%d", left));
-                SimpleTextView textView = textCell.getTextView2();
-                int key = left < 0 ? Theme.key_text_RedRegular : Theme.key_windowBackgroundWhiteGrayText3;
-                textView.setTextColor(Theme.getColor(key));
-                textView.setTag(key);
-                textView.setAlpha(((PollEditTextCell) cell).getTextView().isFocused() || left < 0 ? 1.0f : 0.0f);
-            } else {
-                textCell.setText2("");
-            }
-        }
-    }
-
     private static final int VIEW_TYPE_HEADER = 0;
     private static final int VIEW_TYPE_CHAT = 1;
     private static final int VIEW_TYPE_EDIT = 2;
@@ -1145,12 +1299,14 @@ public class FilterCreateActivity extends BaseFragment {
     private static final int VIEW_TYPE_CREATE_LINK = 8;
     private static final int VIEW_TYPE_HEADER_COLOR_PREVIEW = 9;
     private static final int VIEW_TYPE_COLOR = 10;
+    private static final int VIEW_TYPE_HEADER_ANIMATED = 11;
 
     private static class ItemInner extends AdapterWithDiffUtils.Item {
 
         private View.OnClickListener onClickListener;
 
         private CharSequence text;
+        private CharSequence subtext;
         private boolean newSpan;
 
         private boolean include; // or exclude
@@ -1177,6 +1333,14 @@ public class FilterCreateActivity extends BaseFragment {
             ItemInner item = new ItemInner(VIEW_TYPE_HEADER, false);
             item.text = text;
             item.newSpan = newSpan;
+            return item;
+        }
+
+        public static ItemInner asAnimatedHeader(CharSequence text, CharSequence rightText, View.OnClickListener onRightTextClick) {
+            ItemInner item = new ItemInner(VIEW_TYPE_HEADER_ANIMATED, false);
+            item.text = text;
+            item.subtext = rightText;
+            item.onClickListener = onRightTextClick;
             return item;
         }
 
@@ -1241,6 +1405,9 @@ public class FilterCreateActivity extends BaseFragment {
             if (this.viewType != other.viewType) {
                 return false;
             }
+            if (viewType == VIEW_TYPE_HEADER_ANIMATED) {
+                return TextUtils.equals(text, other.text) && TextUtils.equals(subtext, other.subtext);
+            }
             if (viewType == VIEW_TYPE_HEADER || viewType == VIEW_TYPE_CHAT || viewType == VIEW_TYPE_SHADOW || viewType == VIEW_TYPE_BUTTON) {
                 if (!TextUtils.equals(text, other.text)) {
                     return false;
@@ -1285,7 +1452,8 @@ public class FilterCreateActivity extends BaseFragment {
                 type != VIEW_TYPE_HEADER &&
                 type != VIEW_TYPE_EDIT &&
                 type != VIEW_TYPE_HINT &&
-                type != VIEW_TYPE_HEADER_COLOR_PREVIEW
+                type != VIEW_TYPE_HEADER_COLOR_PREVIEW &&
+                type != VIEW_TYPE_HEADER_ANIMATED
             );
         }
 
@@ -1302,6 +1470,10 @@ public class FilterCreateActivity extends BaseFragment {
                     view = new HeaderCell(mContext, 22);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
+                case VIEW_TYPE_HEADER_ANIMATED:
+                    view = new HeaderCellWithRight(mContext, resourceProvider);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
                 case VIEW_TYPE_CHAT: {
                     UserCell cell = new UserCell(mContext, 6, 0, false);
                     cell.setSelfAsSavedMessages(true);
@@ -1310,44 +1482,44 @@ public class FilterCreateActivity extends BaseFragment {
                     break;
                 }
                 case VIEW_TYPE_EDIT: {
-                    PollEditTextCell cell = new PollEditTextCell(mContext, null);
-                    cell.createErrorTextView();
-                    cell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                    cell.addTextWatcher(new TextWatcher() {
+                    EditEmojiTextCell cell = nameEditTextCell = new EditEmojiTextCell(mContext, (SizeNotifierFrameLayout) fragmentView, LocaleController.getString(R.string.FilterNameHint), false, MAX_NAME_LENGTH, EditTextEmoji.STYLE_GIFT, resourceProvider) {
                         @Override
-                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
+                        public int emojiCacheType() {
+                            return AnimatedEmojiDrawable.CACHE_TYPE_TOGGLEABLE_EDIT;
                         }
-
+                    };
+                    cell.setAllowEntities(false);
+                    cell.editTextEmoji.getEditText().setEmojiColor(getThemedColor(Theme.key_featuredStickers_addButton));
+                    cell.editTextEmoji.setEmojiViewCacheType(AnimatedEmojiDrawable.CACHE_TYPE_TOGGLEABLE_EDIT);
+                    cell.editTextEmoji.setText(newFilterName);
+                    AnimatedEmojiDrawable.toggleAnimations(currentAccount, newFilterAnimations);
+                    EditTextCaption editText = cell.editTextEmoji.getEditText();
+                    editText.addTextChangedListener(new EditTextSuggestionsFix());
+                    editText.addTextChangedListener(new TextWatcher() {
                         @Override
-                        public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-                        }
-
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                        @Override
+                        public void onTextChanged(CharSequence s, int start, int before, int count) {}
                         @Override
                         public void afterTextChanged(Editable s) {
-                            if (cell.getTag() != null) {
-                                return;
-                            }
-                            String newName = s.toString();
+                            CharSequence newName = s;
                             if (!TextUtils.equals(newName, newFilterName)) {
                                 nameChangedManually = !TextUtils.isEmpty(newName);
-                                newFilterName = newName;
+                                newFilterName = AnimatedEmojiSpan.onlyEmojiSpans(newName);
                                 if (folderTagsHeader != null) {
-                                    folderTagsHeader.setPreviewText((newFilterName == null ? "" : newFilterName).toUpperCase(), true);
+                                    folderTagsHeader.setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), true);
                                 }
-                            }
-                            RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(nameRow);
-                            if (holder != null) {
-                                setTextLeft(holder.itemView);
+                                if (nameHeaderCell != null) {
+                                    nameHeaderCell.rightTextView.setText(hasAnimatedEmojis(newFilterName) ? LocaleController.getString(newFilterAnimations ? R.string.FilterNameAnimationsDisable : R.string.FilterNameAnimationsEnable) : null);
+                                }
+                                actionBar.setTitle(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, actionBar.getTitleFontMetricsInt()));
                             }
                             checkDoneButton(true);
                         }
                     });
-                    EditTextBoldCursor editText = cell.getTextView();
-                    cell.setShowNextButton(true);
-                    editText.setOnFocusChangeListener((v, hasFocus) -> cell.getTextView2().setAlpha(hasFocus || newFilterName.length() > MAX_NAME_LENGTH ? 1.0f : 0.0f));
-                    editText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+                    editText.setPadding(dp(23 - 16), editText.getPaddingTop(), editText.getPaddingRight(), editText.getPaddingBottom());
+                    cell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    cell.editTextEmoji.getEditText().setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
                     view = cell;
                     break;
                 }
@@ -1398,23 +1570,18 @@ public class FilterCreateActivity extends BaseFragment {
         public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
             int viewType = holder.getItemViewType();
             if (viewType == 2) {
-                setTextLeft(holder.itemView);
-                PollEditTextCell textCell = (PollEditTextCell) holder.itemView;
-                textCell.setTag(1);
-                textCell.setTextAndHint(newFilterName != null ? newFilterName : "", LocaleController.getString("FilterNameHint", R.string.FilterNameHint), false);
-                textCell.setTag(null);
+
+            } else if (viewType == VIEW_TYPE_HEADER_COLOR_PREVIEW) {
+                ((HeaderCellColorPreview) holder.itemView).setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), true);
             }
         }
 
         @Override
         public void onViewDetachedFromWindow(RecyclerView.ViewHolder holder) {
             if (holder.getItemViewType() == 2) {
-                PollEditTextCell editTextCell = (PollEditTextCell) holder.itemView;
-                EditTextBoldCursor editText = editTextCell.getTextView();
-                if (editText.isFocused()) {
-                    editText.clearFocus();
-                    AndroidUtilities.hideKeyboard(editText);
-                }
+                EditEmojiTextCell editTextCell = (EditEmojiTextCell) holder.itemView;
+                editTextCell.editTextEmoji.hidePopup(true);
+                editTextCell.editTextEmoji.closeKeyboard();
             }
         }
 
@@ -1435,6 +1602,14 @@ public class FilterCreateActivity extends BaseFragment {
                     }
                     break;
                 }
+                case VIEW_TYPE_HEADER_ANIMATED: {
+                    HeaderCellWithRight cell = (HeaderCellWithRight) holder.itemView;
+                    nameHeaderCell = cell;
+                    cell.setText(item.text);
+                    cell.rightTextView.setText(item.subtext);
+                    cell.rightTextView.setOnClickListener(item.onClickListener);
+                    break;
+                }
                 case VIEW_TYPE_CHAT: {
                     UserCell userCell = (UserCell) holder.itemView;
                     if (item.chatType != null) {
@@ -1447,11 +1622,11 @@ public class FilterCreateActivity extends BaseFragment {
                         if (user != null) {
                             String status;
                             if (user.bot) {
-                                status = LocaleController.getString("Bot", R.string.Bot);
+                                status = LocaleController.getString(R.string.Bot);
                             } else if (user.contact) {
-                                status = LocaleController.getString("FilterContact", R.string.FilterContact);
+                                status = LocaleController.getString(R.string.FilterContact);
                             } else {
-                                status = LocaleController.getString("FilterNonContact", R.string.FilterNonContact);
+                                status = LocaleController.getString(R.string.FilterNonContact);
                             }
                             userCell.setData(user, null, status, 0, divider);
                         }
@@ -1467,15 +1642,15 @@ public class FilterCreateActivity extends BaseFragment {
                                 }
                             } else if (!ChatObject.isPublic(chat)) {
                                 if (ChatObject.isChannel(chat) && !chat.megagroup) {
-                                    status = LocaleController.getString("ChannelPrivate", R.string.ChannelPrivate);
+                                    status = LocaleController.getString(R.string.ChannelPrivate);
                                 } else {
-                                    status = LocaleController.getString("MegaPrivate", R.string.MegaPrivate);
+                                    status = LocaleController.getString(R.string.MegaPrivate);
                                 }
                             } else {
                                 if (ChatObject.isChannel(chat) && !chat.megagroup) {
-                                    status = LocaleController.getString("ChannelPublic", R.string.ChannelPublic);
+                                    status = LocaleController.getString(R.string.ChannelPublic);
                                 } else {
-                                    status = LocaleController.getString("MegaPublic", R.string.MegaPublic);
+                                    status = LocaleController.getString(R.string.MegaPublic);
                                 }
                             }
                             userCell.setData(chat, null, status, 0, divider);
@@ -1511,7 +1686,7 @@ public class FilterCreateActivity extends BaseFragment {
                 }
                 case VIEW_TYPE_HEADER_COLOR_PREVIEW: {
                     folderTagsHeader = (HeaderCellColorPreview) holder.itemView;
-                    folderTagsHeader.setPreviewText((newFilterName == null ? "" : newFilterName).toUpperCase(), false);
+                    folderTagsHeader.setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), false);
                     folderTagsHeader.setPreviewColor(!getUserConfig().isPremium() ? -1 : newFilterColor, false);
                     folderTagsHeader.setText(LocaleController.getString(R.string.FolderTagColor));
                     break;
@@ -1562,7 +1737,7 @@ public class FilterCreateActivity extends BaseFragment {
             }
         };
 
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{HeaderCell.class, TextCell.class, PollEditTextCell.class, UserCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{HeaderCell.class, TextCell.class, UserCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
         themeDescriptions.add(new ThemeDescription(fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundGray));
 
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault));
@@ -1688,7 +1863,7 @@ public class FilterCreateActivity extends BaseFragment {
             textView = new TextView(context);
             textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
             textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-            textView.setText(LocaleController.getString("CreateNewLink", R.string.CreateNewLink));
+            textView.setText(LocaleController.getString(R.string.CreateNewLink));
             textView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
             textView.setPadding(LocaleController.isRTL ? 16 : 0, 0, LocaleController.isRTL ? 0 : 16, 0);
             addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL | Gravity.CENTER_VERTICAL, LocaleController.isRTL ? 0 : 64, 0, LocaleController.isRTL ? 64 : 0, 0));
@@ -1783,7 +1958,7 @@ public class FilterCreateActivity extends BaseFragment {
             optionsIcon.setBackground(Theme.createSelectorDrawable(Theme.getColor(Theme.key_listSelector)));
             optionsIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_stickers_menu), PorterDuff.Mode.SRC_IN));
             optionsIcon.setOnClickListener(e -> options());
-            optionsIcon.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
+            optionsIcon.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
             addView(optionsIcon, LayoutHelper.createFrame(40, 40, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT), LocaleController.isRTL ? 8 : 4, 4, LocaleController.isRTL ? 4 : 8, 4));
 
             paint = new Paint();
@@ -1892,8 +2067,8 @@ public class FilterCreateActivity extends BaseFragment {
                 return;
             }
             ItemOptions options = ItemOptions.makeOptions(fragment, this);
-            options.add(R.drawable.msg_qrcode, LocaleController.getString("GetQRCode", R.string.GetQRCode), this::qrcode);
-            options.add(R.drawable.msg_delete, LocaleController.getString("DeleteLink", R.string.DeleteLink), true, this::deleteLink);
+            options.add(R.drawable.msg_qrcode, LocaleController.getString(R.string.GetQRCode), this::qrcode);
+            options.add(R.drawable.msg_delete, LocaleController.getString(R.string.DeleteLink), true, this::deleteLink);
             if (LocaleController.isRTL) {
                 options.setGravity(Gravity.LEFT);
             }
@@ -1942,7 +2117,7 @@ public class FilterCreateActivity extends BaseFragment {
             Runnable update = () -> onDelete(lastInvite);
             ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
                 if (err != null) {
-                    BulletinFactory.of(fragment).createErrorBulletin(LocaleController.getString("UnknownError", R.string.UnknownError)).show();
+                    BulletinFactory.of(fragment).createErrorBulletin(LocaleController.getString(R.string.UnknownError)).show();
                     AndroidUtilities.cancelRunOnUIThread(update);
                 }
             }));
@@ -1963,7 +2138,7 @@ public class FilterCreateActivity extends BaseFragment {
                 return;
             }
 
-            QRCodeBottomSheet qrCodeBottomSheet = new QRCodeBottomSheet(getContext(), LocaleController.getString("InviteByQRCode", R.string.InviteByQRCode), lastUrl, LocaleController.getString("QRCodeLinkHelpFolder", R.string.QRCodeLinkHelpFolder), false);
+            QRCodeBottomSheet qrCodeBottomSheet = new QRCodeBottomSheet(getContext(), LocaleController.getString(R.string.InviteByQRCode), lastUrl, LocaleController.getString(R.string.QRCodeLinkHelpFolder), false);
             qrCodeBottomSheet.setCenterAnimation(R.raw.qr_code_logo);
             qrCodeBottomSheet.show();
         }
@@ -1973,7 +2148,7 @@ public class FilterCreateActivity extends BaseFragment {
             super.onInitializeAccessibilityNodeInfo(info);
             info.setContentDescription(
                 (lastInvite != null && !TextUtils.isEmpty(lastInvite.title) ? lastInvite.title + "\n " : "") +
-                LocaleController.getString("InviteLink", R.string.InviteLink) + ", " + subtitleTextView.getText() +
+                LocaleController.getString(R.string.InviteLink) + ", " + subtitleTextView.getText() +
                 (lastInvite != null && TextUtils.isEmpty(lastInvite.title) ? "\n\n" + lastInvite.url : "")
             );
         }
@@ -1994,7 +2169,7 @@ public class FilterCreateActivity extends BaseFragment {
 
         SpannableStringBuilder text = new SpannableStringBuilder(string);
         text.append("  ");
-        SpannableString newText = new SpannableString("NEW"); // new SpannableString(LocaleController.getString("New", R.string.New));
+        SpannableString newText = new SpannableString("NEW"); // new SpannableString(LocaleController.getString(R.string.New));
         if (outline) {
             Drawable drawable = context.getResources().getDrawable(R.drawable.msg_other_new_outline).mutate();
             drawable.setBounds(0, -dp(8), drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight() - dp(8));
@@ -2042,15 +2217,20 @@ public class FilterCreateActivity extends BaseFragment {
 
         private boolean outline;
         private int color;
+        private int fontSize;
 
         public NewSpan(boolean outline) {
+            this(outline, -1);
+        }
+        public NewSpan(boolean outline, int fontSize) {
             this.outline = outline;
+            this.fontSize = fontSize;
 
-            textPaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+            textPaint.setTypeface(AndroidUtilities.bold());
             if (outline) {
                 bgPaint.setStyle(Paint.Style.STROKE);
                 bgPaint.setStrokeWidth(dpf2(1.33f));
-                textPaint.setTextSize(dp(10));
+                textPaint.setTextSize(dp(fontSize < 0 ? 10 : fontSize));
                 textPaint.setStyle(Paint.Style.FILL_AND_STROKE);
                 textPaint.setStrokeWidth(dpf2(0.2f));
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -2058,13 +2238,17 @@ public class FilterCreateActivity extends BaseFragment {
                 }
             } else {
                 bgPaint.setStyle(Paint.Style.FILL);
-                textPaint.setTextSize(dp(12));
+                textPaint.setTextSize(dp(fontSize < 0 ? 12 : fontSize));
             }
+        }
+
+        public void setTypeface(Typeface typeface) {
+            textPaint.setTypeface(typeface);
         }
 
         public NewSpan(float textSize) {
             this.outline = false;
-            textPaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+            textPaint.setTypeface(AndroidUtilities.bold());
             bgPaint.setStyle(Paint.Style.FILL);
             textPaint.setTextSize(dp(textSize));
         }
@@ -2073,9 +2257,18 @@ public class FilterCreateActivity extends BaseFragment {
             this.color = color;
         }
 
+        private CharSequence text = "NEW";
+        public void setText(CharSequence text) {
+            this.text = text;
+            if (layout != null) {
+                layout = null;
+                makeLayout();
+            }
+        }
+
         public StaticLayout makeLayout() {
             if (layout == null) {
-                layout = new StaticLayout("NEW"/*LocaleController.getString("New", R.string.New)*/, textPaint, AndroidUtilities.displaySize.x, Layout.Alignment.ALIGN_NORMAL, 1, 0, false);
+                layout = new StaticLayout(text, textPaint, AndroidUtilities.displaySize.x, Layout.Alignment.ALIGN_NORMAL, 1, 0, false);
                 width = layout.getLineWidth(0);
                 height = layout.getHeight();
             }
@@ -2114,7 +2307,7 @@ public class FilterCreateActivity extends BaseFragment {
                 AndroidUtilities.rectTmp.bottom += dp(1.33f);
             } else {
                 r = dp(4.4f);
-                AndroidUtilities.rectTmp.inset(dp(-4), dp(-2.33f));
+                AndroidUtilities.rectTmp.inset(dp(-4), dp(fontSize == 8 ? -3.66f : -2.33f));
             }
             canvas.drawRoundRect(AndroidUtilities.rectTmp, r, r, bgPaint);
 
@@ -2141,7 +2334,7 @@ public class FilterCreateActivity extends BaseFragment {
                     add ?
                         LocaleController.formatPluralString("FolderLinkAddedChats", count) :
                         LocaleController.formatPluralString("FolderLinkRemovedChats", count),
-                    LocaleController.getString("FolderLinkChatlistUpdate", R.string.FolderLinkChatlistUpdate)
+                    LocaleController.getString(R.string.FolderLinkChatlistUpdate)
                 ).setDuration(Bulletin.DURATION_PROLONG).show();
             };
             if (getLayoutContainer() != null) {
@@ -2170,7 +2363,7 @@ public class FilterCreateActivity extends BaseFragment {
                 } else if (err != null && "FILTER_ID_INVALID".equals(err.text) && !filter.isDefault()) {
                     new FilterCreateActivity.FilterInvitesBottomSheet(fragment, filter, null).show();
                 } else {
-                    BulletinFactory.of(fragment).createErrorBulletin(LocaleController.getString("UnknownError", R.string.UnknownError)).show();
+                    BulletinFactory.of(fragment).createErrorBulletin(LocaleController.getString(R.string.UnknownError)).show();
                 }
                 if (onLoaded != null) {
                     AndroidUtilities.runOnUIThread(onLoaded, Math.max(0, 200 - (System.currentTimeMillis() - start)));
@@ -2204,12 +2397,15 @@ public class FilterCreateActivity extends BaseFragment {
             button = new TextView(getContext());
             button.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
             button.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
-            button.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+            button.setTypeface(AndroidUtilities.bold());
             button.setBackground(Theme.AdaptiveRipple.filledRectByKey(Theme.key_featuredStickers_addButton, 8));
-            button.setText(LocaleController.getString("FolderLinkShareButton", R.string.FolderLinkShareButton));
+            button.setText(LocaleController.getString(R.string.FolderLinkShareButton));
             button.setGravity(Gravity.CENTER);
             button.setOnClickListener(e -> createLink());
-            containerView.addView(button, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL, 16, 10, 16, 10));
+            FrameLayout.LayoutParams buttonLayoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL, 16, 10, 16, 10);
+            buttonLayoutParams.leftMargin += backgroundPaddingLeft;
+            buttonLayoutParams.rightMargin += backgroundPaddingLeft;
+            containerView.addView(button, buttonLayoutParams);
 
             bulletinContainer = new FrameLayout(getContext());
             containerView.addView(bulletinContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 100, Gravity.BOTTOM, 6, 0, 6, 0));
@@ -2224,11 +2420,22 @@ public class FilterCreateActivity extends BaseFragment {
 
         @Override
         protected CharSequence getTitle() {
-            return LocaleController.formatString("FolderLinkShareTitle", R.string.FolderLinkShareTitle, filter == null ? "" : filter.name);
+            return getTitle(null);
         }
 
-        private ArrayList<ItemInner> oldItems = new ArrayList<>();
-        private ArrayList<ItemInner> items = new ArrayList<>();
+        protected CharSequence getTitle(TextView textView) {
+            CharSequence name = "";
+            if (filter != null) {
+                Paint.FontMetricsInt fontMetricsInt = textView == null ? null : textView.getPaint().getFontMetricsInt();
+                name = new SpannableStringBuilder(filter.name);
+                name = Emoji.replaceEmoji(name, fontMetricsInt, false);
+                name = MessageObject.replaceAnimatedEmoji(name, filter.entities, fontMetricsInt);
+            }
+            return LocaleController.formatSpannable(R.string.FolderLinkShareTitle2, name);
+        }
+
+        private final ArrayList<ItemInner> oldItems = new ArrayList<>();
+        private final ArrayList<ItemInner> items = new ArrayList<>();
 
         private void updateRows(boolean animated) {
             oldItems.clear();
@@ -2330,9 +2537,9 @@ public class FilterCreateActivity extends BaseFragment {
                             @Override
                             public void options() {
                                 ItemOptions options = ItemOptions.makeOptions(container, this);
-                                options.add(R.drawable.msg_copy, LocaleController.getString("CopyLink", R.string.CopyLink), this::copy);
-                                options.add(R.drawable.msg_qrcode, LocaleController.getString("GetQRCode", R.string.GetQRCode), this::qrcode);
-                                options.add(R.drawable.msg_delete, LocaleController.getString("DeleteLink", R.string.DeleteLink), true, this::deleteLink);
+                                options.add(R.drawable.msg_copy, LocaleController.getString(R.string.CopyLink), this::copy);
+                                options.add(R.drawable.msg_qrcode, LocaleController.getString(R.string.GetQRCode), this::qrcode);
+                                options.add(R.drawable.msg_delete, LocaleController.getString(R.string.DeleteLink), true, this::deleteLink);
                                 if (LocaleController.isRTL) {
                                     options.setGravity(Gravity.LEFT);
                                 }
@@ -2363,7 +2570,7 @@ public class FilterCreateActivity extends BaseFragment {
                     } else {
                         view = new HeaderView(getContext());
 //                        TextView textView = new TextView(getContext());
-//                        textView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+//                        textView.setTypeface(AndroidUtilities.medium());
 //                        textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
 //                        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 19);
 //                        textView.setPadding(AndroidUtilities.dp(21), AndroidUtilities.dp(16), AndroidUtilities.dp(21), AndroidUtilities.dp(8));
@@ -2400,7 +2607,7 @@ public class FilterCreateActivity extends BaseFragment {
 //                        textView.setText(item.text);
                     } else if (viewType == VIEW_TYPE_CREATE_LINK) {
                         CreateLinkCell createLinkCell = (CreateLinkCell) holder.itemView;
-                        createLinkCell.setText(LocaleController.getString("CreateNewInviteLink", R.string.CreateNewInviteLink));
+                        createLinkCell.setText(LocaleController.getString(R.string.CreateNewInviteLink));
                         createLinkCell.setDivider(divider);
                     }
                 }
@@ -2415,7 +2622,7 @@ public class FilterCreateActivity extends BaseFragment {
         private class HeaderView extends FrameLayout {
 
             private final ImageView imageView;
-            private final TextView titleView;
+            private final SpoilersTextView titleView;
             private final TextView subtitleView;
             private final ImageView closeImageView;
 
@@ -2429,18 +2636,19 @@ public class FilterCreateActivity extends BaseFragment {
                 imageView.setBackground(Theme.createRoundRectDrawable(dp(22), Theme.getColor(Theme.key_featuredStickers_addButton)));
                 addView(imageView, LayoutHelper.createFrame(54, 44, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 22, 0, 0));
 
-                titleView = new TextView(context);
-                titleView.setText(getTitle());
-                titleView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+                titleView = new SpoilersTextView(context);
+                titleView.setTypeface(AndroidUtilities.bold());
                 titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
                 titleView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
                 titleView.setGravity(Gravity.CENTER_HORIZONTAL);
+                titleView.setText(getTitle(titleView));
+                titleView.cacheType = filter != null && filter.title_noanimate ? AnimatedEmojiDrawable.CACHE_TYPE_NOANIMATE_FOLDER : AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES;
                 addView(titleView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 20, 84, 20, 0));
 
                 subtitleView = new TextView(context);
                 subtitleView.setText(invites.isEmpty() ?
-                    LocaleController.getString("FolderLinkShareSubtitleEmpty", R.string.FolderLinkShareSubtitleEmpty) :
-                    LocaleController.getString("FolderLinkShareSubtitle", R.string.FolderLinkShareSubtitle)
+                    LocaleController.getString(R.string.FolderLinkShareSubtitleEmpty) :
+                    LocaleController.getString(R.string.FolderLinkShareSubtitle)
                 );
                 subtitleView.setLines(2);
                 subtitleView.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -2536,9 +2744,9 @@ public class FilterCreateActivity extends BaseFragment {
         if ("INVITE_PEERS_TOO_MUCH".equals(err.text)) {
             new LimitReachedBottomSheet(fragment, fragment.getContext(), LimitReachedBottomSheet.TYPE_CHATS_IN_FOLDER, fragment.getCurrentAccount(), null).show();
         } else if ("PEERS_LIST_EMPTY".equals(err.text)) {
-            factory.createErrorBulletin(LocaleController.getString("FolderLinkNoChatsError", R.string.FolderLinkNoChatsError)).show();
+            factory.createErrorBulletin(LocaleController.getString(R.string.FolderLinkNoChatsError)).show();
         } else if ("USER_CHANNELS_TOO_MUCH".equals(err.text)) {
-            factory.createErrorBulletin(LocaleController.getString("FolderLinkOtherAdminLimitError", R.string.FolderLinkOtherAdminLimitError)).show();
+            factory.createErrorBulletin(LocaleController.getString(R.string.FolderLinkOtherAdminLimitError)).show();
         } else if ("CHANNELS_TOO_MUCH".equals(err.text)) {
             new LimitReachedBottomSheet(fragment, fragment.getContext(), LimitReachedBottomSheet.TYPE_TO0_MANY_COMMUNITIES, fragment.getCurrentAccount(), null).show();
         } else if ("INVITES_TOO_MUCH".equals(err.text)) {
@@ -2546,13 +2754,13 @@ public class FilterCreateActivity extends BaseFragment {
         } else if ("CHATLISTS_TOO_MUCH".equals(err.text)) {
             new LimitReachedBottomSheet(fragment, fragment.getContext(), LimitReachedBottomSheet.TYPE_SHARED_FOLDERS, fragment.getCurrentAccount(), null).show();
         } else if ("INVITE_SLUG_EXPIRED".equals(err.text)) {
-            factory.createErrorBulletin(LocaleController.getString("NoFolderFound", R.string.NoFolderFound)).show();
+            factory.createErrorBulletin(LocaleController.getString(R.string.NoFolderFound)).show();
         } else if ("FILTER_INCLUDE_TOO_MUCH".equals(err.text)) {
             new LimitReachedBottomSheet(fragment, fragment.getContext(), LimitReachedBottomSheet.TYPE_CHATS_IN_FOLDER, fragment.getCurrentAccount(), null).show();
         } else if ("DIALOG_FILTERS_TOO_MUCH".equals(err.text)) {
             new LimitReachedBottomSheet(fragment, fragment.getContext(), LimitReachedBottomSheet.TYPE_FOLDERS, fragment.getCurrentAccount(), null).show();
         } else {
-            factory.createErrorBulletin(LocaleController.getString("UnknownError", R.string.UnknownError)).show();
+            factory.createErrorBulletin(LocaleController.getString(R.string.UnknownError)).show();
         }
         return true;
     }
@@ -2589,7 +2797,7 @@ public class FilterCreateActivity extends BaseFragment {
             };
             animatedColor = new AnimatedColor(previewView, 0, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
             previewView.setTextSize(dp(10));
-            previewView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+            previewView.setTypeface(AndroidUtilities.bold());
             previewView.setGravity(Gravity.RIGHT);
             previewView.setPadding(dp(4.66f), 0, dp(4.66f), 0);
             addView(previewView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, padding, 16.66f, padding, bottomMargin));
@@ -2601,6 +2809,9 @@ public class FilterCreateActivity extends BaseFragment {
 
             final boolean noTag = colorId < 0;
             currentColor = noTag ? 0 : FilterCreateActivity.this.getThemedColor(Theme.keys_avatar_nameInMessage[colorId % Theme.keys_avatar_nameInMessage.length]);
+            if (!noTag) {
+                previewView.setEmojiColor(currentColor);
+            }
             if (!animated) {
                 this.animatedColor.set(currentColor, true);
             }
@@ -2611,11 +2822,40 @@ public class FilterCreateActivity extends BaseFragment {
             }
         }
 
-        public void setPreviewText(String text, boolean animated) {
+        public void setPreviewText(CharSequence text, boolean animated) {
+            if (text == null) {
+                text = "";
+            }
             if (text.length() > MAX_NAME_LENGTH) {
-                text = text.substring(0, MAX_NAME_LENGTH);
+                text = text.subSequence(0, MAX_NAME_LENGTH);
             }
             previewView.setText(Emoji.replaceEmoji(text, previewView.getPaint().getFontMetricsInt(), false), animated && !LocaleController.isRTL);
+        }
+
+        public TextPaint getPreviewTextPaint() {
+            return previewView.getPaint();
+        }
+    }
+
+    private class HeaderCellWithRight extends HeaderCell {
+
+        private final AnimatedTextView rightTextView;
+
+        public HeaderCellWithRight(Context context, Theme.ResourcesProvider resourcesProvider) {
+            super(context);
+
+            rightTextView = new AnimatedTextView(context, true, true, true) {
+                @Override
+                protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                    setPivotX(getMeasuredWidth());
+                }
+            };
+            rightTextView.setGravity(LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT);
+            rightTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueHeader, resourcesProvider));
+            rightTextView.setTextSize(dpf2(15));
+            addView(rightTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, 22, 17, 22, 0));
+            ScaleStateListAnimator.apply(rightTextView, 0.04f, 1.2f);
         }
     }
 }

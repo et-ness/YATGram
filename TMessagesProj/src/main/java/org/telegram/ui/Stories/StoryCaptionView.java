@@ -52,6 +52,7 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -83,7 +84,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -734,7 +734,7 @@ public class StoryCaptionView extends NestedScrollView {
 
         public void draw(Canvas canvas, float width) {
             if (titleLayout == null) {
-                titleLayout = new Text(title == null ? "" : title, 14, AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+                titleLayout = new Text(title == null ? "" : title, 14, AndroidUtilities.bold());
             }
             if (textLayout == null || updateText) {
                 textLayout = new Text(text == null ? "" : text, 14);
@@ -909,7 +909,7 @@ public class StoryCaptionView extends NestedScrollView {
                 if (shouldCollapse) {
                     float collapsedY = fullLayout.getLineTop(2) + fullLayout.getTopPadding();
                     if (this == state[0]) {
-                        String showMoreText = LocaleController.getString("ShowMore", R.string.ShowMore);
+                        String showMoreText = LocaleController.getString(R.string.ShowMore);
                         showMore = makeTextLayout(showMorePaint, showMoreText, width);
 
                         showMoreY = verticalPadding + replyOffset + collapsedY - AndroidUtilities.dpf2(0.3f);
@@ -1109,7 +1109,7 @@ public class StoryCaptionView extends NestedScrollView {
 
             private void drawLayout(StaticLayout staticLayout, Canvas canvas, List<SpoilerEffect> spoilers) {
                 if (!spoilers.isEmpty()) {
-                    SpoilerEffect.renderWithRipple(StoryCaptionTextView.this, false, Color.WHITE, 0, patchedLayout, staticLayout, spoilers, canvas, false);
+                    SpoilerEffect.renderWithRipple(StoryCaptionTextView.this, false, Color.WHITE, 0, patchedLayout, 0, staticLayout, spoilers, canvas, false);
                 } else {
                     staticLayout.draw(canvas);
                 }
@@ -1247,7 +1247,7 @@ public class StoryCaptionView extends NestedScrollView {
             textPaint.setTextSize(dp(15));
 
             showMorePaint.setColor(Color.WHITE);
-            showMorePaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+            showMorePaint.setTypeface(AndroidUtilities.bold());
             showMorePaint.setTextSize(dp(16));
 
             xRefPaint.setColor(0xff000000);
@@ -1274,7 +1274,7 @@ public class StoryCaptionView extends NestedScrollView {
             if (text == null) {
                 text = "";
             }
-            if (TextUtils.equals(state[0].text, text) && state[0].reply == reply) {
+            if (MediaDataController.stringsEqual(state[0].text, text) && state[0].reply == reply) {
                 state[0].translating = translating;
                 invalidate();
                 return;

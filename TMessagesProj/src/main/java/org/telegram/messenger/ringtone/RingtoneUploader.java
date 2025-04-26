@@ -9,6 +9,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.Components.Bulletin;
 
 import java.io.File;
@@ -35,7 +36,7 @@ public class RingtoneUploader implements NotificationCenter.NotificationCenterDe
             }
             if (location.equals(filePath)) {
                 final TLRPC.InputFile file = (TLRPC.InputFile) args[1];
-                TLRPC.TL_account_uploadRingtone req = new TLRPC.TL_account_uploadRingtone();
+                TL_account.uploadRingtone req = new TL_account.uploadRingtone();
                 req.file = file;
                 req.file_name = file.name;
                 req.mime_type = FileLoader.getFileExtension(new File(file.name));
@@ -89,7 +90,7 @@ public class RingtoneUploader implements NotificationCenter.NotificationCenterDe
                 } else if (error.text.equals("RINGTONE_SIZE_TOO_BIG")) {
                     NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.showBulletin, Bulletin.TYPE_ERROR_SUBTITLE, LocaleController.formatString("TooLargeError", R.string.TooLargeError), LocaleController.formatString("ErrorRingtoneSizeTooBig", R.string.ErrorRingtoneSizeTooBig, (MessagesController.getInstance(currentAccount).ringtoneSizeMax / 1024)));
                 } else {
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.showBulletin, Bulletin.TYPE_ERROR_SUBTITLE, LocaleController.formatString("InvalidFormatError", R.string.InvalidFormatError), LocaleController.formatString("ErrorRingtoneInvalidFormat", R.string.ErrorRingtoneInvalidFormat));
+                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.showBulletin, Bulletin.TYPE_ERROR_SUBTITLE, LocaleController.formatString("InvalidFormatError", R.string.InvalidFormatError), LocaleController.getString(R.string.ErrorRingtoneInvalidFormat));
                 }
             });
         }

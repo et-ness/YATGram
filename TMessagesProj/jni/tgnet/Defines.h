@@ -46,7 +46,7 @@ class NativeByteBuffer;
 class Handshake;
 class ConnectionSocket;
 
-typedef std::function<void(TLObject *response, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msgId)> onCompleteFunc;
+typedef std::function<void(TLObject *response, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msgId, int32_t dcId)> onCompleteFunc;
 typedef std::function<void()> onQuickAckFunc;
 typedef std::function<void()> onWriteToSocketFunc;
 typedef std::function<void()> onRequestClearFunc;
@@ -153,6 +153,8 @@ typedef struct ConnectiosManagerDelegate {
     virtual void getHostByName(std::string domain, int32_t instanceNum, ConnectionSocket *socket) = 0;
     virtual int32_t getInitFlags(int32_t instanceNum) = 0;
     virtual void onPremiumFloodWait(int32_t instanceNum, int32_t requestToken, bool isUpload) = 0;
+    virtual void onIntegrityCheckClassic(int32_t instanceNum, int32_t requestToken, std::string project, std::string nonce) = 0;
+    virtual void onCaptchaCheck(int32_t instanceNum, int32_t requestToken, std::string action, std::string key_id) = 0;
 } ConnectiosManagerDelegate;
 
 typedef struct HandshakeDelegate {
@@ -174,7 +176,8 @@ enum RequestFlag {
     RequestFlagResendAfter = 512,
     RequestFlagIgnoreFloodWait = 1024,
     RequestFlagListenAfterCancel = 2048,
-    RequestFlagIsCancel = 32768
+    RequestFlagIsCancel = 32768,
+    RequestFlagFailOnServerErrorsExceptFloodWait = 65536
 };
 
 inline std::string to_string_int32(int32_t value) {

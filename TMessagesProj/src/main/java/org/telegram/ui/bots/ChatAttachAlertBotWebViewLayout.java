@@ -1,5 +1,6 @@
 package org.telegram.ui.bots;
 
+import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.ui.Components.Bulletin.DURATION_PROLONG;
 
 import android.animation.Animator;
@@ -9,16 +10,17 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.RenderNode;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextPaint;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -59,6 +61,7 @@ import org.telegram.ui.Components.ChatAttachAlert;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SimpleFloatPropertyCompat;
+import org.telegram.ui.web.BotWebViewContainer;
 
 public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlertLayout implements NotificationCenter.NotificationCenterDelegate {
     private final static int POLL_PERIOD = 60000;
@@ -188,7 +191,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
         otherItem.addSubItem(R.id.menu_tos_bot, R.drawable.menu_intro, LocaleController.getString(R.string.BotWebViewToS));
         otherItem.addSubItem(R.id.menu_delete_bot, R.drawable.msg_delete, LocaleController.getString(R.string.BotWebViewDeleteBot));
 
-        webViewContainer = new BotWebViewContainer(context, resourcesProvider, getThemedColor(Theme.key_dialogBackground)) {
+        webViewContainer = new BotWebViewContainer(context, resourcesProvider, getThemedColor(Theme.key_dialogBackground), true) {
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
                 if (ev.getAction() == MotionEvent.ACTION_DOWN) {
@@ -201,14 +204,15 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             }
 
             @Override
-            public void onWebViewCreated() {
-                swipeContainer.setWebView(webViewContainer.getWebView());
+            public void onWebViewCreated(MyWebView webView) {
+                super.onWebViewCreated(webView);
+                swipeContainer.setWebView(webView);
             }
         };
         swipeContainer = new WebViewSwipeContainer(context) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec) - ActionBar.getCurrentActionBarHeight() - AndroidUtilities.dp(84) + measureOffsetY, MeasureSpec.EXACTLY));
+                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec) - ActionBar.getCurrentActionBarHeight() - dp(84) + measureOffsetY, MeasureSpec.EXACTLY));
             }
         };
         swipeContainer.addView(webViewContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
@@ -218,12 +222,12 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             lastSwipeTime = System.currentTimeMillis();
         });
         swipeContainer.setScrollEndListener(()-> webViewContainer.invalidateViewPortHeight(true));
-        swipeContainer.setDelegate(() -> {
+        swipeContainer.setDelegate(byTap -> {
             if (!onCheckDismissByUser()) {
                 swipeContainer.stickTo(0);
             }
         });
-        swipeContainer.setIsKeyboardVisible(obj -> parentAlert.sizeNotifierFrameLayout.getKeyboardHeight() >= AndroidUtilities.dp(20));
+        swipeContainer.setIsKeyboardVisible(obj -> parentAlert.sizeNotifierFrameLayout.getKeyboardHeight() >= dp(20));
 
         addView(swipeContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         addView(progressView = new WebProgressView(context, resourcesProvider), LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 0, 0, 0, 84));
@@ -251,6 +255,10 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
     public void setNeedCloseConfirmation(boolean needCloseConfirmation) {
         this.needCloseConfirmation = needCloseConfirmation;
+    }
+
+    public void setAllowSwipes(boolean allowSwipes) {
+        swipeContainer.setAllowSwipes(allowSwipes);
     }
 
     @Override
@@ -400,7 +408,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
         CharSequence title = UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(botId));
         try {
             TextPaint tp = new TextPaint();
-            tp.setTextSize(AndroidUtilities.dp(20));
+            tp.setTextSize(dp(20));
             title = Emoji.replaceEmoji(title, tp.getFontMetricsInt(), false);
         } catch (Exception ignore) {}
         parentAlert.actionBar.setTitle(title);
@@ -430,7 +438,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
     private void requestEnableKeyboard() {
         BaseFragment fragment = parentAlert.getBaseFragment();
-        if (fragment instanceof ChatActivity && ((ChatActivity) fragment).contentView.measureKeyboardHeight() > AndroidUtilities.dp(20)) {
+        if (fragment instanceof ChatActivity && ((ChatActivity) fragment).contentView.measureKeyboardHeight() > dp(20)) {
             AndroidUtilities.hideKeyboard(parentAlert.baseFragment.getFragmentView());
             AndroidUtilities.runOnUIThread(this::requestEnableKeyboard, 250);
             return;
@@ -578,7 +586,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
     @Override
     public int getFirstOffset() {
-        return getListTopPadding() + AndroidUtilities.dp(56);
+        return getListTopPadding() + dp(56);
     }
 
     @Override
@@ -603,7 +611,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
     @Override
     public int getButtonsHideOffset() {
-        return (int) swipeContainer.getTopActionBarOffsetY() + AndroidUtilities.dp(12);
+        return (int) swipeContainer.getTopActionBarOffsetY() + dp(12);
     }
 
     @Override
@@ -696,12 +704,42 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
     public static class WebViewSwipeContainer extends FrameLayout {
         public final static SimpleFloatPropertyCompat<WebViewSwipeContainer> SWIPE_OFFSET_Y = new SimpleFloatPropertyCompat<>("swipeOffsetY", WebViewSwipeContainer::getSwipeOffsetY, WebViewSwipeContainer::setSwipeOffsetY);
 
-        private GestureDetectorCompat gestureDetector;
-        private boolean isScrolling;
+        private Object renderNode;
+        public Object getRenderNode() {
+            if (renderNode == null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    renderNode = new RenderNode("WebViewSwipeContainer");
+                }
+            }
+            return renderNode;
+        }
+
+        @Override
+        protected void dispatchDraw(@NonNull Canvas canvas) {
+            if (canvas.isHardwareAccelerated()) {
+                Canvas drawingCanvas = canvas;
+                if (renderNode != null) {
+                    final RenderNode node = (RenderNode) renderNode;
+                    node.setPosition(0, 0, getWidth(), getHeight());
+                    drawingCanvas = node.beginRecording();
+                }
+                super.dispatchDraw(drawingCanvas);
+                if (renderNode != null) {
+                    final RenderNode node = (RenderNode) renderNode;
+                    node.endRecording();
+                    canvas.drawRenderNode(node);
+                }
+            } else {
+                super.dispatchDraw(canvas);
+            }
+        }
+
+        private final GestureDetectorCompat gestureDetector;
+        public boolean isScrolling;
         private boolean isSwipeDisallowed;
 
-        private float topActionBarOffsetY = ActionBar.getCurrentActionBarHeight();
-        private float offsetY = 0;
+        public float topActionBarOffsetY = ActionBar.getCurrentActionBarHeight();
+        public float offsetY = 0;
         private float pendingOffsetY = -1;
         private float pendingSwipeOffsetY = Integer.MIN_VALUE;
         private float swipeOffsetY;
@@ -711,7 +749,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
         private boolean flingInProgress;
 
-        private WebView webView;
+        private BotWebViewContainer.MyWebView webView;
 
         private Runnable scrollListener;
         private Runnable scrollEndListener;
@@ -723,6 +761,54 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
         private GenericProvider<Void, Boolean> isKeyboardVisible = obj -> false;
 
+        private boolean fullsize;
+        public boolean opened;
+        public void setFullSize(boolean fullsize) {
+            if (this.fullsize != fullsize) {
+                this.fullsize = fullsize;
+                if (fullsize) {
+                    if (opened) {
+                        stickTo(-getOffsetY() + getTopActionBarOffsetY());
+                    }
+                } else {
+                    stickTo(0);
+                }
+            }
+        }
+
+        public boolean isFullSize() {
+            return fullsize;
+        }
+
+        private boolean allowFullSizeSwipe;
+        public void setAllowFullSizeSwipe(boolean value) {
+            allowFullSizeSwipe = value;
+        }
+
+        private boolean allowSwipes = true;
+        public void setAllowSwipes(boolean allowSwipes) {
+            if (this.allowSwipes != allowSwipes) {
+                this.allowSwipes = allowSwipes;
+            }
+        }
+        public boolean isAllowedSwipes() {
+            return allowSwipes;
+        }
+
+        public boolean shouldWaitWebViewScroll;
+        public boolean allowedScrollX, allowedScrollY;
+        public void setShouldWaitWebViewScroll(boolean value) {
+            shouldWaitWebViewScroll = value;
+        }
+        public void allowThisScroll(boolean x, boolean y) {
+            allowedScrollX = x;
+            allowedScrollY = y;
+        }
+
+        public boolean allowingScroll(boolean x) {
+            return webView == null || !webView.injectedJS || (x ? allowedScrollX : allowedScrollY);
+        }
+
         public WebViewSwipeContainer(@NonNull Context context) {
             super(context);
 
@@ -730,15 +816,19 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             gestureDetector = new GestureDetectorCompat(context, new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                    if (isSwipeDisallowed) {
+                    if (isSwipeDisallowed || !allowSwipes || fullsize && !allowFullSizeSwipe || (shouldWaitWebViewScroll && !allowingScroll(false))) {
                         return false;
                     }
-                    if (velocityY >= 700 && (webView == null || webView.getScrollY() == 0)) {
+                    final float distance = AndroidUtilities.distance(e1.getX(), e1.getY(), e2.getX(), e2.getY());
+                    final float time = e2.getEventTime() - e1.getEventTime();
+                    if (velocityY >= dp(650) && (distance > dp(200) || (time > 250)) && (webView == null || webView.getScrollY() == 0)) {
                         flingInProgress = true;
 
-                        if (swipeOffsetY >= swipeStickyRange) {
-                            if (delegate != null) {
-                                delegate.onDismiss();
+                        if (swipeOffsetY >= swipeStickyRange || fullsize) {
+                            if (fullsize && allowFullSizeSwipe && (drawnSwipeOffsetY == -offsetY + topActionBarOffsetY || swipeOffsetY <= -swipeStickyRange && velocityY < dp(1200))) {
+                                stickTo(-offsetY + topActionBarOffsetY);
+                            } else if (delegate != null) {
+                                delegate.onDismiss(false);
                             }
                         } else {
                             stickTo(0);
@@ -749,12 +839,13 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                         stickTo(-offsetY + topActionBarOffsetY);
                         return true;
                     }
-                    return true;
+                    return false;
                 }
 
                 @Override
                 public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                    if (!isScrolling && !isSwipeDisallowed) {
+                    distanceY = cap(distanceY);
+                    if (!isScrolling && !isSwipeDisallowed && allowSwipes && (!shouldWaitWebViewScroll || swipeOffsetY != -offsetY + topActionBarOffsetY || allowingScroll(false))) {
                         if (isKeyboardVisible.provide(null) && swipeOffsetY == -offsetY + topActionBarOffsetY) {
                             isSwipeDisallowed = true;
                         } else if (Math.abs(distanceY) >= touchSlop && Math.abs(distanceY) * 1.5f >= Math.abs(distanceX) && (swipeOffsetY != -offsetY + topActionBarOffsetY || webView == null || distanceY < 0 && webView.getScrollY() == 0)) {
@@ -785,7 +876,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                             } else {
                                 swipeOffsetY -= distanceY;
                             }
-                        } else {
+                        } else if (distanceY > 0) {
                             swipeOffsetY -= distanceY;
 
                             if (webView != null && swipeOffsetY < -offsetY + topActionBarOffsetY) {
@@ -795,6 +886,9 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                         }
 
                         swipeOffsetY = MathUtils.clamp(swipeOffsetY, -offsetY + topActionBarOffsetY, getHeight() - offsetY + topActionBarOffsetY);
+                        if (fullsize && !allowFullSizeSwipe) {
+                            swipeOffsetY = Math.min(swipeOffsetY, -offsetY + topActionBarOffsetY);
+                        }
                         invalidateTranslation();
                         return true;
                     }
@@ -804,6 +898,8 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             });
             updateStickyRange();
         }
+
+        private float drawnSwipeOffsetY;
 
         public void setIsKeyboardVisible(GenericProvider<Void, Boolean> isKeyboardVisible) {
             this.isKeyboardVisible = isKeyboardVisible;
@@ -841,7 +937,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             this.scrollEndListener = scrollEndListener;
         }
 
-        public void setWebView(WebView webView) {
+        public void setWebView(BotWebViewContainer.MyWebView webView) {
             this.webView = webView;
         }
 
@@ -852,6 +948,11 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
         public void setSwipeOffsetY(float swipeOffsetY) {
             this.swipeOffsetY = swipeOffsetY;
+            invalidateTranslation();
+        }
+
+        public void setForceOffsetY(float offsetY) {
+            this.offsetY = offsetY;
             invalidateTranslation();
         }
 
@@ -867,7 +968,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
             float wasOffsetY = this.offsetY;
             float deltaOffsetY = offsetY - wasOffsetY;
-            boolean wasOnTop = Math.abs(swipeOffsetY + wasOffsetY - topActionBarOffsetY) <= AndroidUtilities.dp(1);
+            boolean wasOnTop = Math.abs(swipeOffsetY + wasOffsetY - topActionBarOffsetY) <= dp(1);
             if (!isSwipeOffsetAnimationDisallowed) {
                 if (offsetYAnimator != null) {
                     offsetYAnimator.cancel();
@@ -879,10 +980,14 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                         .addUpdateListener((animation, value, velocity) -> {
                             this.offsetY = value;
 
-                            float progress = (value - wasOffsetY) / deltaOffsetY;
+                            float progress = deltaOffsetY == 0 ? 1f : (value - wasOffsetY) / deltaOffsetY;
 
                             if (wasOnTop) {
-                                swipeOffsetY = MathUtils.clamp(swipeOffsetY - progress * Math.max(0, deltaOffsetY), -this.offsetY + topActionBarOffsetY, getHeight() - this.offsetY + topActionBarOffsetY);
+                                swipeOffsetY = MathUtils.clamp(
+                                    swipeOffsetY - progress * Math.max(0, deltaOffsetY),
+                                    -this.offsetY + topActionBarOffsetY,
+                                    getHeight() - this.offsetY + topActionBarOffsetY
+                                );
                             }
                             if (scrollAnimator != null && scrollAnimator.getSpring().getFinalPosition() == -wasOffsetY + topActionBarOffsetY) {
                                 scrollAnimator.getSpring().setFinalPosition(-offsetY + topActionBarOffsetY);
@@ -904,14 +1009,24 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                 this.offsetY = offsetY;
 
                 if (wasOnTop) {
-                    swipeOffsetY = MathUtils.clamp(swipeOffsetY - Math.max(0, deltaOffsetY), -this.offsetY + topActionBarOffsetY, getHeight() - this.offsetY + topActionBarOffsetY);
+                    swipeOffsetY = MathUtils.clamp(
+                        swipeOffsetY - Math.max(0, deltaOffsetY),
+                        -this.offsetY + topActionBarOffsetY,
+                        getHeight() - this.offsetY + topActionBarOffsetY
+                    );
                 }
                 invalidateTranslation();
             }
         }
 
-        private void invalidateTranslation() {
+        private void updateDrawn() {
+            drawnSwipeOffsetY = swipeOffsetY;
+        }
+
+        public void invalidateTranslation() {
             setTranslationY(Math.max(topActionBarOffsetY, offsetY + swipeOffsetY));
+            AndroidUtilities.cancelRunOnUIThread(this::updateDrawn);
+            AndroidUtilities.runOnUIThread(this::updateDrawn);
             if (scrollListener != null) {
                 scrollListener.run();
             }
@@ -920,6 +1035,11 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                 Bulletin bulletin = Bulletin.getVisibleBulletin();
                 bulletin.updatePosition();
             }
+        }
+
+        @Override
+        public void setTranslationY(float translationY) {
+            super.setTranslationY(translationY);
         }
 
         public float getTopActionBarOffsetY() {
@@ -938,10 +1058,46 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             this.delegate = delegate;
         }
 
+        private float sy = 0;
+        private boolean scrolledOut = false;
+        private final float minscroll = dp(60);
+        private float cap(float dy) {
+            if (scrolledOut) {
+                return dy;
+            }
+            sy += dy;
+            if (Math.abs(sy) > minscroll) {
+                scrolledOut = true;
+                if (sy > 0) {
+                    dy = sy - minscroll;
+                } else {
+                    dy = sy + minscroll;
+                }
+            } else {
+                dy = 0;
+            }
+            return dy;
+        }
+
+        public boolean stickToEdges = true;
+
+        private long pressDownTime;
+        private float pressDownX, pressDownY;
         @Override
         public boolean dispatchTouchEvent(MotionEvent ev) {
             if (isScrolling && ev.getActionIndex() != 0) {
                 return false;
+            }
+            if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+                pressDownTime = ev.getEventTime();
+                pressDownX = ev.getX();
+                pressDownY = ev.getY();
+                scrolledOut = false;
+                sy = 0;
+                if (shouldWaitWebViewScroll) {
+                    allowedScrollX = false;
+                    allowedScrollY = false;
+                }
             }
 
             MotionEvent rawEvent = MotionEvent.obtain(ev);
@@ -956,19 +1112,30 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             rawEvent.recycle();
 
             if (ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL) {
+                final boolean wasScrolling = isScrolling;
                 isSwipeDisallowed = false;
                 isScrolling = false;
 
-                if (flingInProgress) {
+                if (fullsize && !allowFullSizeSwipe) {
+
+                } else if (flingInProgress) {
                     flingInProgress = false;
-                } else {
+                } else if (allowSwipes && (!shouldWaitWebViewScroll || swipeOffsetY != -offsetY + topActionBarOffsetY && allowingScroll(false))) {
                     if (swipeOffsetY <= -swipeStickyRange) {
-                        stickTo(-offsetY + topActionBarOffsetY);
+                        if (stickToEdges) {
+                            stickTo(-offsetY + topActionBarOffsetY);
+                        }
                     } else if (swipeOffsetY > -swipeStickyRange && swipeOffsetY <= swipeStickyRange) {
-                        stickTo(0);
+                        if (stickToEdges) {
+                            stickTo(0);
+                        }
                     } else {
-                        if (delegate != null) {
-                            delegate.onDismiss();
+                        final float distance = AndroidUtilities.distance(ev.getX(), ev.getY(), pressDownX, pressDownY);
+                        final long time = ev.getEventTime() - pressDownTime;
+                        if (delegate != null && (time > 250 || distance > dp(200))) {
+                            delegate.onDismiss(!wasScrolling);
+                        } else if (stickToEdges) {
+                            stickTo(-offsetY + topActionBarOffsetY);
                         }
                     }
                 }
@@ -978,6 +1145,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             if (!superTouch && !detector && ev.getAction() == MotionEvent.ACTION_DOWN) {
                 return true;
             }
+
             return superTouch || detector;
         }
 
@@ -985,7 +1153,22 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             stickTo(offset, null);
         }
 
+        public void cancelStickTo() {
+            if (offsetYAnimator != null) {
+                offsetYAnimator.cancel();
+            }
+            if (scrollAnimator != null) {
+                scrollAnimator.cancel();
+            }
+        }
+
         public void stickTo(float offset, Runnable callback) {
+            stickTo(offset, false, callback);
+        }
+        public void stickTo(float offset, boolean force, Runnable callback) {
+            if (fullsize && !force) {
+                offset = -getOffsetY() + getTopActionBarOffsetY();
+            }
             if (swipeOffsetY == offset || scrollAnimator != null && scrollAnimator.getSpring().getFinalPosition() == offset) {
                 if (callback != null) {
                     callback.run();
@@ -1005,7 +1188,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             }
             scrollAnimator = new SpringAnimation(this, SWIPE_OFFSET_Y, offset)
                     .setSpring(new SpringForce(offset)
-                            .setStiffness(1400)
+                            .setStiffness(1200)
                             .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY))
                     .addEndListener((animation, canceled, value, velocity) -> {
                         if (animation == scrollAnimator) {
@@ -1040,7 +1223,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             /**
              * Called to dismiss parent layout
              */
-            void onDismiss();
+            void onDismiss(boolean byTap);
         }
     }
 
@@ -1058,7 +1241,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
             bluePaint.setColor(getThemedColor(Theme.key_featuredStickers_addButton));
             bluePaint.setStyle(Paint.Style.STROKE);
-            bluePaint.setStrokeWidth(AndroidUtilities.dp(2));
+            bluePaint.setStrokeWidth(dp(2));
             bluePaint.setStrokeCap(Paint.Cap.ROUND);
         }
 
@@ -1102,8 +1285,10 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
         public void draw(Canvas canvas) {
             super.draw(canvas);
 
-            float y = getHeight() - bluePaint.getStrokeWidth() / 2f;
-            canvas.drawLine(0, y, getWidth() * loadProgress, y, bluePaint);
+            if (loadProgress > 0) {
+                float y = getHeight() - bluePaint.getStrokeWidth() / 2f;
+                canvas.drawLine(0, y, getWidth() * loadProgress, y, bluePaint);
+            }
         }
     }
 }
