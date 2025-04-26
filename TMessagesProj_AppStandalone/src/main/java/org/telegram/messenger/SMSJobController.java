@@ -22,6 +22,7 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -53,20 +54,15 @@ import java.util.Map;
 
 public class SMSJobController implements NotificationCenter.NotificationCenterDelegate {
 
-    private static volatile SMSJobController[] Instance = new SMSJobController[UserConfig.MAX_ACCOUNT_COUNT];
-    private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
-    static {
-        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            lockObjects[i] = new Object();
-        }
-    }
+    private static volatile SparseArray<SMSJobController> Instance = new SparseArray<>();
+    private static final Object lockObject = new Object();
     public static SMSJobController getInstance(int num) {
-        SMSJobController localInstance = Instance[num];
+        SMSJobController localInstance = Instance.get(num);
         if (localInstance == null) {
-            synchronized (lockObjects[num]) {
-                localInstance = Instance[num];
+            synchronized (lockObject) {
+                localInstance = Instance.get(num);
                 if (localInstance == null) {
-                    Instance[num] = localInstance = new SMSJobController(num);
+                    Instance.put(num, localInstance = new SMSJobController(num));
                 }
             }
         }

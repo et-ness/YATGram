@@ -122,7 +122,7 @@ fun PerformForwardFromMyName(
         val copyText = currentReplaceText();
         queue.add {
             val instance = SendMessagesHelper.getInstance(currentAccount);
-            instance.processForwardFromMyName(copyMsg, key, copyText, notify, topicId)
+            instance.processForwardFromMyName(copyMsg, key, 0, copyText, notify, topicId)
             deque();
         }
     }

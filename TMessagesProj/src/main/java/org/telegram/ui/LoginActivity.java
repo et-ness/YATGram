@@ -675,7 +675,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         }
         if (savedInstanceState != null) {
             currentViewNum = savedInstanceState.getInt("currentViewNum", 0);
-            syncContacts = savedInstanceState.getInt("syncContacts", 0) == 1;
+            syncContacts = savedInstanceState.getInt("syncContacts", 0) == 1; // YATGram default sync contacs false
             if (currentViewNum >= VIEW_CODE_MESSAGE && currentViewNum <= VIEW_CODE_CALL) {
                 int time = savedInstanceState.getInt("open");
                 if (time != 0 && Math.abs(System.currentTimeMillis() / 1000 - time) >= 24 * 60 * 60) {
@@ -5757,6 +5757,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             requestPhone = currentParams.getString("phoneFormated");
             phoneHash = currentParams.getString("phoneHash");
 
+            // TODO review for commit df1d81466aa6d471d4794907e783528514fa26ea
+            loginOrView.setVisibility(params.getBoolean("googleSignInAllowed") && PushListenerController.GooglePushListenerServiceProvider.INSTANCE.hasServices() ? VISIBLE : GONE);
+
             showKeyboard(emailField);
             emailField.requestFocus();
         }
@@ -5929,7 +5932,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private boolean resetRequestPending;
         private Bundle currentParams;
         private boolean nextPressed;
-        private GoogleSignInAccount googleAccount;
 
         private int resetAvailablePeriod, resetPendingDate;
         private String phone, emailPhone, email;
@@ -6144,6 +6146,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             } else {
                 bottomContainer.addView(errorViewSwitcher, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
                 bottomContainer.addView(cantAccessEmailFrameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
+                // TODO review for commit df1d81466aa6d471d4794907e783528514fa26ea
+                bottomContainer.addView(loginOrView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 16, Gravity.CENTER, 0, 0, 0, 16));
             }
             addView(bottomContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 0, 1f));
         }
@@ -6193,6 +6197,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         public void updateColors() {
             titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             confirmTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
+            loginOrView.updateColors();
             resendCodeView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
             cantAccessEmailView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
             emailResetInView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
@@ -6212,10 +6217,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             AndroidUtilities.updateViewVisibilityAnimated(resendCodeView, show);
             AndroidUtilities.updateViewVisibilityAnimated(cantAccessEmailFrameLayout, !show && activityMode != MODE_CHANGE_LOGIN_EMAIL && !isSetup);
 
-            /*if (loginOrView.getVisibility() != GONE) {
+            // TODO review for commit df1d81466aa6d471d4794907e783528514fa26ea
+            if (loginOrView.getVisibility() != GONE) {
                 loginOrView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 16, Gravity.CENTER, 0, 0, 0, show ? 8 : 16));
                 loginOrView.requestLayout();
-            }*/
+            }
         }
 
         @Override
@@ -6307,6 +6313,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
                 confirmTextView.setText(AndroidUtilities.formatSpannable(getString(R.string.CheckYourEmailSubtitle), confirmText));
             }
+
+            // TODO review for commit df1d81466aa6d471d4794907e783528514fa26ea
+            loginOrView.setVisibility(params.getBoolean("googleSignInAllowed") && PushListenerController.GooglePushListenerServiceProvider.INSTANCE.hasServices() ? VISIBLE : GONE);
 
             showKeyboard(codeFieldContainer.codeField[0]);
             codeFieldContainer.requestFocus();
@@ -6442,7 +6451,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
 
             code = codeFieldContainer.getCode();
-            if (code.length() == 0 && googleAccount == null) {
+            if (code.length() == 0) {
                 onPasscodeError(false);
                 return;
             }
@@ -6471,15 +6480,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 TLRPC.TL_auth_signIn request = new TLRPC.TL_auth_signIn();
                 request.phone_number = requestPhone;
                 request.phone_code_hash = phoneHash;
-                if (googleAccount != null) {
+                /*if (googleAccount != null) {
                     TLRPC.TL_emailVerificationGoogle verification = new TLRPC.TL_emailVerificationGoogle();
                     verification.token = googleAccount.getIdToken();
                     request.email_verification = verification;
-                } else {
+                } else {*/
                     TLRPC.TL_emailVerificationCode verification = new TLRPC.TL_emailVerificationCode();
                     verification.code = code;
                     request.email_verification = verification;
-                }
+                //}
                 request.flags |= 2;
                 req = request;
             }
@@ -6584,15 +6593,14 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         }
                     }
                 }
-                googleAccount = null;
             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
         }
 
         private void animateSuccess(Runnable callback) {
-            if (googleAccount != null) {
+/*            if (googleAccount != null) {
                 callback.run();
                 return;
-            }
+            }*/
             for (int i = 0; i < codeFieldContainer.codeField.length; i++) {
                 int finalI = i;
                 codeFieldContainer.postDelayed(()-> codeFieldContainer.codeField[finalI].animateSuccessProgress(1f), i * 75L);
@@ -8594,12 +8602,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     private void processError(TLRPC.TL_error error) {
         if (error.text.contains("SESSION_PASSWORD_NEEDED")) {
             exportLoginTokenProgress.show();
-            TLRPC.TL_account_getPassword req2 = new TLRPC.TL_account_getPassword();
+            TL_account.getPassword req2 = new TL_account.getPassword();
             ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
                 exportLoginTokenProgress.dismiss();
                 showDoneButton(false, true);
                 if (error1 == null) {
-                    TLRPC.TL_account_password password = (TLRPC.TL_account_password) response1;
+                    TL_account.TL_password password = (TL_account.TL_password) response1;
                     if (!TwoStepVerificationActivity.canHandleCurrentPassword(password, true)) {
                         AlertsCreator.showUpdateAppAlert(getParentActivity(), LocaleController.getString("UpdateAppAlert", R.string.UpdateAppAlert), true);
                         return;
@@ -9128,7 +9136,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 return;
             }
             try {
-                codeField.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                codeField.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {}
             final int a = currentType == AUTH_TYPE_WORD ? 0 : 1;
             if (asBeginning) {
@@ -9661,7 +9669,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 button.setLoading(false);
                 button.setEnabled(false);
                 button.setText(getString(R.string.Unavailable), false);
-            } else {
+/*            } else {
                 button.setVisibility(View.VISIBLE);
                 button.setLoading(true);
 
@@ -9780,7 +9788,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     BillingController.getInstance().whenSetuped(fetch);
                 } else {
                     fetch.run();
-                }
+                }*/
             }
         }
     }

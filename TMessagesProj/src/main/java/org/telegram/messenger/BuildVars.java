@@ -32,8 +32,6 @@ public class BuildVars {
     public static String HUAWEI_STORE_URL = "https://appgallery.huawei.com/app/C101184875";
     public static String GOOGLE_AUTH_CLIENT_ID = "760348033671-81kmi3pi84p11ub8hp9a1funsv0rn2p9.apps.googleusercontent.com";
 
-    public static String HUAWEI_APP_ID = "101184875";
-
     // You can use this flag to disable Google Play Billing (If you're making fork and want it to be in Google Play)
     public static boolean IS_BILLING_UNAVAILABLE = false;
 
@@ -65,11 +63,9 @@ public class BuildVars {
 
     public static boolean useInvoiceBilling() {
         return true;
-        /*
-        return BillingController.billingClientEmpty || DEBUG_VERSION || ApplicationLoader.isStandaloneBuild() || isBetaApp() || isHuaweiStoreApp() || hasDirectCurrency();
     }
 
-    private static boolean hasDirectCurrency() {
+    /*private static boolean hasDirectCurrency() {
         if (!BillingController.getInstance().isReady() || BillingController.PREMIUM_PRODUCT_DETAILS == null) {
             return false;
         }
@@ -83,13 +79,7 @@ public class BuildVars {
             }
         }
         return false;
-        */
-    }
-
-    private static Boolean standaloneApp;
-    public static boolean isStandaloneApp() {
-        return true;
-    }
+    }*/
 
     private static Boolean betaApp;
     public static boolean isBetaApp() {

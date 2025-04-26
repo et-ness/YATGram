@@ -325,7 +325,7 @@ public class GroupCallPip implements NotificationCenter.NotificationCenterDelega
             private void onTap() {
                 if (VoIPService.getSharedInstance() != null) {
                     showAlert(!showAlert);
-                    //performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);x
+                    //performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 }
             }
         };

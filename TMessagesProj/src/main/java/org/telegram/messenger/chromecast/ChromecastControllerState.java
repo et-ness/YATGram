@@ -11,9 +11,10 @@ import java.io.File;
 class ChromecastControllerState {
     private ChromecastFileServer server;
     private ChromecastMediaVariations media;
-    private ChromecastController.RemoteMediaClientHandler client;
+    //private ChromecastController.RemoteMediaClientHandler client;
 
     public void setMedia(ChromecastMediaVariations m) {
+/*
         if (client != null && m != null) {
             addToFileServer(m);
         }
@@ -33,6 +34,7 @@ class ChromecastControllerState {
         }
 
         media = m;
+*/
     }
 
     public String setCoverFile(File file) {
@@ -52,6 +54,7 @@ class ChromecastControllerState {
         return media;
     }
 
+/*
     public void setClient(ChromecastController.RemoteMediaClientHandler c) {
         if (media != null && client == null && c != null) {
             addToFileServer(media);
@@ -80,7 +83,7 @@ class ChromecastControllerState {
     public ChromecastController.RemoteMediaClientHandler getClient() {
         return client;
     }
-
+*/
     private void addToFileServer(ChromecastMediaVariations media) {
         if (server == null) {
             server = new ChromecastFileServer();

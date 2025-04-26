@@ -7,20 +7,22 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
+import android.util.SparseArray;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.ServiceCompat;
 
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.web.R;
 import org.telegram.tgnet.TL_smsjobs;
 import org.telegram.ui.LaunchActivity;
 
 public class SMSJobsNotification extends Service {
 
-    private static SMSJobsNotification[] instance = new SMSJobsNotification[UserConfig.MAX_ACCOUNT_COUNT];
-    private static Intent[] service = new Intent[UserConfig.MAX_ACCOUNT_COUNT];
+    private static SparseArray<SMSJobsNotification> instance = new SparseArray<>();
+    private static SparseArray<Intent> service = new SparseArray<>();
 
     public int currentAccount;
     public boolean shown;
@@ -31,7 +33,7 @@ public class SMSJobsNotification extends Service {
 
     public static boolean check() {
         boolean shown = false;
-        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; ++i) {
+        for (int i : SharedConfig.activeAccounts) {
             shown = check(i) || shown;
         }
         return shown;
@@ -49,24 +51,25 @@ public class SMSJobsNotification extends Service {
             );
         }
 
-        final boolean shownNow = instance[currentAccount] != null && instance[currentAccount].shown;
+        final boolean shownNow = instance.get(num) != null && instance.get(num).shown;
         if (shownNow != showNotification) {
             if (showNotification) {
-                service[currentAccount] = new Intent(ApplicationLoader.applicationContext, SMSJobsNotification.class);
-                service[currentAccount].putExtra("account", currentAccount);
+                Intent localInstance = new Intent(ApplicationLoader.applicationContext, SMSJobsNotification.class);
+                localInstance.putExtra("account", currentAccount);
+                service.put(currentAccount, localInstance);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    ApplicationLoader.applicationContext.startForegroundService(service[currentAccount]);
+                    ApplicationLoader.applicationContext.startForegroundService(service.get(currentAccount));
                 } else {
-                    ApplicationLoader.applicationContext.startService(service[currentAccount]);
+                    ApplicationLoader.applicationContext.startService(service.get(currentAccount));
                 }
             } else {
-                if (service[currentAccount] != null) {
-                    ApplicationLoader.applicationContext.stopService(service[currentAccount]);
-                    service[currentAccount] = null;
+                if (service.get(currentAccount) != null) {
+                    ApplicationLoader.applicationContext.stopService(service.get(currentAccount));
+                    service.put(currentAccount, null);
                 }
             }
         } else if (shownNow) {
-            instance[currentAccount].update();
+            instance.get(currentAccount).update();
         }
 
         return showNotification;
@@ -96,10 +99,10 @@ public class SMSJobsNotification extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         currentAccount = intent.getIntExtra("account", UserConfig.selectedAccount);
 
-        if (instance[currentAccount] != this && instance[currentAccount] != null) {
-            instance[currentAccount].stopSelf();
+        if (instance.get(currentAccount) != this && instance.get(currentAccount) != null) {
+            instance.get(currentAccount).stopSelf();
         }
-        instance[currentAccount] = this;
+        instance.put(currentAccount, this);
         shown = true;
 
         if (builder == null) {

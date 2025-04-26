@@ -7,8 +7,6 @@ import android.util.Base64;
 
 import androidx.core.util.Pair;
 
-//import com.android.billingclient.api.AccountIdentifiers;
-//import com.android.billingclient.api.Purchase;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.base.Charsets;
 
@@ -16,6 +14,7 @@ import org.json.JSONObject;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.AbstractSerializedData;

@@ -7559,8 +7559,8 @@ public class Theme {
         }
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             loadingRemoteThemes.put(currentAccount, false);
-            if (response instanceof TL_account_themes) {
-                TL_account_themes res = (TL_account_themes) response;
+            if (response instanceof TL_account.TL_themes) {
+                TL_account.TL_themes res = (TL_account.TL_themes) response;
                 remoteThemesHash.put(currentAccount, res.hash);
                 lastLoadingThemesTime.put(currentAccount, (int) (System.currentTimeMillis() / 1000));
                 ArrayList<TLRPC.TL_theme> emojiPreviewThemes = new ArrayList<>();

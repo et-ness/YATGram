@@ -18,11 +18,8 @@ import org.checkerframework.checker.units.qual.A;
 import org.telegram.messenger.utils.BillingUtilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.Stars.StarsController;
 
-import java.io.InputStream;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,7 +76,6 @@ public class BillingController {
         return formatCurrency(amount, currency, exp, false);
     }
 
-    private static NumberFormat currencyInstance;
     public String formatCurrency(long amount, String currency, int exp, boolean rounded) {
         if (currency == null || currency.isEmpty()) {
             return String.valueOf(amount);
@@ -92,14 +88,12 @@ public class BillingController {
         }
         Currency cur = Currency.getInstance(currency);
         if (cur != null) {
-            if (currencyInstance == null) {
-                currencyInstance = NumberFormat.getCurrencyInstance();
-            }
-            currencyInstance.setCurrency(cur);
+            NumberFormat numberFormat = NumberFormat.getCurrencyInstance();
+            numberFormat.setCurrency(cur);
             if (rounded) {
-                return currencyInstance.format(Math.round(amount / Math.pow(10, exp)));
+                return numberFormat.format(Math.round(amount / Math.pow(10, exp)));
             }
-            return currencyInstance.format(amount / Math.pow(10, exp));
+            return numberFormat.format(amount / Math.pow(10, exp));
         }
         return amount + " " + currency;
     }

@@ -361,7 +361,7 @@ public class MultiContactsSelectorBottomSheet extends BottomSheetWithRecyclerLis
         String text = LocaleController.formatPluralString("BotMultiContactsSelectorLimit", maxCount);
         BulletinFactory.of(container, resourcesProvider).createSimpleBulletin(R.raw.chats_infotip, text).show(true);
         try {
-            container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         } catch (Exception ignore) {
         }
     }

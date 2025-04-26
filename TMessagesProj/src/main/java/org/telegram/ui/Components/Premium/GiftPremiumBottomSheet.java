@@ -575,7 +575,7 @@ public class GiftPremiumBottomSheet extends BottomSheetWithRecyclerListView impl
         }
 
         public String getFormattedPrice() {
-            return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());        }
+            return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
         }
 
         public long getPrice() {

@@ -1782,7 +1782,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         } else if (DialogObject.isEncryptedDialog(did)) {
             ArrayList<MessageObject> arrayList = new ArrayList<>();
             arrayList.add(messageObject);
-            sendMessage(arrayList, did, true, false, true, 0, payStars);
+            sendMessage(arrayList, did, true, false, notify, 0, payStars);
         }
     }
 
@@ -8389,8 +8389,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             sendingMedia.geo = new TLRPC.TL_geoPoint();
             sendingMedia.geo.lat = location.getLatitude();
             sendingMedia.geo._long = location.getLongitude();
-            SendMessageParams params = SendMessageParams.of(sendingMedia, dialog_id, null, null, null, null, true, 0);
-            accountInstance.getSendMessagesHelper().sendMessage(params);
+            accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(sendingMedia, dialog_id, null, null, null, null, true, 0));
         })));
     }
 

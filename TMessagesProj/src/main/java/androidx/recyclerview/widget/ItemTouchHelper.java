@@ -693,7 +693,7 @@ public class ItemTouchHelper extends RecyclerView.ItemDecoration
 
             if (actionState == ACTION_STATE_DRAG) {
                 try {
-                    mSelected.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    mSelected.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                 } catch (Exception ignore) {}
             }
         }

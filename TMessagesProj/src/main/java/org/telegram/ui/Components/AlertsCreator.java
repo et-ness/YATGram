@@ -3717,18 +3717,18 @@ public class AlertsCreator {
         dayPicker.setWrapSelectorWheel(false);
         dayPicker.setFormatter(value -> {
             if (value == 0) {
-                return LocaleController.getString("MessageScheduleToday", R.string.MessageScheduleToday);
+                return LocaleController.getString(R.string.MessageScheduleToday);
             } else {
                 long date = currentTime + (long) value * 86400000L;
                 calendar.setTimeInMillis(date);
                 int year = calendar.get(Calendar.YEAR);
                 LocaleController loc = LocaleController.getInstance();
-                final String week = loc.formatterWeek.format(date) + ", ";
+                final String week = loc.getFormatterWeek().format(date) + ", ";
                 
                 if (year == currentYear) {
-                    return week + loc.formatterScheduleDay.format(date);
+                    return week + loc.getFormatterScheduleDay().format(date);
                 } else {
-                    return week + loc.formatterScheduleYear.format(date);
+                    return week + loc.getFormatterScheduleYear().format(date);
                 }
             }
         });
@@ -6174,7 +6174,7 @@ public class AlertsCreator {
 
         numberPicker.setFormatter(value -> {
             if (value == 0) {
-                return LocaleController.getString("ShortMessageLifetimeForever", R.string.ShortMessageLifetimeForever);
+                return LocaleController.getString(R.string.ShortMessageLifetimeForever);
             } else {
                 return LocaleController.formatTTLString(values[value]);
             }

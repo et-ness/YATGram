@@ -1,12 +1,12 @@
 package org.telegram.messenger;
 
 import android.app.Activity;
-
+/*
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.recaptcha.Recaptcha;
 import com.google.android.recaptcha.RecaptchaAction;
 import com.google.android.recaptcha.RecaptchaTasksClient;
-
+*/
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.LaunchActivity;
 
@@ -70,7 +70,7 @@ public class CaptchaController {
             return;
         }
 
-        Recaptcha.getTasksClient(activity.getApplication(), key_id)
+        /*Recaptcha.getTasksClient(activity.getApplication(), key_id)
             .addOnSuccessListener(client -> {
                 client.executeTask(getAction(action))
                     .addOnSuccessListener(token -> {
@@ -89,9 +89,9 @@ public class CaptchaController {
             .addOnFailureListener(e -> {
                 FileLog.e("CaptchaController: getTasksClient failure", e);
                 finalRequest.done("RECAPTCHA_FAILED_GETCLIENT_EXCEPTION_" + formatException(e));
-            });
+            });*/
     }
-
+/*
     private static RecaptchaAction getAction(String action) {
         switch (action) {
             case "login":
@@ -104,7 +104,7 @@ public class CaptchaController {
                 return RecaptchaAction.custom(action);
         }
     }
-
+*/
     private static String formatException(Exception e) {
         if (e == null) return "NULL";
         if (e.getMessage() == null) return "MSG_NULL";

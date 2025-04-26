@@ -173,8 +173,7 @@ public class PhotoView extends EntityView {
     private boolean segmentingLoading, segmentingLoaded;
     public Bitmap segmentedImage;
     public void segmentImage(Bitmap source) {
-/*
-        if (segmentingLoaded || segmentingLoading || source == null) return;
+/*      if (segmentingLoaded || segmentingLoading || source == null) return;
         if (Build.VERSION.SDK_INT < 24) return;
         SubjectSegmenter segmenter = SubjectSegmentation.getClient(new SubjectSegmenterOptions.Builder().enableForegroundBitmap().build());
         segmentingLoading = true;
@@ -194,8 +193,7 @@ public class PhotoView extends EntityView {
                 } else {
                     segmentingLoaded = true;
                 }
-            });
-*/
+            }); */
     }
 
     public boolean hasSegmentedImage() {

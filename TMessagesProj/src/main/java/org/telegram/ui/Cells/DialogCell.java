@@ -4083,20 +4083,20 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     // Theme.dialogs_countPaint.setAlpha((int) ((1.0f - reorderIconProgress) * 255));
 
                     int x = mentionLeft - dp(5.5f);
-                    rect.set(x, countTop, x + mentionWidth + dp(11), countTop + dp(23));
+                    rect.set(x, newTop, x + mentionWidth + dp(11), newTop + dp(23));
                     Paint paint = drawCounterMuted && folderId != 0 ? Theme.dialogs_countGrayPaint : Theme.dialogs_countPaint;
                     canvas.drawRoundRect(rect, 11.5f * AndroidUtilities.density, 11.5f * AndroidUtilities.density, paint);
                     if (mentionLayout != null) {
                         Theme.dialogs_countTextPaint.setAlpha((int) ((1.0f - reorderIconProgress) * 255));
 
                         canvas.save();
-                        canvas.translate(mentionLeft, countTop + dp(4));
+                        canvas.translate(mentionLeft, newTop + dp(4));
                         mentionLayout.draw(canvas);
                         canvas.restore();
                     } else {
                         // Theme.dialogs_mentionDrawable.setAlpha((int) ((1.0f - reorderIconProgress) * 255));
 
-                        setDrawableBounds(Theme.dialogs_mentionDrawable, mentionLeft - dp(2), countTop + dp(3.2f), dp(16), dp(16));
+                        setDrawableBounds(Theme.dialogs_mentionDrawable, mentionLeft - dp(2), newTop + dp(3.2f), dp(16), dp(16));
                         Theme.dialogs_mentionDrawable.draw(canvas);
                     }
                 }
@@ -4252,7 +4252,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             int countLeftLocal = (int) (storyParams.originalAvatarRect.left + storyParams.originalAvatarRect.width() - countWidth - dp(5f));
             int countLeftOld =  (int) (storyParams.originalAvatarRect.left + storyParams.originalAvatarRect.width() - countWidthOld - dp(5f));
             int countTop = (int) (avatarImage.getImageY() + storyParams.originalAvatarRect.height() - dp(22));
-            drawCounter(canvas, drawCounterMuted, countTop, countLeftLocal, countLeftOld, rightFragmentOpenedProgress, true);
+            drawCounter(canvas, drawCounterMuted, newTop, countLeftLocal, countLeftOld, rightFragmentOpenedProgress, true);
         }
 
         if (collapseOffset != 0) {
@@ -4542,7 +4542,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
                     Theme.dialogs_onlineCirclePaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
                     canvas.drawCircle(left, top, dp(7) * onlineProgress, Theme.dialogs_onlineCirclePaint);
-                    Theme.dialogs_onlineCirclePaint.setColor(Theme.getColor(Theme.key_chats_onlineCircle, resourcesProvider));
+                    Theme.dialogs_onlineCirclePaint.setColor(colorOnline);
                     canvas.drawCircle(left, top, dp(5) * onlineProgress, Theme.dialogs_onlineCirclePaint);
                     if (isOnline) {
                         if (onlineProgress < 1.0f) {

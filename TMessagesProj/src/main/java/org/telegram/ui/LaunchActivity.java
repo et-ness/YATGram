@@ -6524,6 +6524,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } catch (Exception e) {
             FileLog.e(e);
         }
+        // Fix bug not resolved in ForkGram
         clearFragments();
         super.onDestroy();
         onFinish();

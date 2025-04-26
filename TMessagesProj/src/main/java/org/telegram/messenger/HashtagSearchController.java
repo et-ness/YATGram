@@ -3,6 +3,7 @@ package org.telegram.messenger;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
+import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
 
@@ -16,22 +17,16 @@ import java.util.HashMap;
 import java.util.Objects;
 
 public class HashtagSearchController {
-    private static volatile HashtagSearchController[] Instance = new HashtagSearchController[UserConfig.MAX_ACCOUNT_COUNT];
-    private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
-
-    static {
-        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            lockObjects[i] = new Object();
-        }
-    }
+    private static volatile SparseArray<HashtagSearchController> Instance = new SparseArray<>();
+    private static final Object lockObject = new Object();
 
     public static HashtagSearchController getInstance(int num) {
-        HashtagSearchController localInstance = Instance[num];
+        HashtagSearchController localInstance = Instance.get(num);
         if (localInstance == null) {
-            synchronized (lockObjects[num]) {
-                localInstance = Instance[num];
+            synchronized (lockObject) {
+                localInstance = Instance.get(num);
                 if (localInstance == null) {
-                    Instance[num] = localInstance = new HashtagSearchController(num);
+                    Instance.put(num, localInstance = new HashtagSearchController(num));
                 }
             }
         }

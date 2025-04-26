@@ -162,6 +162,11 @@ public class ForkSettingsActivity extends BaseFragment {
     private int addItemToDeleteAllUnpinnedMessages;
     private int largePhoto;
     private int hideAds;
+    private int disableSlideToNextChannel;
+    private int disableRecentFilesAttachment;
+    private int botSkipShare;
+    private int botSkipFullscreen;
+    private int disableDefaultInAppBrowser;
 
     private int stickerSizeRow;
 
@@ -231,6 +236,13 @@ public class ForkSettingsActivity extends BaseFragment {
         disableParametersFromBotLinks = rowCount++;
         addItemToDeleteAllUnpinnedMessages = rowCount++;
         largePhoto = rowCount++;
+        disableSlideToNextChannel = rowCount++;
+        disableRecentFilesAttachment = rowCount++;
+        disableDefaultInAppBrowser = rowCount++;
+
+        emptyRows.add(rowCount++);
+        botSkipShare = rowCount++;
+        botSkipFullscreen = rowCount++;
     
         emptyRows.add(rowCount++);
         sectionRows.add(rowCount++);
@@ -339,6 +351,16 @@ public class ForkSettingsActivity extends BaseFragment {
                 toggleGlobalMainSetting("addItemToDeleteAllUnpinnedMessages", view, false);
             } else if (position == largePhoto) {
                 toggleGlobalMainSetting("largePhoto", view, false);
+            } else if (position == disableSlideToNextChannel) {
+                toggleGlobalMainSetting("disableSlideToNextChannel", view, false);
+            } else if (position == disableRecentFilesAttachment) {
+                toggleGlobalMainSetting("disableRecentFilesAttachment", view, false);
+            } else if (position == disableDefaultInAppBrowser) {
+                toggleGlobalMainSetting("disableDefaultInAppBrowser", view, false);
+            } else if (position == botSkipShare) {
+                toggleGlobalMainSetting("botSkipShare", view, false);
+            } else if (position == botSkipFullscreen) {
+                toggleGlobalMainSetting("botSkipFullscreen", view, false);
             } else if (position == lockPremium) {
                 toggleGlobalMainSetting("lockPremium", view, false);
             } else if (position == hideAds) {
@@ -481,6 +503,21 @@ public class ForkSettingsActivity extends BaseFragment {
                         String t = LocaleController.getString("LargePhoto", R.string.LargePhoto);
                         String info = LocaleController.getString("SquareAvatarsInfo", R.string.SquareAvatarsInfo);
                         textCell.setTextAndValueAndCheck(t, info, preferences.getBoolean("largePhoto", false), true, false);
+                    } else if (position == disableSlideToNextChannel) {
+                        String t = LocaleController.getString("DisableSlideToNextChannel", R.string.DisableSlideToNextChannel);
+                        textCell.setTextAndCheck(t, preferences.getBoolean("disableSlideToNextChannel", false), false);
+                    } else if (position == disableRecentFilesAttachment) {
+                        String t = LocaleController.getString("DisableRecentFilesAttachment", R.string.DisableRecentFilesAttachment);
+                        textCell.setTextAndCheck(t, preferences.getBoolean("disableRecentFilesAttachment", false), false);
+                    } else if (position == disableDefaultInAppBrowser) {
+                        String t = LocaleController.getString("DisableDefaultInAppBrowser", R.string.DisableDefaultInAppBrowser);
+                        textCell.setTextAndCheck(t, preferences.getBoolean("disableDefaultInAppBrowser", false), false);
+                    } else if (position == botSkipShare) {
+                        String t = LocaleController.getString("BotSkipShare", R.string.BotSkipShare);
+                        textCell.setTextAndCheck(t, preferences.getBoolean("botSkipShare", false), false);
+                    } else if (position == botSkipFullscreen) {
+                        String t = LocaleController.getString("BotSkipFullscreen", R.string.BotSkipFullscreen);
+                        textCell.setTextAndCheck(t, preferences.getBoolean("botSkipFullscreen", false), false);
                     } else if (position == lockPremium) {
                         String t = LocaleController.getString("LockPremium", R.string.LockPremium);
                         String info = LocaleController.getString("SquareAvatarsInfo", R.string.SquareAvatarsInfo);
@@ -551,6 +588,11 @@ public class ForkSettingsActivity extends BaseFragment {
                         || position == disableParametersFromBotLinks
                         || position == addItemToDeleteAllUnpinnedMessages
                         || position == largePhoto
+                        || position == disableSlideToNextChannel
+                        || position == disableRecentFilesAttachment
+                        || position == disableDefaultInAppBrowser
+                        || position == botSkipShare
+                        || position == botSkipFullscreen
                         || position == lockPremium
                         || position == hideAds
                         || position == replaceForward
@@ -618,6 +660,11 @@ public class ForkSettingsActivity extends BaseFragment {
                 || position == disableParametersFromBotLinks
                 || position == addItemToDeleteAllUnpinnedMessages
                 || position == largePhoto
+                || position == disableSlideToNextChannel
+                || position == disableRecentFilesAttachment
+                || position == disableDefaultInAppBrowser
+                || position == botSkipShare
+                || position == botSkipFullscreen
                 || position == lockPremium
                 || position == hideAds
                 || position == replaceForward
@@ -681,4 +728,13 @@ public class ForkSettingsActivity extends BaseFragment {
 
         return themeDescriptions;
     }
+
+    public static String GetBotPlatform(int currentAccount, long botId) {
+        return MessagesController.getMainSettings(currentAccount).getString("bot_platform_" + botId, "android");
+    }
+
+    public static boolean GetBotCopyLink(int currentAccount, long botId) {
+        return MessagesController.getMainSettings(currentAccount).getBoolean("bot_copy_link_" + botId, false);
+    }
+
 }

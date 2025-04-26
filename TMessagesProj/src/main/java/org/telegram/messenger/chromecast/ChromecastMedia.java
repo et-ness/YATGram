@@ -2,8 +2,8 @@ package org.telegram.messenger.chromecast;
 
 import android.net.Uri;
 
-import com.google.android.gms.cast.MediaInfo;
-import com.google.android.gms.cast.MediaMetadata;
+//import com.google.android.gms.cast.MediaInfo;
+//import com.google.android.gms.cast.MediaMetadata;
 
 public class ChromecastMedia {
     public static final String IMAGE_JPEG = "image/jpeg";
@@ -12,7 +12,7 @@ public class ChromecastMedia {
     public static final String APPLICATION_X_MPEG_URL = "application/x-mpegURL";
 
     public final String mimeType;
-    public final MediaMetadata mediaMetadata;
+    //public final MediaMetadata mediaMetadata;
 
     public final Uri internalUri;
     public final String externalPath;
@@ -22,7 +22,7 @@ public class ChromecastMedia {
 
     private ChromecastMedia(ChromecastMedia.Builder b) {
         this.mimeType = b.mimeType;
-        this.mediaMetadata = b.buildMetadata();
+        //this.mediaMetadata = b.buildMetadata();
         this.internalUri = b.internalUri;
         this.externalPath = b.externalPath;
         this.width = b.width;
@@ -32,7 +32,7 @@ public class ChromecastMedia {
     public String getExternalUri (String host) {
         return ChromecastFileServer.getUrlToSource(host, externalPath);
     }
-
+/*
     public MediaInfo buildMediaInfo (String host, String options) {
         return new MediaInfo.Builder(getExternalUri(host) + options)
             .setContentType(mimeType)
@@ -40,14 +40,14 @@ public class ChromecastMedia {
             .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
             .build();
     }
-
+*/
     /* */
 
     public static class Builder {
         private final String mimeType;
         private final Uri internalUri;
         private final String externalPath;
-        private MediaMetadata baseMetadata;
+//        private MediaMetadata baseMetadata;
 
         private int width;
         private int height;
@@ -79,16 +79,16 @@ public class ChromecastMedia {
             this.height = height;
             return this;
         }
-
+/*
         public Builder setMetadata(MediaMetadata metadata) {
             this.baseMetadata = metadata;
             return this;
         }
-
+*/
         public ChromecastMedia build () {
             return new ChromecastMedia(this);
         }
-
+/*
         private MediaMetadata buildMetadata () {
             final int mediaType;
             switch (mimeType) {
@@ -143,5 +143,6 @@ public class ChromecastMedia {
 
             return metadata;
         }
+*/
     }
 }

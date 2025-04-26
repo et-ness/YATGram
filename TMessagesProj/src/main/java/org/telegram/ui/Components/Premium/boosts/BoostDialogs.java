@@ -92,7 +92,7 @@ public class BoostDialogs {
                     AndroidUtilities.replaceCharSequence("%1$s", subTitleWithLink, replaceTags("**" + formattedDate + "**"))
             ).show();
             try {
-                containerLayout.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                containerLayout.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {}
         } else {
             BoostDialogs.showToastError(containerLayout.getContext(), error);

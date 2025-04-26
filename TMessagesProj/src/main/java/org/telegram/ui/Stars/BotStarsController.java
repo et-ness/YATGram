@@ -27,24 +27,20 @@ import org.telegram.ui.ChannelMonetizationLayout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import android.util.SparseArray;
 
 public class BotStarsController {
 
-    private static volatile BotStarsController[] Instance = new BotStarsController[UserConfig.MAX_ACCOUNT_COUNT];
-    private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
-    static {
-        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            lockObjects[i] = new Object();
-        }
-    }
+    private static volatile SparseArray<BotStarsController> Instance = new SparseArray<>();
+    private static final Object lockObject = new Object();
 
     public static BotStarsController getInstance(int num) {
-        BotStarsController localInstance = Instance[num];
+        BotStarsController localInstance = Instance.get(num);
         if (localInstance == null) {
-            synchronized (lockObjects[num]) {
-                localInstance = Instance[num];
+            synchronized (lockObject) {
+                localInstance = Instance.get(num);
                 if (localInstance == null) {
-                    Instance[num] = localInstance = new BotStarsController(num);
+                    Instance.put(num, localInstance = new BotStarsController(num));
                 }
             }
         }

@@ -12,10 +12,10 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.SparseArray;
-
-//import com.google.android.exoplayer2.util.Log;
-
 import androidx.annotation.Keep;
+
+import com.google.android.exoplayer2.util.Log;
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

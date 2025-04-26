@@ -176,7 +176,7 @@ stages = []
 def removeDir(folder):
     if win:
         return 'if exist ' + folder + ' rmdir /Q /S ' + folder + '\nif exist ' + folder + ' exit /b 1'
-    return 'rm -rf ' + folder
+    return 'rm -rf ' + folder + '/*'
 
 def filterByPlatform(commands):
     commands = commands.split('\n')
@@ -391,6 +391,15 @@ if customRunCommand:
         print('FAILED :(')
         finish(1)
     finish(0)
+
+stage('dav1d', """
+    git submodule init && git submodule update
+    cd dav1d && git reset --hard HEAD && cd ..
+    export NDK={ndk}
+    export NINJA_PATH=`which ninja`
+    ./build_dav1d_clang.sh {archesStr}
+    echo "Built archs: {archesStr}"
+""".format(ndk=ndkPath,archesStr=' '.join(arches)))
 
 stage('libvpx', """
     git submodule init && git submodule update

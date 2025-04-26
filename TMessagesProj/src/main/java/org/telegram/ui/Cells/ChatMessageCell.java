@@ -10120,6 +10120,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             quoteHighlight = null;
         }
+        // YATGram hide message
         if (currentMessageObject.messageOwner.hide) {
             totalHeight = 0;
             drawTime = false;
@@ -16753,8 +16754,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (messageObject.type != MessageObject.TYPE_STORY) {
                 java.util.Date dateOfFwdMsg = new java.util.Date((long)messageObject.messageOwner.fwd_from.date * 1000);
                 timeOfFwdMsg = (messageObject.messageOwner.fwd_from.date == 0)
-                    ? "Date: Loading..."
-                    : "Date: " + new java.text.SimpleDateFormat("dd.MM.yyyy' 'HH:mm:ss").format(dateOfFwdMsg);
+                    ? " Date: Loading..."
+                    : " Date: " + new java.text.SimpleDateFormat("dd.MM.yyyy' 'HH:mm:ss").format(dateOfFwdMsg);
             }
 
             if (messageObject.type == MessageObject.TYPE_STORY || currentForwardUser != null || currentForwardChannel != null || currentForwardName != null) {

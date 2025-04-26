@@ -16,11 +16,11 @@ import android.view.TextureView;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-
+/*
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
-
+*/
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.SharedConfig;
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class QRScanner {
 
-    private final AtomicReference<BarcodeDetector> detector = new AtomicReference<>();
+    //private final AtomicReference<BarcodeDetector> detector = new AtomicReference<>();
     private final AtomicBoolean paused = new AtomicBoolean(false);
 
     private final Utilities.Callback<Detected> listener;
@@ -46,7 +46,7 @@ public class QRScanner {
         this.listener = whenScanned;
         this.prefix = MessagesController.getInstance(UserConfig.selectedAccount).linkPrefix;
         Utilities.globalQueue.postRunnable(() -> {
-            detector.set(new BarcodeDetector.Builder(context).setBarcodeFormats(Barcode.QR_CODE).build());
+            //detector.set(new BarcodeDetector.Builder(context).setBarcodeFormats(Barcode.QR_CODE).build());
             attach(cameraView);
         });
     }
@@ -64,12 +64,12 @@ public class QRScanner {
 
     public void attach(CameraView cameraView) {
         this.cameraView = cameraView;
-        if (detector.get() == null) return;
+        /*if (detector.get() == null) return;
 
         if (!paused.get()) {
             Utilities.globalQueue.cancelRunnable(this.process);
             Utilities.globalQueue.postRunnable(this.process, getTimeout());
-        }
+        }*/
     }
 
     public void setPaused(boolean pause) {
@@ -93,7 +93,7 @@ public class QRScanner {
 
     private Bitmap cacheBitmap;
     private final Runnable process = () -> {
-        if (detector.get() == null || cameraView == null || paused.get()) {
+/*        if (detector.get() == null || cameraView == null || paused.get()) {
             return;
         }
 
@@ -123,11 +123,11 @@ public class QRScanner {
         if (!paused.get()) {
             Utilities.globalQueue.cancelRunnable(this.process);
             Utilities.globalQueue.postRunnable(this.process, getTimeout());
-        }
+        }*/
     };
 
     private Detected detect(Bitmap bitmap) {
-        if (bitmap == null) {
+        /*if (bitmap == null) {
             return null;
         }
 
@@ -154,7 +154,7 @@ public class QRScanner {
             }
 
             return new Detected(link, cornerPoints);
-        }
+        }*/
 
         return null;
     }
@@ -179,10 +179,10 @@ public class QRScanner {
     }
 
     public void detach() {
-        BarcodeDetector detector = this.detector.getAndSet(null);
+        /*BarcodeDetector detector = this.detector.getAndSet(null);
         if (detector != null) {
             detector.release();
-        }
+        }*/
     }
 
     public static final class Detected {

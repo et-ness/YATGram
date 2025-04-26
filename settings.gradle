@@ -1,2 +1,2 @@
 include ':TMessagesProj'
-include ':TMessagesProj_AppFork'
+include ':TMessagesProj_App'

@@ -32,6 +32,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.XiaomiUtilities;
 import org.telegram.tgnet.ConnectionsManager;
@@ -589,7 +590,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
         nm.cancel(VoIPService.ID_INCOMING_CALL_PRENOTIFICATION);
         stopRinging();
         if (!answered) {
-            for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; ++i) {
+            for (int i : SharedConfig.activeAccounts) {
                 MessagesController.getInstance(i).ignoreSetOnline = false;
             }
         }

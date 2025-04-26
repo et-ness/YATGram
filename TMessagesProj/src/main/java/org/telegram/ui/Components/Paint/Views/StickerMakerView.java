@@ -897,7 +897,7 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
     private static class SubjectMock {
         public Bitmap bitmap;
         public int startX, startY, width, height;
-        public static SubjectMock of(Subject subject) {
+/*        public static SubjectMock of(Subject subject) {
             SubjectMock m = new SubjectMock();
             m.bitmap = subject.getBitmap();
             m.startX = subject.getStartX();
@@ -905,7 +905,7 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
             m.width = subject.getWidth();
             m.height = subject.getHeight();
             return m;
-        }
+        }*/
         public static SubjectMock mock(Bitmap source) {
             SubjectMock m = new SubjectMock();
             m.width = m.height = (int) (Math.min(source.getWidth(), source.getHeight()) * .4f);
@@ -916,7 +916,7 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
             return m;
         }
     }
-
+/*
     private void segment(Bitmap bitmap, int orientation, Utilities.Callback<List<SubjectMock>> whenDone, Utilities.Callback<SegmentedObject> whenEmpty) {
         segmentingLoading = true;
         SubjectSegmenter segmenter = SubjectSegmentation.getClient(
@@ -975,9 +975,8 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
         for (int i = 0; i < Math.min(defaultReactions.size(), 9); ++i) {
             Emoji.getEmojiDrawable(defaultReactions.get(i).reaction);
         }
->>>>>>> telegram/master
     }
-
+*/
     private void createSegmentImagePath(SegmentedObject object, int containerWidth, int containerHeight) {
         int imageWidth = object.getImage().getWidth();
         int imageHeight = object.getImage().getHeight();
@@ -1221,11 +1220,6 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
         }
         hideLoadingDialog();
         isThanosInProgress = false;
-    }
-
-    public static boolean isWaitingMlKitError(Exception e) {
-        //return e instanceof MlKitException && e.getMessage() != null && e.getMessage().contains("segmentation optional module to be downloaded");
-        return false;
     }
 
     public void setCurrentAccount(int account) {

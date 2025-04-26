@@ -11,16 +11,12 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.LongSparseArray;
+import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.android.billingclient.api.BillingClient;
-import com.android.billingclient.api.BillingFlowParams;
-import com.android.billingclient.api.ProductDetails;
-import com.android.billingclient.api.QueryProductDetailsParams;
 
 import org.json.JSONObject;
 import org.telegram.SQLite.SQLiteCursor;
@@ -87,21 +83,16 @@ public class StarsController {
     public static final int PERIOD_MINUTE = 60;
     public static final int PERIOD_5MINUTES = 300;
 
-    private static volatile StarsController[] Instance = new StarsController[UserConfig.MAX_ACCOUNT_COUNT];
-    private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
-    static {
-        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            lockObjects[i] = new Object();
-        }
-    }
+    private static volatile SparseArray<StarsController> Instance = new SparseArray<>();
+    private static final Object lockObject = new Object();
 
     public static StarsController getInstance(int num) {
-        StarsController localInstance = Instance[num];
+        StarsController localInstance = Instance.get(num);
         if (localInstance == null) {
-            synchronized (lockObjects[num]) {
-                localInstance = Instance[num];
+            synchronized (lockObject) {
+                localInstance = Instance.get(num);
                 if (localInstance == null) {
-                    Instance[num] = localInstance = new StarsController(num);
+                    Instance.put(num, localInstance = new StarsController(num));
                 }
             }
         }
@@ -262,7 +253,7 @@ public class StarsController {
             options = loadedOptions;
             optionsLoading = false;
             NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starOptionsLoaded);
-            if (!toLoadStorePrice.isEmpty()) {
+/*            if (!toLoadStorePrice.isEmpty()) {
                 Runnable fetchStorePrices = () -> {
                     ArrayList<QueryProductDetailsParams.Product> productQueries = new ArrayList<>();
                     for (int i = 0; i < toLoadStorePrice.size(); ++i) {
@@ -314,7 +305,7 @@ public class StarsController {
                 } else {
                     fetchStorePrices.run();
                 }
-            }
+            }*/
         }));
         return options;
     }
@@ -350,7 +341,7 @@ public class StarsController {
             giftOptionsLoading = false;
             NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starGiftOptionsLoaded);
             if (!toLoadStorePrice.isEmpty()) {
-                Runnable fetchStorePrices = () -> {
+                /*Runnable fetchStorePrices = () -> {
                     ArrayList<QueryProductDetailsParams.Product> productQueries = new ArrayList<>();
                     for (int i = 0; i < toLoadStorePrice.size(); ++i) {
                         productQueries.add(
@@ -400,7 +391,7 @@ public class StarsController {
                     BillingController.getInstance().whenSetuped(fetchStorePrices);
                 } else {
                     fetchStorePrices.run();
-                }
+                }*/
             }
         }));
         return giftOptions;
@@ -436,7 +427,7 @@ public class StarsController {
             giveawayOptions = loadedOptions;
             giveawayOptionsLoading = false;
             NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starGiveawayOptionsLoaded);
-            if (!toLoadStorePrice.isEmpty()) {
+            /*if (!toLoadStorePrice.isEmpty()) {
                 Runnable fetchStorePrices = () -> {
                     ArrayList<QueryProductDetailsParams.Product> productQueries = new ArrayList<>();
                     for (int i = 0; i < toLoadStorePrice.size(); ++i) {
@@ -488,7 +479,7 @@ public class StarsController {
                 } else {
                     fetchStorePrices.run();
                 }
-            }
+            }*/
         }));
         return giveawayOptions;
     }
@@ -713,7 +704,7 @@ public class StarsController {
             return;
         }
 
-        if (BuildVars.useInvoiceBilling() || !BillingController.getInstance().isReady()) {
+        if (BuildVars.useInvoiceBilling()) {
             TLRPC.TL_inputStorePaymentStarsTopup payload = new TLRPC.TL_inputStorePaymentStarsTopup();
             payload.stars = option.stars;
             payload.currency = option.currency;
@@ -788,47 +779,6 @@ public class StarsController {
         payload.stars = option.stars;
         payload.currency = option.currency;
         payload.amount = option.amount;
-        QueryProductDetailsParams.Product product = QueryProductDetailsParams.Product.newBuilder()
-                .setProductType(BillingClient.ProductType.INAPP)
-                .setProductId(option.store_product)
-                .build();
-        FileLog.d("StarsController.buy starts queryProductDetails");
-        BillingController.getInstance().queryProductDetails(Arrays.asList(product), (billingResult, list) -> AndroidUtilities.runOnUIThread(() -> {
-            if (list.isEmpty()) {
-                FileLog.d("StarsController.buy queryProductDetails done: no products");
-                AndroidUtilities.runOnUIThread(() -> whenDone.run(false, "PRODUCT_NOT_FOUND"));
-                return;
-            }
-
-            ProductDetails productDetails = list.get(0);
-            ProductDetails.OneTimePurchaseOfferDetails offerDetails = productDetails.getOneTimePurchaseOfferDetails();
-            if (offerDetails == null) {
-                FileLog.d("StarsController.buy queryProductDetails done: no details");
-                AndroidUtilities.runOnUIThread(() -> whenDone.run(false, "PRODUCT_NO_ONETIME_OFFER_DETAILS"));
-                return;
-            }
-
-            payload.currency = offerDetails.getPriceCurrencyCode();
-            payload.amount = (long) ((offerDetails.getPriceAmountMicros() / Math.pow(10, 6)) * Math.pow(10, BillingController.getInstance().getCurrencyExp(option.currency)));
-
-            BillingController.getInstance().addResultListener(productDetails.getProductId(), billingResult1 -> {
-                final boolean success = billingResult1.getResponseCode() == BillingClient.BillingResponseCode.OK;
-                final String error = success ? null : BillingController.getResponseCodeString(billingResult1.getResponseCode());
-                FileLog.d("StarsController.buy onResult " + success + " " + error);
-                AndroidUtilities.runOnUIThread(() -> whenDone.run(success, error));
-            });
-            BillingController.getInstance().setOnCanceled(() -> {
-                FileLog.d("StarsController.buy onCanceled");
-                AndroidUtilities.runOnUIThread(() -> whenDone.run(false, null));
-            });
-            FileLog.d("StarsController.buy launchBillingFlow");
-            BillingController.getInstance().launchBillingFlow(
-                    activity, AccountInstance.getInstance(UserConfig.selectedAccount), payload,
-                    Collections.singletonList(BillingFlowParams.ProductDetailsParams.newBuilder()
-                            .setProductDetails(list.get(0))
-                            .build())
-            );
-        }));
     }
 
     public void buyGift(Activity activity, TL_stars.TL_starsGiftOption option, long user_id, Utilities.Callback2<Boolean, String> whenDone) {
@@ -846,7 +796,7 @@ public class StarsController {
             return;
         }
 
-        if (BuildVars.useInvoiceBilling() || !BillingController.getInstance().isReady()) {
+        if (BuildVars.useInvoiceBilling()/* || !BillingController.getInstance().isReady()*/) {
             TLRPC.TL_inputStorePaymentStarsGift purpose = new TLRPC.TL_inputStorePaymentStarsGift();
             purpose.stars = option.stars;
             purpose.amount = option.amount;
@@ -913,7 +863,7 @@ public class StarsController {
             return;
         }
 
-        TLRPC.TL_inputStorePaymentStarsGift payload = new TLRPC.TL_inputStorePaymentStarsGift();
+/*        TLRPC.TL_inputStorePaymentStarsGift payload = new TLRPC.TL_inputStorePaymentStarsGift();
         payload.stars = option.stars;
         payload.currency = option.currency;
         payload.amount = option.amount;
@@ -967,7 +917,7 @@ public class StarsController {
                     }
                 }
             }));
-        }));
+        }));*/
     }
 
     public void buyGiveaway(
@@ -1023,7 +973,7 @@ public class StarsController {
         payload.amount = option.amount;
         payload.users = users;
 
-        if (BuildVars.useInvoiceBilling() || !BillingController.getInstance().isReady() || option.store_product == null) {
+        if (BuildVars.useInvoiceBilling()/* || !BillingController.getInstance().isReady() || option.store_product == null*/) {
 
             TLRPC.TL_inputInvoiceStars invoice = new TLRPC.TL_inputInvoiceStars();
             invoice.purpose = payload;
@@ -1084,7 +1034,7 @@ public class StarsController {
 
             return;
         }
-
+/*
         QueryProductDetailsParams.Product product = QueryProductDetailsParams.Product.newBuilder()
                 .setProductType(BillingClient.ProductType.INAPP)
                 .setProductId(option.store_product)
@@ -1130,7 +1080,7 @@ public class StarsController {
                     }
                 }
             }));
-        }));
+        }));*/
     }
 
     public Runnable pay(MessageObject messageObject, Runnable whenShown) {

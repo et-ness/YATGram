@@ -3,7 +3,7 @@
 set -e
 
 
-if [[ -z "$(ANDROID_SDK)" ]]; then
+if [[ -z "$ANDROID_SDK" ]]; then
    cmakePath=""
 else
    cmakePath=`find $ANDROID_SDK/cmake -executable -type f | grep cmake$ | head -n 1`/

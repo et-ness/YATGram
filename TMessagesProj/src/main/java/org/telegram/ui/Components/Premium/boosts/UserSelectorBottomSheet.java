@@ -466,7 +466,7 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
         initHints(false);
         updateList(false, true);
         fixNavigationBar();
-        if (type == TYPE_PREMIUM || type == TYPE_STAR_GIFT) {
+/*        if (type == TYPE_PREMIUM || type == TYPE_STAR_GIFT) {
             BoostRepository.loadGiftOptions(currentAccount, null, arg -> {
                 paymentOptions.clear();
                 paymentOptions.addAll(arg);
@@ -477,7 +477,7 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
                     }
                 }
             });
-        }
+        }*/
         if (type == TYPE_PREMIUM || type == TYPE_STAR_GIFT) {
             StarsController.getInstance(currentAccount).loadStarGifts();
         }
@@ -589,7 +589,7 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
         String text = getString("BoostingSelectUpToWarningUsers", R.string.BoostingSelectUpToWarningUsers);
         BulletinFactory.of(container, resourcesProvider).createSimpleBulletin(R.raw.chats_infotip, text).show(true);
         try {
-            container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         } catch (Exception ignore) {}
     }
 

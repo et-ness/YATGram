@@ -13,8 +13,8 @@ import com.google.android.exoplayer2.upstream.AssetDataSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.upstream.FileDataSource;
-import com.google.android.gms.cast.MediaMetadata;
-import com.google.android.gms.common.images.WebImage;
+//import com.google.android.gms.cast.MediaMetadata;
+//import com.google.android.gms.common.images.WebImage;
 
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
@@ -183,7 +183,7 @@ public class ChromecastFileServer extends NanoHTTPD {
                     sb.append('\n');
                 }
                 sb.append(getUrlToSource(host, media.getKey()));
-
+/*
                 final MediaMetadata mediaMetadata = media.getValue().mediaMetadata;
                 if (mediaMetadata == null) continue;
 
@@ -198,6 +198,7 @@ public class ChromecastFileServer extends NanoHTTPD {
                     sb.append(subtitle);
                     sb.append(']');
                 }
+*/
             }
         }
         return newFixedLengthResponse(Response.Status.OK, "text/plain", sb.toString());

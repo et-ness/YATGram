@@ -7,7 +7,7 @@ import android.os.Handler;
 import android.provider.Settings;
 
 import androidx.annotation.NonNull;
-
+/*
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.MediaError;
 import com.google.android.gms.cast.MediaSeekOptions;
@@ -17,7 +17,7 @@ import com.google.android.gms.cast.framework.CastSession;
 import com.google.android.gms.cast.framework.Session;
 import com.google.android.gms.cast.framework.SessionManagerListener;
 import com.google.android.gms.cast.framework.media.RemoteMediaClient;
-
+*/
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
@@ -44,7 +44,7 @@ public class CastSync {
 
     private static boolean listened;
     public static void check(int type) {
-        CastSync.type = type;
+        /*CastSync.type = type;
         if (listened) return;
         try {
             final Context context = getContext();
@@ -130,23 +130,23 @@ public class CastSync {
             listened = true;
         } catch (Exception e) {
             FileLog.e(e);
-        }
+        }*/
     }
 
     public static void stop() {
         final Context context = getContext();
         if (context == null) return;
         try {
-            final CastContext castContext = CastContext.getSharedInstance(getContext());
+            /*final CastContext castContext = CastContext.getSharedInstance(getContext());
             if (castContext == null) return;
-            castContext.getSessionManager().endCurrentSession(true);
+            castContext.getSessionManager().endCurrentSession(true);*/
         } catch (Exception e) {
             FileLog.e(e);
         }
     }
 
     public static boolean isActive() {
-        final Context context = getContext();
+/*        final Context context = getContext();
         if (context == null) return false;
         try {
             final CastContext castContext = CastContext.getSharedInstance(getContext());
@@ -155,10 +155,10 @@ public class CastSync {
             return castSession != null && (castSession.isConnecting() || castSession.isConnected());
         } catch (Exception e) {
             FileLog.e(e);
-        }
+        }*/
         return false;
     }
-
+/*
     public static RemoteMediaClient getClient() {
         final Context context = getContext();
         if (context == null) return null;
@@ -174,15 +174,16 @@ public class CastSync {
         }
         return null;
     }
-
+*/
     public static long getPosition() {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return -1;
-        return client.getApproximateStreamPosition();
+        return client.getApproximateStreamPosition();*/
+        return -1;
     }
 
     public static void seekTo(long position) {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return;
         if (pending == null) {
             pending = new AtomicInteger(0);
@@ -192,7 +193,7 @@ public class CastSync {
             new MediaSeekOptions.Builder()
                 .setPosition(position)
                 .build()
-        ).addStatusListener(s -> pending.decrementAndGet());
+        ).addStatusListener(s -> pending.decrementAndGet());*/
     }
 
     public static void syncPosition(long position) {
@@ -204,35 +205,37 @@ public class CastSync {
     }
 
     public static void setVolume(float volume) {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return;
         if (pending == null) {
             pending = new AtomicInteger(0);
         }
         pending.incrementAndGet();
-        client.setStreamVolume(volume).addStatusListener(s -> pending.decrementAndGet());
+        client.setStreamVolume(volume).addStatusListener(s -> pending.decrementAndGet());*/
     }
 
     public static float getVolume() {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return 0.5f;
         final MediaStatus status = client.getMediaStatus();
         if (status == null) return 0.5f;
-        return (float) status.getStreamVolume();
+        return (float) status.getStreamVolume();*/
+        return 0.5f;
     }
 
     public static boolean isPlaying() {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return false;
         if (type == TYPE_PHOTOVIEWER) {
             return !client.isPaused();
         } else {
             return client.isPlaying();
-        }
+        }*/
+        return false;
     }
 
     public static void setPlaying(boolean play) {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return;
         if (play != client.isPlaying()) {
             if (pending == null) {
@@ -244,16 +247,16 @@ public class CastSync {
             } else {
                 client.pause().addStatusListener(s -> pending.decrementAndGet());
             }
-        }
+        }*/
     }
     public static void setSpeed(float speed) {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return;
         if (pending == null) {
             pending = new AtomicInteger(0);
         }
         pending.incrementAndGet();
-        client.setPlaybackRate(speed).addStatusListener(s -> pending.decrementAndGet());
+        client.setPlaybackRate(speed).addStatusListener(s -> pending.decrementAndGet());*/
     }
 
     public static boolean isUpdatePending() {
@@ -261,11 +264,12 @@ public class CastSync {
     }
 
     public static float getSpeed() {
-        final RemoteMediaClient client = getClient();
+/*        final RemoteMediaClient client = getClient();
         if (client == null) return 1.0f;
         final MediaStatus status = client.getMediaStatus();
         if (status == null) return 1.0f;
-        return (float) status.getPlaybackRate();
+        return (float) status.getPlaybackRate();*/
+        return 1.0f;
     }
 
     private static int savedVolume;

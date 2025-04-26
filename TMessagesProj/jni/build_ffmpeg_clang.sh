@@ -82,18 +82,22 @@ function build_one {
 	\
 	--enable-libvpx \
 	--enable-decoder=libvpx_vp9 \
+	--enable-encoder=libvpx_vp9 \
+	--enable-muxer=matroska \
+	--enable-bsf=vp9_superframe \
+	--enable-bsf=vp9_raw_reorder \
 	--enable-runtime-cpudetect \
 	--enable-pthreads \
 	--enable-avresample \
 	--enable-swscale \
 	--enable-protocol=file \
 	--enable-decoder=opus \
+	--enable-decoder=mp3 \
 	--enable-decoder=h264 \
 	--enable-decoder=mpeg4 \
 	--enable-decoder=mjpeg \
 	--enable-decoder=gif \
 	--enable-decoder=alac \
-    --enable-decoder=mp3 \
 	--enable-demuxer=mov \
 	--enable-demuxer=gif \
 	--enable-demuxer=ogg \
@@ -160,7 +164,7 @@ checkPreRequisites
 cd ffmpeg
 
 ## common
-LLVM_PREFIX="${NDK}/toolchains/llvm/prebuilt/linux-x86_64"
+LLVM_PREFIX="${NDK}/toolchains/llvm/prebuilt/${BUILD_PLATFORM}"
 LLVM_BIN="${LLVM_PREFIX}/bin"
 VERSION="4.9"
 

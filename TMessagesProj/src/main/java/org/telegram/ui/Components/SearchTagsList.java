@@ -463,7 +463,7 @@ public class SearchTagsList extends BlurredFrameLayout implements NotificationCe
 //                    ignoreTextChange = true;
 //                    s.delete(MAX_NAME_LENGTH, s.length());
 //                    AndroidUtilities.shakeView(editText);
-//                    editText.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+//                    editText.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
 //                    ignoreTextChange = false;
 //                }
 //            }

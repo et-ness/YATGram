@@ -143,7 +143,6 @@ import org.telegram.messenger.FlagSecureReason;
 import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
-import org.telegram.messenger.LanguageDetector;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
@@ -4122,7 +4121,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else if (position == forkRow) {
                 presentFragment(new ForkSettingsActivity());
             } else if (position == forkCheckUpdateRow) {
-                ((LaunchActivity) getParentActivity()).checkAppUpdate(true);
+                ((LaunchActivity) getParentActivity()).checkAppUpdate(true, null);
             } else if (position == questionRow) {
                 showDialog(AlertsCreator.createSupportAlert(ProfileActivity.this, resourcesProvider));
             } else if (position == faqRow) {
@@ -4251,7 +4250,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 SharedConfig.inappCamera ? getString("DebugMenuDisableCamera", R.string.DebugMenuDisableCamera) : getString("DebugMenuEnableCamera", R.string.DebugMenuEnableCamera),
                                 getString("DebugMenuClearMediaCache", R.string.DebugMenuClearMediaCache),
                                 getString("DebugMenuCallSettings", R.string.DebugMenuCallSettings),
-                                null,
+                                "Set ignoreSetOnline = true.",
                                 BuildVars.DEBUG_PRIVATE_VERSION || ApplicationLoader.isStandaloneBuild() || ApplicationLoader.isBetaBuild() ? getString("DebugMenuCheckAppUpdate", R.string.DebugMenuCheckAppUpdate) : null,
                                 getString("DebugMenuReadAllDialogs", R.string.DebugMenuReadAllDialogs),
                                 BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.disableVoiceAudioEffects ? "Enable voip audio effects" : "Disable voip audio effects") : null,
@@ -4276,7 +4275,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? (!SharedConfig.isUsingCamera2(currentAccount) ? "Use Camera 2 API" : "Use old Camera 1 API") : null, /* 30 */
                                 BuildVars.DEBUG_VERSION ? "Clear bot biometry data" : null, /* 31 */
                                 BuildVars.DEBUG_VERSION ? "Clear Mini Apps Permissions and Files" : null, /* 32 */
-                                BuildVars.DEBUG_PRIVATE_VERSION ? "Clear all login tokens" : null /* 33 */
+                                BuildVars.DEBUG_PRIVATE_VERSION ? "Clear all login tokens" : null, /* 33 */
                                 SharedConfig.canBlurChat() && Build.VERSION.SDK_INT >= 31 ? (SharedConfig.useNewBlur ? "back to cpu blur" : "use new gpu blur") : null, /* 34 */
                                 SharedConfig.adaptableColorInBrowser ? "Disabled adaptive browser colors" : "Enable adaptive browser colors", /* 35 */
                                 SharedConfig.debugVideoQualities ? "Disable video qualities debug" : "Enable video qualities debug", /* 36 */
@@ -4353,7 +4352,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             } else if (which == 7) { // Call settings
                                 VoIPHelper.showCallDebugSettings(getParentActivity());
                             } else if (which == 8) { // ?
-                                SharedConfig.toggleRoundCamera16to9();
+                                MessagesController.getInstance(currentAccount).ignoreSetOnline = true;
+                                Toast.makeText(getParentActivity(), "ignoreSetOnline = true;", Toast.LENGTH_SHORT).show();
+                                // SharedConfig.toggleRoundCamera16to9();
                             } else if (which == 9) { // Check app update
                                 ((LaunchActivity) getParentActivity()).checkAppUpdate(true, null);
                             } else if (which == 10) { // Read all chats
@@ -9152,7 +9153,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     forkCheckUpdateRow = rowCount++;
                 }
                 forkSectionCell = rowCount++;
-                if (!getMessagesController().premiumLocked) {
+                if (!getMessagesController().premiumFeaturesBlocked()) {
                     premiumRow = rowCount++;
                 }
                 if (getMessagesController().starsPurchaseAvailable()) {
@@ -9173,7 +9174,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 policyRow = rowCount++;
                 if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
                     helpSectionCell = rowCount++;
-                    debugHeaderRow = rowCount++;
+                    //debugHeaderRow = rowCount++;
                 }
                 if (BuildVars.LOGS_ENABLED) {
                     sendLogsRow = rowCount++;
@@ -9207,7 +9208,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (user != null && username != null) {
                     usernameRow = rowCount++;
                 }
-                idRow = rowCount++;
                 if (userInfo != null) {
                     if (userInfo.birthday != null) {
                         birthdayRow = rowCount++;
@@ -9219,6 +9219,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         bizLocationRow = rowCount++;
                     }
                 }
+                idRow = rowCount++;
 //                if (phoneRow != -1 || userInfoRow != -1 || usernameRow != -1 || bizHoursRow != -1 || bizLocationRow != -1) {
 //                    notificationsDividerRow = rowCount++;
 //                }

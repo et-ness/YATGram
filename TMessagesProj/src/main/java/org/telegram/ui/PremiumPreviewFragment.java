@@ -1001,10 +1001,10 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
     }
 
     public static void buyPremium(BaseFragment fragment, SubscriptionTier tier, String source, boolean forcePremium) {
-        buyPremium(fragment, tier, source, forcePremium, null);
+        buyPremium(fragment, tier, source, forcePremium, true);
     }
 
-    public static void buyPremium(BaseFragment fragment, SubscriptionTier tier, String source, boolean forcePremium, String a/*BillingFlowParams.SubscriptionUpdateParams updateParams*/) {
+    public static void buyPremium(BaseFragment fragment, SubscriptionTier tier, String source, boolean forcePremium, boolean updateParams) {
         if (BuildVars.IS_BILLING_UNAVAILABLE) {
             fragment.showDialog(new PremiumNotAvailableBottomSheet(fragment));
             return;
@@ -1226,7 +1226,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 return getString(R.string.Loading);
             }
 
-            return LocaleController.formatString(R.string.SubscribeToPremium, price);
+            return LocaleController.formatString(stringResId, price);
         } else {
             final boolean isPremium = UserConfig.getInstance(currentAccount).isPremium();
             final boolean isYearTier = tier.getMonths() == 12;
@@ -1981,7 +1981,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                             .setSubscriptionReplacementMode(BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.CHARGE_FULL_PRICE)
                             .build();
                 }*/
-                buyPremium(this, tier, "settings", true, null);
+                buyPremium(this, tier, "settings", true, true);
             }, animated);
             premiumButtonView.setFlickerDisabled(false);
         }
@@ -2331,9 +2331,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             return offerDetails == null ? "" : offerDetails.getPricingPhases().getPricingPhaseList().get(0).getPriceCurrencyCode();
              */
         }
-
-        private void checkOfferDetails() {
 /*
+        private void checkOfferDetails() {
             if (googlePlayProductDetails == null) {
                 return;
             }
@@ -2347,8 +2346,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                     }
                 }
             }
-*/
-        }
+        }*/
     }
 
     private SelectAnimatedEmojiDialog.SelectAnimatedEmojiDialogWindow selectAnimatedEmojiDialog;

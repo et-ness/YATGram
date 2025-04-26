@@ -80,6 +80,25 @@ public class LocaleController {
                 }
             }
         }
+        if (MessagesController.getGlobalMainSettings().getBoolean("formatWithSeconds", false)) {
+            if (formatterDayWithSeconds == null) {
+                final Locale locale = currentLocale == null ? Locale.getDefault() : currentLocale;
+                String lang = locale.getLanguage();
+                if (lang == null) {
+                    lang = "en";
+                }
+                lang = lang.toLowerCase();
+                formatterDayWithSeconds = createFormatter(
+                        lang.toLowerCase().equals("ar") || lang.toLowerCase().equals("ko")
+                                ? locale
+                                : Locale.US,
+                        is24HourFormat
+                                ? getStringInternal("formatterDay24HSec", R.string.formatterDay24HSec)
+                                : getStringInternal("formatterDay12HSec", R.string.formatterDay12HSec),
+                        is24HourFormat ? "HH:mm:ss" : "h:mm:ss a");
+            }
+            return formatterDayWithSeconds;
+        }
         return formatterDay;
     }
 
@@ -348,8 +367,6 @@ public class LocaleController {
         }
         return formatterScheduleSend[n];
     }
-
->>>>>>> telegram/master
 
     private static HashMap<Integer, String> resourcesCacheMap = new HashMap<>();
 
@@ -761,14 +778,6 @@ public class LocaleController {
 
     public boolean isCurrentLocalLocale() {
         return currentLocaleInfo.isLocal();
-    }
-
-    public FastDateFormat getFormatterDay() {
-        final boolean flag = MessagesController.getGlobalMainSettings()
-            .getBoolean("formatWithSeconds", false);
-        return flag
-            ? formatterDayWithSeconds
-            : formatterDay;
     }
 
     public void reloadCurrentRemoteLocale(int currentAccount, String langCode, boolean force, Runnable onDone) {

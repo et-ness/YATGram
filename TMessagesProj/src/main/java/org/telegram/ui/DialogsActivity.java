@@ -475,7 +475,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Nullable
     private ActionBarMenuItem pinItem;
     @Nullable
-    private ActionBarMenuItem muteItem;
+    private ActionBarMenuItem readItem;
     @Nullable
     private ActionBarMenuItem archive2Item;
     @Nullable
@@ -489,7 +489,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Nullable
     private ActionBarMenuSubItem clearItem;
     @Nullable
-    private ActionBarMenuSubItem readItem;
+    private ActionBarMenuSubItem muteItem;
     @Nullable
     private ActionBarMenuSubItem blockItem;
     private ActionBarMenuSubItem profileInfoItem;
@@ -3749,7 +3749,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     presentFragment(new ArchiveSettingsActivity());
                 } else if (id == 6) {
                     showArchiveHelp();
-                } else if (id >= 10 && id < 10 + UserConfig.MAX_ACCOUNT_COUNT) {
+                } else if (id >= 10 && id < 10 + SharedConfig.activeAccounts.size()) {
                     if (getParentActivity() == null) {
                         return;
                     }
@@ -9903,7 +9903,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (forumCount == 0) {
                     //readItem.setTextAndIcon(LocaleController.getString(R.string.MarkAsUnread), R.drawable.msg_markunread);
                     readItem.setIcon(R.drawable.msg_markunread);
-                    readItem.setContentDescription(LocaleController.getString(, R.string.MarkAsUnread));
+                    readItem.setContentDescription(LocaleController.getString(R.string.MarkAsUnread));
                     readItem.setVisibility(View.VISIBLE);
                 } else {
                     readItem.setVisibility(View.GONE);

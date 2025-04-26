@@ -389,10 +389,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             } else if (position == forwardsRow) {
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_FORWARDS));
             } else if (position == voicesRow) {
-                if (!getUserConfig().isPremium()) {
-                    BulletinFactory.of(this).createRestrictVoiceMessagesPremiumBulletin().show();
-                    return;
-                }
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_VOICE_MESSAGES));
             } else if (position == noncontactsRow) {
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_MESSAGES));

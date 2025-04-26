@@ -44,11 +44,11 @@ import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
-
+/*
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.QueryProductDetailsParams;
-
+*/
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BirthdayController;
@@ -617,7 +617,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
     private void updatePremiumTiers() {
         premiumTiers.clear();
         if (premiumTiers.isEmpty() && options != null && !options.isEmpty()) {
-            List<QueryProductDetailsParams.Product> products = new ArrayList<>();
+            //List<QueryProductDetailsParams.Product> products = new ArrayList<>();
             long pricePerMonthMax = 0;
             for (int i = options.size() - 1; i >= 0; i--) {
                 final TLRPC.TL_premiumGiftCodeOption option = options.get(i);
@@ -635,18 +635,18 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                     if (giftTier.getPricePerMonth() > pricePerMonthMax) {
                         pricePerMonthMax = giftTier.getPricePerMonth();
                     }
-                } else if (giftTier.getStoreProduct() != null && BillingController.getInstance().isReady()) {
+/*                } else if (giftTier.getStoreProduct() != null && BillingController.getInstance().isReady()) {
                     products.add(QueryProductDetailsParams.Product.newBuilder()
                             .setProductType(BillingClient.ProductType.INAPP)
                             .setProductId(giftTier.getStoreProduct())
-                            .build());
+                            .build());*/
                 }
             }
             if (BuildVars.useInvoiceBilling()) {
                 for (GiftPremiumBottomSheet.GiftTier tier : premiumTiers) {
                     tier.setPricePerMonthRegular(pricePerMonthMax);
                 }
-            } else if (!products.isEmpty()) {
+/*            } else if (!products.isEmpty()) {
                 long startMs = System.currentTimeMillis();
                 BillingController.getInstance().queryProductDetails(products, (billingResult, list) -> {
                     long pricePerMonthMaxStore = 0;
@@ -672,10 +672,10 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                             adapter.update(false);
                         }
                     });
-                });
+                });*/
             }
         }
-        if (premiumTiers.isEmpty()) {
+/*        if (premiumTiers.isEmpty()) {
             BoostRepository.loadGiftOptions(currentAccount, null, paymentOptions -> {
                 if (getContext() == null || !isShown()) return;
                 options = BoostRepository.filterGiftOptions(paymentOptions, 1);
@@ -687,7 +687,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                     }
                 }
             });
-        }
+        }*/
     }
 
     @Override

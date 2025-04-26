@@ -4446,7 +4446,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             sendPopupWindow.dimBehind();
             sendButton.invalidate();
             try {
-                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             } catch (Exception ignore) {}
 
             return true;
@@ -6922,7 +6922,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             if (captionLimitView != null) {
                 AndroidUtilities.shakeViewSpring(captionLimitView, 3.5f);
                 try {
-                    captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                    captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 } catch (Exception ignored) {
                 }
             }

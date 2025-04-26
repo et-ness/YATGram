@@ -594,11 +594,9 @@ public class AvatarDrawable extends Drawable {
             }
             if (roundRadius > 0) {
                 AndroidUtilities.rectTmp.set(0, 0, size, size);
-                canvas.drawRoundRect(AndroidUtilities.rectTmp, roundRadius, roundRadius, Theme.avatar_backgroundPaint);
+                canvas.drawRoundRect(AndroidUtilities.rectTmp, roundRadius, roundRadius, backgroundPaint);
             } else if (squareAvatars) {
-                canvas.drawRect(0f, 0f, size, size, Theme.avatar_backgroundPaint);
-                // telegram 10.6.1
-                //canvas.drawRoundRect(AndroidUtilities.rectTmp, roundRadius, roundRadius, backgroundPaint);
+                canvas.drawRect(0f, 0f, size, size, backgroundPaint);
             } else {
                 canvas.drawCircle(size / 2.0f, size / 2.0f, size / 2.0f, backgroundPaint);
             }

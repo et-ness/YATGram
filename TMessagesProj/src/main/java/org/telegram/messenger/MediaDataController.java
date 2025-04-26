@@ -45,8 +45,6 @@ import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
-// import com.android.billingclient.api.ProductDetails;
-
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLiteDatabase;
 import org.telegram.SQLite.SQLiteException;
@@ -433,7 +431,7 @@ public class MediaDataController extends BaseController {
     }
 
     public Integer getPremiumHintAnnualDiscount(boolean checkTransaction) {
-        if (/*checkTransaction && (!BillingController.getInstance().isReady() || BillingController.getInstance().getLastPremiumTransaction() == null) || */premiumPromo == null) {
+        if (checkTransaction /*&& (!BillingController.getInstance().isReady() || BillingController.getInstance().getLastPremiumTransaction() == null)*/ || premiumPromo == null) {
             return null;
         }
 
@@ -459,9 +457,9 @@ public class MediaDataController extends BaseController {
                     } else {
                         currentPrice = (double) offerDetails.getPricingPhases().getPricingPhaseList().get(0).getPriceAmountMicros() / option.months;
                     }
-                } else */{
+                } else {*/
                     currentPrice = (double) option.amount / option.months;
-                }
+                //}
             }
         }
         for (TLRPC.TL_premiumSubscriptionOption option : premiumPromo.period_options) {
@@ -482,9 +480,9 @@ public class MediaDataController extends BaseController {
                     } else {
                         amount = (double) offerDetails.getPricingPhases().getPricingPhaseList().get(0).getPriceAmountMicros() / option.months;
                     }
-                } else */{
+                } else {*/
                     amount = (double) option.amount / option.months;
-                }
+                //}
 
                 discount = (int) ((1.0 - amount / currentPrice) * 100);
             }

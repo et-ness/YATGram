@@ -2,6 +2,8 @@ package org.telegram.messenger;
 
 import android.content.SharedPreferences;
 
+import android.util.SparseArray;
+
 import org.telegram.tgnet.AbstractSerializedData;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;

@@ -104,12 +104,12 @@ jobs:
 
           sudo apt update
           sudo apt install ninja-build
-          ./gradlew :TMessagesProj_AppFork:${{ matrix.afat }}
+          ./gradlew :TMessagesProj_App:${{ matrix.afat }}
 
           grep VERSION_NAME TMessagesProj/build/generated/source/buildConfig/${{ matrix.typeb }}/org/telegram/messenger/BuildConfig.java | cut -d'"' -f 2 > ver.txt
 
           mkdir artifact
-          mv TMessagesProj_AppFork/build/outputs/apk/afat/${{ matrix.typeb }}/app.apk app.apk
+          mv TMessagesProj_App/build/outputs/apk/afat/${{ matrix.typeb }}/app.apk app.apk
           cp app.apk "artifact/YATGram_$(cat ver.txt)${{ matrix.name }}.apk"
           mkdir tag_asset
           cp app.apk "tag_asset/YATGram_$(cat ver.txt)${{ matrix.name }}.apk"
@@ -119,7 +119,7 @@ jobs:
           tempVer=$(cat ver.txt)
           tempVer=${tempVer::-2}
           echo "NEW_OFFICIAL_TAG_TEXT=$tempVer" >> $GITHUB_ENV
-          versionCode=$(grep VERSION_CODE TMessagesProj_AppFork/build/generated/source/buildConfig/afat/${{ matrix.typeb }}/org/telegram/messenger/regular/BuildConfig.java | cut -d' ' -f 9 | sed 's/;//')
+          versionCode=$(grep VERSION_CODE TMessagesProj_App/build/generated/source/buildConfig/afat/${{ matrix.typeb }}/org/telegram/messenger/regular/BuildConfig.java | cut -d' ' -f 9 | sed 's/;//')
           echo "VERSION_CODE=$versionCode" >> $GITHUB_ENV
 
       - name: Draft release

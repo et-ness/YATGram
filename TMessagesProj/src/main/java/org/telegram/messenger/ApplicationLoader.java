@@ -10,7 +10,9 @@ package org.telegram.messenger;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.Application;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -32,8 +34,6 @@ import android.telephony.TelephonyManager;
 import android.util.Pair;
 import android.view.ViewGroup;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -115,7 +115,7 @@ public class ApplicationLoader extends Application {
     }
 
     public static boolean isStandaloneBuild() {
-        return applicationLoaderInstance.isStandalone();
+        return true;
     }
 
     public static boolean isBetaBuild() {
@@ -127,7 +127,7 @@ public class ApplicationLoader extends Application {
     }
 
     protected boolean isStandalone() {
-        return false;
+        return true;
     }
 
     protected boolean isBeta() {
@@ -236,7 +236,6 @@ public class ApplicationLoader extends Application {
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
         }
-        BillingController.getInstance().startConnection();
     }
 
     public ApplicationLoader() {
@@ -340,15 +339,25 @@ public class ApplicationLoader extends Application {
             editorCA.commit();
             ConnectionsManager.getInstance(UserConfig.selectedAccount).setPushConnectionEnabled(true);
         }
+        int pendingIntentFlags;
+        if (Build.VERSION.SDK_INT >= 34) {
+            pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE;
+        } else {
+            pendingIntentFlags = PendingIntent.FLAG_MUTABLE;
+        }
         if (enabled) {
             Log.d("TFOSS", "Trying to start push service every minute");
             // Telegram-FOSS: unconditionally enable push service
             AlarmManager am = (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE);
             Intent i = new Intent(applicationContext, NotificationsService.class);
-            pendingIntent = PendingIntent.getBroadcast(applicationContext, 0, i, PendingIntent.FLAG_MUTABLE);
+            try {
+            pendingIntent = PendingIntent.getBroadcast(applicationContext, 0, i, pendingIntentFlags);
 
             am.cancel(pendingIntent);
             am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 60000, pendingIntent);
+            } catch (Throwable ignore) {
+                Log.d("YATGram", "Failed to set intent");
+            }
             try {
                 Log.d("TFOSS", "Starting push service...");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -361,13 +370,16 @@ public class ApplicationLoader extends Application {
             }
         } else {
             applicationContext.stopService(new Intent(applicationContext, NotificationsService.class));
-
-            PendingIntent pintent = PendingIntent.getService(applicationContext, 0, new Intent(applicationContext, NotificationsService.class), PendingIntent.FLAG_MUTABLE);
-            AlarmManager alarm = (AlarmManager)applicationContext.getSystemService(Context.ALARM_SERVICE);
-            alarm.cancel(pintent);
-	        if (pendingIntent != null) {
-	            alarm.cancel(pendingIntent);
-	        }
+            try {
+                PendingIntent pintent = PendingIntent.getService(applicationContext, 0, new Intent(applicationContext, NotificationsService.class), PendingIntent.FLAG_MUTABLE);
+                AlarmManager alarm = (AlarmManager)applicationContext.getSystemService(Context.ALARM_SERVICE);
+                alarm.cancel(pintent);
+                if (pendingIntent != null) {
+                    alarm.cancel(pendingIntent);
+                }
+            } catch (Throwable ignore) {
+                Log.d("Fork Client", "Failed to set intent");
+            }
         }
     }
 

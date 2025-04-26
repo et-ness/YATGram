@@ -412,7 +412,7 @@ public class MessageDetailsActivity extends BaseFragment {
                         textCell.setTextAndValue("Bot", LocaleController.getString("CheckPhoneNumberYes", R.string.CheckPhoneNumberYes), divider);
                     } else if (position == dateRow) {
                         long date = (long) messageObject.messageOwner.date * 1000;
-                        String timeString = LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().formatterYear.format(new Date(date)), LocaleController.getInstance().formatterDay.format(new Date(date)));
+                        String timeString = LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().getFormatterYear().format(new Date(date)), LocaleController.getInstance().getFormatterDay().format(new Date(date)));
                         StringBuilder builder = new StringBuilder();
                         if (messageObject.scheduled) {
                             if (messageObject.messageOwner.date == 0x7ffffffe) {
@@ -427,7 +427,7 @@ public class MessageDetailsActivity extends BaseFragment {
                         long date = (long) messageObject.messageOwner.edit_date * 1000;
                         String editedTxt = LocaleController.formatString("EditedMessage", R.string.EditedMessage);
                         editedTxt = editedTxt.substring(0, 1).toUpperCase() + editedTxt.substring(1).toLowerCase();
-                        textCell.setTextAndValue(editedTxt, LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().formatterYear.format(new Date(date)), LocaleController.getInstance().formatterDay.format(new Date(date))), divider);
+                        textCell.setTextAndValue(editedTxt, LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().getFormatterYear().format(new Date(date)), LocaleController.getInstance().getFormatterDay().format(new Date(date))), divider);
                     } else if (position == forwardRow) {
                         long date = (long) messageObject.messageOwner.fwd_from.date * 1000;
                         StringBuilder builder = new StringBuilder();
@@ -461,8 +461,8 @@ public class MessageDetailsActivity extends BaseFragment {
                                 builder.append(messageObject.messageOwner.fwd_from.from_name);
                             }
                         }
-                        builder.append("\n").append(LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().formatterYear.format(new Date(date)), LocaleController.getInstance().formatterDay.format(new Date(date))));
-                        textCell.setTextAndValue(LocaleController.formatString("ForwardedMessage", R.string.ForwardedMessage), builder.toString(), divider);
+                        builder.append("\n").append(LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().getFormatterYear().format(new Date(date)), LocaleController.getInstance().getFormatterDay().format(new Date(date))));
+                        textCell.setTextAndValue(LocaleController.formatString(R.string.ForwardedMessageCount_one), builder.toString(), divider);
                     } else if (position == fileNameRow) {
                         textCell.setTextAndValue(LocaleController.formatString("Filename", R.string.Filename), fileName, divider);
                     } else if (position == filePathRow) {

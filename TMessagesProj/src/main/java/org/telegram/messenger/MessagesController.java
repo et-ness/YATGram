@@ -1681,7 +1681,6 @@ public class MessagesController extends BaseController implements NotificationCe
             }
         }
         scheduleTranscriptionUpdate();
-        //BuildVars.GOOGLE_AUTH_CLIENT_ID = mainPreferences.getString("googleAuthClientId", BuildVars.GOOGLE_AUTH_CLIENT_ID);
         if (mainPreferences.contains("dcDomainName2")) {
             dcDomainName = mainPreferences.getString("dcDomainName2", "apv3.stel.com");
         } else {
@@ -11678,6 +11677,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     getUserConfig().saveConfig(false);
                 }
             }));
+            sortDialogs(null);
         }
         if (!getUserConfig().notificationsSignUpSettingsLoaded) {
             loadSignUpNotificationsSettings();

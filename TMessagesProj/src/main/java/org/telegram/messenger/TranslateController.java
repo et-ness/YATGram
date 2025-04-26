@@ -675,7 +675,7 @@ public class TranslateController extends BaseController {
 
     private ArrayList<Integer> pendingLanguageChecks = new ArrayList<>();
     private void checkLanguage(MessageObject messageObject) {
-        if (!LanguageDetector.hasSupport()) {
+/*      if (!LanguageDetector.hasSupport()) {
             return;
         }
         if (!isTranslatable(messageObject) || messageObject.messageOwner == null || TextUtils.isEmpty(messageObject.messageOwner.message)) {
@@ -712,7 +712,7 @@ public class TranslateController extends BaseController {
                 getMessagesStorage().updateMessageCustomParams(dialogId, messageObject.messageOwner);
                 pendingLanguageChecks.remove((Integer) hash);
             }));
-        });
+        }); */
     }
 
     private void checkDialogTranslatable(MessageObject messageObject) {
@@ -1258,7 +1258,7 @@ public class TranslateController extends BaseController {
 
     // ensure dialogId in storyItem is valid
     public void detectStoryLanguage(TL_stories.StoryItem storyItem) {
-        if (storyItem == null || storyItem.detectedLng != null || storyItem.caption == null || storyItem.caption.length() == 0 || !LanguageDetector.hasSupport()) {
+/*        if (storyItem == null || storyItem.detectedLng != null || storyItem.caption == null || storyItem.caption.length() == 0 || !LanguageDetector.hasSupport()) {
             return;
         }
 
@@ -1276,7 +1276,7 @@ public class TranslateController extends BaseController {
             storyItem.detectedLng = UNKNOWN_LANGUAGE;
             getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
             detectingStories.remove(key);
-        }));
+        }));*/
     }
 
     public boolean canTranslateStory(TL_stories.StoryItem storyItem) {
@@ -1377,7 +1377,7 @@ public class TranslateController extends BaseController {
     private final HashSet<MessageKey> translatingPhotos = new HashSet<>();
 
     public void detectPhotoLanguage(MessageObject messageObject, Utilities.Callback<String> done) {
-        if (messageObject == null || messageObject.messageOwner == null || !LanguageDetector.hasSupport() || TextUtils.isEmpty(messageObject.messageOwner.message)) {
+/*      if (messageObject == null || messageObject.messageOwner == null || !LanguageDetector.hasSupport() || TextUtils.isEmpty(messageObject.messageOwner.message)) {
             return;
         }
         if (!TextUtils.isEmpty(messageObject.messageOwner.originalLanguage)) {
@@ -1407,7 +1407,7 @@ public class TranslateController extends BaseController {
             if (done != null) {
                 done.run(UNKNOWN_LANGUAGE);
             }
-        }));
+        }));*/
     }
 
     public boolean canTranslatePhoto(MessageObject messageObject, String detectedLanguage) {

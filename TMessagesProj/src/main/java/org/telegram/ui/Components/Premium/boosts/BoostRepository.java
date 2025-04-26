@@ -110,16 +110,12 @@ public class BoostRepository {
         if (!isGoogleBillingAvailable()) {
             payGiftCodeByInvoice(users, option, chat, message, baseFragment, onSuccess, onError);
         } else {
-            payGiftCodeByGoogle(users, option, chat, message, baseFragment, onSuccess, onError);
+            //payGiftCodeByGoogle(users, option, chat, message, baseFragment, onSuccess, onError);
         }
     }
 
     public static boolean isGoogleBillingAvailable() {
-        if (BuildVars.useInvoiceBilling()) {
-            return false;
-        }
         return false;
-//        return BillingController.getInstance().isReady();
     }
 
     public static void payGiftCodeByInvoice(List<TLObject> users, TLRPC.TL_premiumGiftCodeOption option, TLRPC.Chat chat, TLRPC.TL_textWithEntities message, BaseFragment baseFragment, Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
@@ -282,7 +278,7 @@ public class BoostRepository {
         if (!isGoogleBillingAvailable()) {
             payGiveAwayByInvoice(chats, selectedCountries, option, chat, date, onlyNewSubscribers, baseFragment, winnersVisible, withAdditionPrize, prizeDesc, onSuccess, onError);
         } else {
-            payGiveAwayByGoogle(chats, selectedCountries, option, chat, date, onlyNewSubscribers, baseFragment, winnersVisible, withAdditionPrize, prizeDesc, onSuccess, onError);
+            //payGiveAwayByGoogle(chats, selectedCountries, option, chat, date, onlyNewSubscribers, baseFragment, winnersVisible, withAdditionPrize, prizeDesc, onSuccess, onError);
         }
     }
 
@@ -362,12 +358,11 @@ public class BoostRepository {
             }
         }));
     }
-
+/*
     public static void payGiveAwayByGoogle(List<TLObject> chats, List<TLObject> selectedCountries, TLRPC.TL_premiumGiftCodeOption option,
                                            TLRPC.Chat chat, int date, boolean onlyNewSubscribers, BaseFragment baseFragment,
                                            boolean winnersVisible, boolean withAdditionPrize, String prizeDesc,
                                            Utilities.Callback<Void> onSuccess, Utilities.Callback<TLRPC.TL_error> onError) {
-/*
         MessagesController controller = MessagesController.getInstance(UserConfig.selectedAccount);
         ConnectionsManager connection = ConnectionsManager.getInstance(UserConfig.selectedAccount);
         TLRPC.TL_inputStorePaymentPremiumGiveaway payload = new TLRPC.TL_inputStorePaymentPremiumGiveaway();
@@ -428,9 +423,8 @@ public class BoostRepository {
                 }
             }));
         });
-*/
     }
-
+*/
     public static List<TLRPC.TL_premiumGiftCodeOption> filterGiftOptions(List<TLRPC.TL_premiumGiftCodeOption> list, int selected) {
         List<TLRPC.TL_premiumGiftCodeOption> result = new ArrayList<>();
         for (TLRPC.TL_premiumGiftCodeOption item : list) {

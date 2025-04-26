@@ -1797,8 +1797,8 @@ target_include_directories(tgcalls PUBLIC
         third_party
         voip/libtgvoip
         ffmpeg/build/${ANDROID_ABI}/include
-        libvpx/build/${ANDROID_ABI}/include
-        voip/webrtc/third_party/crc32c/src/include)
+        voip/webrtc/third_party/crc32c/src/include
+        libvpx/build/${ANDROID_ABI}/include)
 
 if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
     target_sources(tgcalls PRIVATE
