@@ -5844,6 +5844,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     private boolean firstAppUpdateCheck = true;
     public void checkAppUpdate(boolean force, Browser.Progress progress) {
+        if (!BuildVars.CHECK_UPDATES || BuildVars.DEBUG_VERSION) {
+             return;
+        }
         AppUpdater.checkNewVersion(this, getBaseContext(), (builder) -> {
             showAlertDialog(builder);
             return 0;

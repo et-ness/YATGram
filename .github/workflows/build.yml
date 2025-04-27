@@ -49,12 +49,10 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          java-version: "17"
+          java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
@@ -70,6 +68,9 @@ jobs:
           key: ${{ runner.os }}
           restore-keys: ${{ runner.os }}
           save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.name == '' }}
+
+      - name: Install meson
+        run: sudo apt install -y meson
 
       - name: Prepare additional build number
         run: |
