@@ -5,6 +5,8 @@ import android.view.WindowManager;
 
 import java.util.HashMap;
 
+import org.telegram.messenger.MessagesController;
+
 public class FlagSecureReason {
 
     private static HashMap<Window, Integer> currentSecureReasons;
@@ -64,7 +66,7 @@ public class FlagSecureReason {
             return;
         }
 
-        if (isSecuredNow(window)) {
+        if (isSecuredNow(window) && !MessagesController.getGlobalMainSettings().getBoolean("byPassRestrictedContent", false)) {
             window.addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE);

@@ -13,4 +13,6 @@
     <string name="Buttons">Buttons</string>
     <string name="Filename">File name</string>
     <string name="Filesize">File size</string>
+    <string name="byPassRestrictedContent">Bypass restricted content</string>
+    <string name="byPassRestrictedContentInfo">Allow screen capture and save attachments on chat where is not allowed</string>
 </resources>

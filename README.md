@@ -14,10 +14,12 @@ YATGram is a fork of the unofficial Telegram Fork Client
 
 ## Features:
 - All features of ForkGram/Fork Client
-- Unlimited acccounts
+- Unlimited acccounts*
 - Fix of delete for everyone
 - QR Login
 - Changed order of buttons in Chat
+
+<sub><sup>* Theoretically unlimited, but over 40 there are crashes in the app, if you want you can install version 2, same app with different package name. I don't think it will ever be useful to anyone.</sup></sub>
 
 ### Privacy Features:
 - All features of ForkGram/Fork Client less show number in ProfileCell

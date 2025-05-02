@@ -14191,6 +14191,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         boolean captionTranslating = false;
         String newFileName = getFileName(index);
         MessageObject newMessageObject = null;
+        boolean bypassRestricted = MessagesController.getGlobalMainSettings().getBoolean("byPassRestrictedContent", false);
 
         if (animated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             TransitionSet transitionSet = new TransitionSet();
@@ -14345,8 +14346,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
 
             if (currentAnimation != null) {
-                galleryButton.setVisibility(View.GONE);
-                galleryGap.setVisibility(View.GONE);
+                galleryButton.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
+                galleryGap.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
                 menuItem.hideSubItem(gallery_menu_share);
                 setItemVisible(editItem, false, animated);
                 if (!newMessageObject.canDeleteMessage(parentChatActivity != null && parentChatActivity.isInScheduleMode(), null)) {
@@ -14457,8 +14458,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
             if (isEmbedVideo || newMessageObject.messageOwner.ttl != 0 && newMessageObject.messageOwner.ttl < 60 * 60 || noforwards) {
                 allowShare = false;
-                galleryButton.setVisibility(View.GONE);
-                galleryGap.setVisibility(View.GONE);
+                galleryButton.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
+                galleryGap.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
                 menuItem.hideSubItem(gallery_menu_share);
                 setItemVisible(editItem, false, animated);
             } else {
@@ -14471,8 +14472,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         } else if (!secureDocuments.isEmpty()) {
             allowShare = false;
             menuItem.showSubItem(gallery_menu_delete);
-            galleryButton.setVisibility(View.GONE);
-            galleryGap.setVisibility(View.GONE);
+            galleryButton.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
+            galleryGap.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
             menuItem.hideSubItem(gallery_menu_translate);
             menuItem.hideSubItem(gallery_menu_hide_translation);
             if (countView != null) {
@@ -14538,8 +14539,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
             boolean noforwards = avatarsDialogId != 0 && MessagesController.getInstance(currentAccount).isChatNoForwards(-avatarsDialogId);
             if (noforwards) {
-                galleryButton.setVisibility(View.GONE);
-                galleryGap.setVisibility(View.GONE);
+                galleryButton.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
+                galleryGap.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
             } else {
                 galleryButton.setVisibility(View.VISIBLE);
                 galleryGap.setVisibility(View.VISIBLE);
@@ -14822,8 +14823,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 countView.set(switchingToIndex + 1, size);
             }
             if (currentAnimation != null || (!pageBlocksAdapter.isVideo(index) && pageBlocksAdapter.isHardwarePlayer(index))) {
-                galleryButton.setVisibility(View.GONE);
-                galleryGap.setVisibility(View.GONE);
+                galleryButton.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
+                galleryGap.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
                 if (allowShare) {
                     menuItem.showSubItem(gallery_menu_savegif);
                 } else {
@@ -15271,18 +15272,20 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 AndroidUtilities.cancelRunOnUIThread(hideActionBarRunnable);
             }
             if (sharedMediaType == MediaDataController.MEDIA_FILE) {
+                boolean bypassRestricted = MessagesController.getGlobalMainSettings().getBoolean("byPassRestrictedContent", false);
                 if (canZoom = newMessageObject.canPreviewDocument()) {
                     if (allowShare) {
                         galleryButton.setVisibility(View.VISIBLE);
                         galleryGap.setVisibility(View.VISIBLE);
                     } else {
-                        galleryButton.setVisibility(View.GONE);
-                        galleryGap.setVisibility(View.GONE);
+                        galleryButton.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
+                        galleryGap.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
                     }
                     setDoubleTapEnabled(true);
                 } else {
-                    galleryButton.setVisibility(View.GONE);
-                    galleryGap.setVisibility(View.GONE);
+                    // Maybe useless this bypass restricted
+                    galleryButton.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
+                    galleryGap.setVisibility(bypassRestricted ? View.VISIBLE : View.GONE);
                     setDoubleTapEnabled(false);
                 }
             }
@@ -16931,10 +16934,12 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             } else {
                 windowLayoutParams.flags = WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
             }
-            if (chatActivity != null && chatActivity.getCurrentEncryptedChat() != null ||
+            // YATGram feature
+            if ((chatActivity != null && chatActivity.getCurrentEncryptedChat() != null ||
                 avatarsDialogId != 0 && MessagesController.getInstance(currentAccount).isChatNoForwards(-avatarsDialogId) ||
                 messageObject != null && (MessagesController.getInstance(currentAccount).isChatNoForwards(messageObject.getChatId()) ||
-                (messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) || messageObject != null && messageObject.hasRevealedExtendedMedia()
+                (messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) || messageObject != null && messageObject.hasRevealedExtendedMedia()) &&
+                !MessagesController.getGlobalMainSettings().getBoolean("byPassRestrictedContent", false)
             ) {
                 windowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_SECURE;
             } else {

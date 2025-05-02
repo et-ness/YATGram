@@ -13,4 +13,6 @@
     <string name="Buttons">Bottoni</string>
     <string name="Filename">Nome file</string>
     <string name="Filesize">Dimensione file</string>
+    <string name="byPassRestrictedContent">Aggira i contenuti protetti</string>
+    <string name="byPassRestrictedContentInfo">Permette di catturare schermate e salvare allegati sulle chat dove è proibito</string>
 </resources>

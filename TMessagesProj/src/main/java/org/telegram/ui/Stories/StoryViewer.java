@@ -2667,7 +2667,7 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     public void allowScreenshots(boolean allowScreenshots) {
-        if (BuildVars.DEBUG_PRIVATE_VERSION) {
+        if (BuildVars.DEBUG_PRIVATE_VERSION || MessagesController.getGlobalMainSettings().getBoolean("byPassRestrictedContent", false)) {
             return;
         }
         allowScreenshots = !isShowing || allowScreenshots;

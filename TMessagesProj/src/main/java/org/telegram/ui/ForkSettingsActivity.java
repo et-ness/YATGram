@@ -161,12 +161,15 @@ public class ForkSettingsActivity extends BaseFragment {
     private int lockPremium;
     private int addItemToDeleteAllUnpinnedMessages;
     private int largePhoto;
-    private int hideAds;
     private int disableSlideToNextChannel;
     private int disableRecentFilesAttachment;
     private int botSkipShare;
     private int botSkipFullscreen;
     private int disableDefaultInAppBrowser;
+    // YATGram
+    private int hideAds;
+    private int byPassRestrictedContent;
+    // end YATGram
 
     private int stickerSizeRow;
 
@@ -203,7 +206,7 @@ public class ForkSettingsActivity extends BaseFragment {
         super.onFragmentCreate();
 
         rowCount = 0;
-        
+
         sectionRows.add(rowCount++);
         hideSensitiveDataRow = SharedConfig.isUserOwner() ? -1 : rowCount++;
         squareAvatarsRow = rowCount++;
@@ -211,8 +214,9 @@ public class ForkSettingsActivity extends BaseFragment {
         showNotificationContent = rowCount++;
         hideBottomButton = SharedConfig.isUserOwner() ? rowCount++ : -1;
         lockPremium = rowCount++;
-        hideAds = rowCount++;
-    
+        hideAds = rowCount++; // YATGram
+        byPassRestrictedContent = rowCount++; // YATGram
+
         emptyRows.add(rowCount++);
         sectionRows.add(rowCount++);
         syncPinsRow = rowCount++;
@@ -221,7 +225,7 @@ public class ForkSettingsActivity extends BaseFragment {
         disableThumbsInDialogList = rowCount++;
         disableGlobalSearch = rowCount++;
         customTitleRow = rowCount++;
-    
+
         emptyRows.add(rowCount++);
         sectionRows.add(rowCount++);
         disableFlipPhotos = rowCount++;
@@ -365,6 +369,8 @@ public class ForkSettingsActivity extends BaseFragment {
                 toggleGlobalMainSetting("lockPremium", view, false);
             } else if (position == hideAds) {
                 toggleGlobalMainSetting("hideAds", view, true);
+            } else if (position == byPassRestrictedContent) {
+                toggleGlobalMainSetting("byPassRestrictedContent", view, false);
             } else if (position == replaceForward) {
                 toggleGlobalMainSetting("replaceForward", view, true);
             } else if (position == mentionByName) {
@@ -525,6 +531,10 @@ public class ForkSettingsActivity extends BaseFragment {
                     } else if (position == hideAds) {
                         String t = LocaleController.getString("hideAds", R.string.hideAds);
                         textCell.setTextAndCheck(t, preferences.getBoolean("hideAds", true), false);
+                    } else if (position == byPassRestrictedContent) {
+                        String t = LocaleController.getString("byPassRestrictedContent", R.string.byPassRestrictedContent);
+                        String info = LocaleController.getString("byPassRestrictedContentInfo", R.string.byPassRestrictedContentInfo);
+                        textCell.setTextAndValueAndCheck(t, info, preferences.getBoolean("byPassRestrictedContent", false), true, false);
                     } else if (position == replaceForward) {
                         String t = LocaleController.getString("ReplaceForward", R.string.ReplaceForward);
                         textCell.setTextAndCheck(t, preferences.getBoolean("replaceForward", true), false);
@@ -595,6 +605,7 @@ public class ForkSettingsActivity extends BaseFragment {
                         || position == botSkipFullscreen
                         || position == lockPremium
                         || position == hideAds
+                        || position == byPassRestrictedContent
                         || position == replaceForward
                         || position == mentionByName
                         || position == openArchiveOnPull
@@ -667,6 +678,7 @@ public class ForkSettingsActivity extends BaseFragment {
                 || position == botSkipFullscreen
                 || position == lockPremium
                 || position == hideAds
+                || position == byPassRestrictedContent
                 || position == replaceForward
                 || position == mentionByName
                 || position == openArchiveOnPull
