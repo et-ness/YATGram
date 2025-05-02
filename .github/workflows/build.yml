@@ -21,13 +21,8 @@ jobs:
 
     strategy:
       matrix:
-#        type: [debug, release]
         type: [release, release2]
         include:
-#          - type: debug
-#            afat: assembleAfatDebug
-#            name: ""
-#            updates: 1
           - type: release
             typeb: release
             afat: assembleAfatRelease
@@ -37,11 +32,12 @@ jobs:
           - type: release2
             typeb: release
             afat: assembleAfatRelease
-            name: "2"
+            name: "_2"
             updates: 0
             packagename: "org.yatgram.messenger.clone"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout project
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -134,7 +130,7 @@ jobs:
           name: "${{ env.NEW_TAG_TEXT }}"
           body: "- Updated to ${{ env.NEW_OFFICIAL_TAG_TEXT }} build of the official Telegram.\nVersion code: ${{ env.VERSION_CODE }}\n"
 
-      - uses: actions/upload-artifact@master
+      - uses: actions/upload-artifact@v4
         name: Upload artifact
         with:
           name: YATGram-${{ matrix.typeb }}${{ matrix.name }}
