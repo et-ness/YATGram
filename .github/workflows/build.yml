@@ -57,6 +57,13 @@ jobs:
           ndk-version: r21e
           link-to-sdk: true
 
+      - name: Setup NDK for tdlib
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r23c
+          link-to-sdk: true
+
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -64,9 +71,6 @@ jobs:
           key: ${{ runner.os }}
           restore-keys: ${{ runner.os }}
           save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.name == '' }}
-
-      - name: Install meson
-        run: sudo apt install -y meson
 
       - name: Prepare additional build number
         run: |
@@ -100,7 +104,7 @@ jobs:
           fi
 
           sudo apt update
-          sudo apt install ninja-build
+          sudo apt install ninja-build meson gperf
           ./gradlew :TMessagesProj_App:${{ matrix.afat }}
 
           grep VERSION_NAME TMessagesProj/build/generated/source/buildConfig/${{ matrix.typeb }}/org/telegram/messenger/BuildConfig.java | cut -d'"' -f 2 > ver.txt
