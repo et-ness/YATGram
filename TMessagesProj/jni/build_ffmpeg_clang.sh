@@ -24,9 +24,9 @@ function build_one {
 	fi
 
 	CROSS_PREFIX=${PREBUILT}/bin/${ARCH_NAME}-linux-${BIN_MIDDLE}-
-	
-	INCLUDES=" -I${LIBVPXPREFIX}/include"
-	LIBS=" -L${LIBVPXPREFIX}/lib"
+
+	INCLUDES=" -I${LIBVPXPREFIX}/include -I${LIBDAV1DPREFIX}/include"
+	LIBS=" -L${LIBVPXPREFIX}/lib -L${LIBDAV1DPREFIX}/lib"
 
 	echo "Cleaning..."
 	rm -f config.h
@@ -56,7 +56,7 @@ function build_one {
 	--sysroot="${LLVM_PREFIX}/sysroot" \
 	--extra-cflags="${INCLUDES} -Wl,-Bsymbolic -Os -DCONFIG_LINUX_PERF=0 -DANDROID $OPTIMIZE_CFLAGS -fPIE -pie --static -fPIC" \
 	--extra-cxxflags="${INCLUDES} -Wl,-Bsymbolic -Os -DCONFIG_LINUX_PERF=0 -DANDROID $OPTIMIZE_CFLAGS -fPIE -pie --static -fPIC" \
-	--extra-ldflags="${LIBS} -Wl,-Bsymbolic -Wl,-rpath-link=$PLATFORM/usr/lib -L$PLATFORM/usr/lib -nostdlib -lc -lm -ldl -fPIC" \
+	--extra-ldflags="${LIBS} -Wl,-Bsymbolic -Wl,-rpath-link=$PLATFORM/usr/lib -L$PLATFORM/usr/lib -lc -lm -ldl -fPIC" \
 	\
 	--enable-version3 \
 	--enable-gpl \
@@ -80,6 +80,7 @@ function build_one {
 	--disable-postproc \
 	--disable-avdevice \
 	\
+	--enable-libdav1d \
 	--enable-libvpx \
 	--enable-decoder=libvpx_vp9 \
 	--enable-encoder=libvpx_vp9 \
@@ -98,11 +99,13 @@ function build_one {
 	--enable-decoder=mjpeg \
 	--enable-decoder=gif \
 	--enable-decoder=alac \
+	--enable-decoder=libdav1d \
+	--enable-decoder=av1 \
 	--enable-demuxer=mov \
 	--enable-demuxer=gif \
 	--enable-demuxer=ogg \
 	--enable-demuxer=matroska \
-    --enable-demuxer=mp3 \
+	--enable-demuxer=mp3 \
 	--enable-hwaccels \
 	$ADDITIONAL_CONFIGURE_FLAG
 
@@ -172,7 +175,7 @@ function build {
 	for arg in "$@"; do
 		case "${arg}" in
 			x86_64)
-				ANDROID_API=21
+				ANDROID_API=23
 
 				ARCH=x86_64
 				ARCH_NAME=x86_64
@@ -183,11 +186,12 @@ function build {
 				CPU=x86_64
 				PREFIX=./build/$CPU
 				LIBVPXPREFIX=../libvpx/build/$ARCH_NAME
+				LIBDAV1DPREFIX=../dav1d/build/$ARCH_NAME
 				ADDITIONAL_CONFIGURE_FLAG="--disable-asm"
 				build_one
 			;;
 			arm64)
-				ANDROID_API=21
+				ANDROID_API=23
 
 				ARCH=arm64
 				ARCH_NAME=aarch64
@@ -199,11 +203,12 @@ function build {
 				OPTIMIZE_CFLAGS=
 				PREFIX=./build/$CPU
 				LIBVPXPREFIX=../libvpx/build/$CPU
+				LIBDAV1DPREFIX=../dav1d/build/$CPU
 				ADDITIONAL_CONFIGURE_FLAG="--enable-neon --enable-optimizations"
 				build_one
 			;;
 			arm)
-				ANDROID_API=16
+				ANDROID_API=23
 
 				ARCH=arm
 				ARCH_NAME=arm
@@ -215,11 +220,12 @@ function build {
 				OPTIMIZE_CFLAGS="-marm -march=$CPU"
 				PREFIX=./build/armeabi-v7a
 				LIBVPXPREFIX=../libvpx/build/armeabi-v7a
-				ADDITIONAL_CONFIGURE_FLAG=--enable-neon
+				LIBDAV1DPREFIX=../dav1d/build/armeabi-v7a
+				ADDITIONAL_CONFIGURE_FLAG="--enable-neon"
 				build_one
 			;;
 			x86)
-				ANDROID_API=16
+				ANDROID_API=23
 
 				ARCH=x86
 				ARCH_NAME=i686
@@ -231,6 +237,7 @@ function build {
 				OPTIMIZE_CFLAGS="-march=$CPU"
 				PREFIX=./build/$ARCH
 				LIBVPXPREFIX=../libvpx/build/$ARCH
+				LIBDAV1DPREFIX=../dav1d/build/$ARCH
 				ADDITIONAL_CONFIGURE_FLAG="--disable-x86asm --disable-inline-asm --disable-asm"
 				build_one
 			;;

@@ -1,34 +1,50 @@
-From b3958bdfcc9c753477fdf6e0da799c1c4e4077f1 Mon Sep 17 00:00:00 2001
-From: Marcus Hoffmann <bubu@bubu1.eu>
-Date: Tue, 31 Jul 2018 17:15:39 +0200
-Subject: [PATCH] add aes ige mode
-
----
- crypto/fipsmodule/CMakeLists.txt |   2 +
- crypto/fipsmodule/aes/aes_ige.c  | 323 +++++++++++++++++++++++++++++++
- include/openssl/aes.h            |   9 +
- 3 files changed, 334 insertions(+)
- create mode 100644 crypto/fipsmodule/aes/aes_ige.c
-
-diff --git a/crypto/fipsmodule/CMakeLists.txt b/crypto/fipsmodule/CMakeLists.txt
-index 30823755..b349572c 100644
---- a/crypto/fipsmodule/CMakeLists.txt
-+++ b/crypto/fipsmodule/CMakeLists.txt
-@@ -198,6 +198,8 @@ else()
-     bcm.c
-     fips_shared_support.c
+diff --git a/gen/sources.cmake b/gen/sources.cmake
+index ae0edd5a5..5dc9441c6 100644
+--- a/gen/sources.cmake
++++ b/gen/sources.cmake
+@@ -2746,6 +2746,7 @@ set(
+ set(
+   SSL_SOURCES
  
-+    aes/aes_ige.c
++  ssl/aes_ige.c
+   ssl/bio_ssl.cc
+   ssl/d1_both.cc
+   ssl/d1_lib.cc
+diff --git a/include/openssl/aes.h b/include/openssl/aes.h
+index eee88a510..18735da3a 100644
+--- a/include/openssl/aes.h
++++ b/include/openssl/aes.h
+@@ -165,6 +165,13 @@ OPENSSL_EXPORT int AES_unwrap_key_padded(const AES_KEY *key, uint8_t *out,
+                                          size_t *out_len, size_t max_out,
+                                          const uint8_t *in, size_t in_len);
+ 
++OPENSSL_EXPORT void AES_ige_encrypt(const unsigned char *in, unsigned char *out,
++                     size_t length, const AES_KEY *key,
++                     unsigned char *ivec, const int enc);
++OPENSSL_EXPORT void AES_bi_ige_encrypt(const unsigned char *in, unsigned char *out,
++                        size_t length, const AES_KEY *key,
++                        const AES_KEY *key2, const unsigned char *ivec,
++                        const int enc);
+ 
+ #if defined(__cplusplus)
+ }  // extern C
+diff --git a/include/openssl/base.h b/include/openssl/base.h
+index 7623db8b3..1b3be2f53 100644
+--- a/include/openssl/base.h
++++ b/include/openssl/base.h
+@@ -535,4 +535,6 @@ BSSL_NAMESPACE_END
+ 
+ #endif  // !BORINGSSL_NO_CXX
+ 
++#define RSA_PKCS1_PADDING_SIZE 11
 +
-     ${BCM_ASM_SOURCES}
-   )
-
-diff --git a/crypto/fipsmodule/aes/aes_ige.c b/crypto/fipsmodule/aes/aes_ige.c
+ #endif  // OPENSSL_HEADER_BASE_H
+diff --git a/ssl/aes_ige.c b/ssl/aes_ige.c
 new file mode 100644
-index 00000000..b425c7d6
+index 000000000..0e6809247
 --- /dev/null
-+++ b/crypto/fipsmodule/aes/aes_ige.c
-@@ -0,0 +1,323 @@
++++ b/ssl/aes_ige.c
+@@ -0,0 +1,332 @@
 +/* crypto/aes/aes_ige.c -*- mode:C; c-file-style: "eay" -*- */
 +/* ====================================================================
 + * Copyright (c) 2006 The OpenSSL Project.  All rights reserved.
@@ -106,6 +122,10 @@ index 00000000..b425c7d6
 +#endif
 +
 +/* N.B. The IV for this mode is _twice_ the block size */
++
++void AES_ige_encrypt(const unsigned char *in, unsigned char *out,
++                     size_t length, const AES_KEY *key,
++                     unsigned char *ivec, const int enc);
 +
 +void AES_ige_encrypt(const unsigned char *in, unsigned char *out,
 +					 size_t length, const AES_KEY *key,
@@ -242,6 +262,11 @@ index 00000000..b425c7d6
 +/* N.B. The IV for this mode is _four times_ the block size */
 +
 +void AES_bi_ige_encrypt(const unsigned char *in, unsigned char *out,
++                        size_t length, const AES_KEY *key,
++                        const AES_KEY *key2, const unsigned char *ivec,
++                        const int enc);
++
++void AES_bi_ige_encrypt(const unsigned char *in, unsigned char *out,
 +						size_t length, const AES_KEY *key,
 +						const AES_KEY *key2, const unsigned char *ivec,
 +						const int enc)
@@ -352,26 +377,3 @@ index 00000000..b425c7d6
 +			}
 +		}
 +	}
-diff --git a/include/openssl/aes.h b/include/openssl/aes.h
-index 11565854..0130fec5 100644
---- a/include/openssl/aes.h
-+++ b/include/openssl/aes.h
-@@ -138,6 +138,15 @@ OPENSSL_EXPORT void AES_cfb128_encrypt(const uint8_t *in, uint8_t *out,
-                                        size_t len, const AES_KEY *key,
-                                        uint8_t *ivec, int *num, int enc);
- 
-+/* NB: the IV is _two_ blocks long */
-+OPENSSL_EXPORT void AES_ige_encrypt(const unsigned char *in, unsigned char *out,
-+                                    size_t length, const AES_KEY *key,
-+                                    unsigned char *ivec, const int enc);
-+/* NB: the IV is _four_ blocks long */
-+OPENSSL_EXPORT void AES_bi_ige_encrypt(const unsigned char *in, unsigned char *out,
-+                                       size_t length, const AES_KEY *key,
-+                                       const AES_KEY *key2, const unsigned char *ivec,
-+                                       const int enc);
- 
- // AES key wrap.
- //
--- 
-2.17.1
-

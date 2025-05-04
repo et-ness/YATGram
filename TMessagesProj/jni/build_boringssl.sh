@@ -67,22 +67,22 @@ function build {
 	for arg in "$@"; do
 		case "${arg}" in
 			x86_64)
-				API=21
+				API=23
 				CPU=x86_64
 				build_one
 			;;
 			arm64)
-				API=21
+				API=23
 				CPU=arm64-v8a
 				build_one
 			;;
 			arm)
-				API=16
+				API=23
 				CPU=armeabi-v7a
 				build_one
 			;;
 			x86)
-				API=16
+				API=23
 				CPU=x86
 				build_one
 			;;

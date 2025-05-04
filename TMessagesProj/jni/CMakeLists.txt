@@ -21,11 +21,13 @@ ${CMAKE_HOME_DIRECTORY}/ffmpeg/build/${ANDROID_ABI}/lib/libavresample.a,
 ${CMAKE_HOME_DIRECTORY}/ffmpeg/build/${ANDROID_ABI}/lib/libavutil.a,
 ${CMAKE_HOME_DIRECTORY}/ffmpeg/build/${ANDROID_ABI}/lib/libswresample.a,
 ${CMAKE_HOME_DIRECTORY}/libvpx/build/${ANDROID_ABI}/lib/libvpx.a,
-${CMAKE_HOME_DIRECTORY}/dav1d/build/${ANDROID_ABI}/lib/libdav1d.a,
-${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/ssl/libssl.a,
-${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/crypto/libcrypto.a,
+${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/libssl.a,
+${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/libcrypto.a,
 ${CMAKE_HOME_DIRECTORY}/tde2e/${ANDROID_ABI}/libtde2e.a,
 ${CMAKE_HOME_DIRECTORY}/tde2e/${ANDROID_ABI}/libtdutils.a")
+
+# useless voip don't link dav1d directly but only on ffmpeg
+# ${CMAKE_HOME_DIRECTORY}/dav1d/build/${ANDROID_ABI}/lib/libdav1d.a,
 
 if (${ANDROID_ABI} STREQUAL "armeabi-v7a" OR ${ANDROID_ABI} STREQUAL "arm64-v8a")
     enable_language(ASM)
@@ -53,10 +55,10 @@ set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTOR
 
 add_library(crypto STATIC IMPORTED)
 
-set_target_properties(crypto PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/crypto/libcrypto.a)
+set_target_properties(crypto PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/libcrypto.a)
 
 add_library(ssl STATIC IMPORTED)
-set_target_properties(ssl PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/ssl/libssl.a)
+set_target_properties(ssl PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/boringssl/build/${ANDROID_ABI}/libssl.a)
 
 add_library(libvpx STATIC IMPORTED)
 set_target_properties(libvpx PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/libvpx/build/${ANDROID_ABI}/lib/libvpx.a)

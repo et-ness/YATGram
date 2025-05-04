@@ -131,7 +131,7 @@ cd libvpx
 LLVM_PREFIX="${NDK}/toolchains/llvm/prebuilt/${BUILD_PLATFORM}"
 LLVM_BIN="${LLVM_PREFIX}/bin"
 VERSION="4.9"
-ANDROID_API=21
+ANDROID_API=23
 
 function build {
 	for arg in "$@"; do

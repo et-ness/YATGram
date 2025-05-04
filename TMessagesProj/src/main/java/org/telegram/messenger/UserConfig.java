@@ -601,7 +601,7 @@ public class UserConfig extends BaseController {
     }
 
     public static int getProductionAccount() {
-        for (int i = -1; i < MAX_ACCOUNT_COUNT; ++i) {
+        for (int i : SharedConfig.activeAccounts) {
             final int account = i < 0 ? selectedAccount : i;
             if (getInstance(account).isClientActivated() && !ConnectionsManager.getInstance(account).isTestBackend())
                 return account;

@@ -1,15 +1,26 @@
-From cdc55ea354ab977ea2f94ea74fad0561b3a8fd93 Mon Sep 17 00:00:00 2001
-From: thermatk <thermatk@thermatk.com>
-Date: Sat, 26 Jun 2021 16:56:55 +0200
-Subject: [PATCH] [PATCH] Compilation magic 2
-
----
- libavcodec/get_bits.h | 221 ++--------------------------------
- libavcodec/golomb.h   | 269 ------------------------------------------
- 2 files changed, 13 insertions(+), 477 deletions(-)
-
+diff --git a/libavcodec/bytestream.h b/libavcodec/bytestream.h
+index d0033f14f3..0516a6e3dc 100644
+--- a/libavcodec/bytestream.h
++++ b/libavcodec/bytestream.h
+@@ -77,15 +77,11 @@ static av_always_inline type bytestream2_get_ ## name(GetByteContext *g)       \
+     }                                                                          \
+     return bytestream2_get_ ## name ## u(g);                                   \
+ }                                                                              \
+-static av_always_inline type bytestream2_peek_ ## name ## u(GetByteContext *g) \
+-{                                                                              \
+-    return read(g->buffer);                                                    \
+-}                                                                              \
+ static av_always_inline type bytestream2_peek_ ## name(GetByteContext *g)      \
+ {                                                                              \
+     if (g->buffer_end - g->buffer < bytes)                                     \
+         return 0;                                                              \
+-    return bytestream2_peek_ ## name ## u(g);                                  \
++    return read(g->buffer);                                                    \
+ }
+ 
+ DEF(uint64_t,     le64, 8, AV_RL64, AV_WL64)
 diff --git a/libavcodec/get_bits.h b/libavcodec/get_bits.h
-index 66fb877..a0695d3 100644
+index 66fb877599..e7b3caa2e0 100644
 --- a/libavcodec/get_bits.h
 +++ b/libavcodec/get_bits.h
 @@ -29,13 +29,9 @@
@@ -288,7 +299,7 @@ index 66fb877..a0695d3 100644
 +
  #endif /* AVCODEC_GET_BITS_H */
 diff --git a/libavcodec/golomb.h b/libavcodec/golomb.h
-index 7fd46a9..637111a 100644
+index defee7139b..637111af59 100644
 --- a/libavcodec/golomb.h
 +++ b/libavcodec/golomb.h
 @@ -33,7 +33,6 @@
@@ -299,12 +310,58 @@ index 7fd46a9..637111a 100644
  
  #define INVALID_VLC           0x80000000
  
-@@ -422,144 +421,6 @@ static inline int get_ur_golomb(GetBitContext *gb, int k, int limit,
+@@ -66,12 +65,9 @@ static inline int get_ue_golomb(GetBitContext *gb)
+         return ff_ue_golomb_vlc_code[buf];
+     } else {
+         int log = 2 * av_log2(buf) - 31;
+-
+-        skip_bits_long(gb, 32 - log);
+-        if (log < 7)
+-            return AVERROR_INVALIDDATA;
+         buf >>= log;
+         buf--;
++        skip_bits_long(gb, 32 - log);
+ 
+         return buf;
+     }
+@@ -90,8 +86,10 @@ static inline int get_ue_golomb(GetBitContext *gb)
+         int log = 2 * av_log2(buf) - 31;
+         LAST_SKIP_BITS(re, gb, 32 - log);
+         CLOSE_READER(re, gb);
+-        if (log < 7)
++        if (log < 7) {
++            av_log(NULL, AV_LOG_ERROR, "Invalid UE golomb code\n");
+             return AVERROR_INVALIDDATA;
++        }
+         buf >>= log;
+         buf--;
+ 
+@@ -116,8 +114,7 @@ static inline unsigned get_ue_golomb_long(GetBitContext *gb)
+ 
+ /**
+  * read unsigned exp golomb code, constraint to a max of 31.
+- * If the value encountered is not in 0..31, the return value
+- * is outside the range 0..30.
++ * the return value is undefined if the stored value exceeds 31.
+  */
+ static inline int get_ue_golomb_31(GetBitContext *gb)
+ {
+@@ -404,7 +401,6 @@ static inline int get_ur_golomb(GetBitContext *gb, int k, int limit,
+     log = av_log2(buf);
+ 
+     if (log > 31 - limit) {
+-        av_assert2(log >= k);
+         buf >>= log - k;
+         buf  += (30U - log) << k;
+         LAST_SKIP_BITS(re, gb, 32 + k - log);
+@@ -425,148 +421,6 @@ static inline int get_ur_golomb(GetBitContext *gb, int k, int limit,
  #endif
  }
  
 -/**
 - * read unsigned golomb rice code (jpegls).
+- *
+- * @returns -1 on error
 - */
 -static inline int get_ur_golomb_jpegls(GetBitContext *gb, int k, int limit,
 -                                       int esc_len)
@@ -416,6 +473,8 @@ index 7fd46a9..637111a 100644
 -
 -/**
 - * read signed golomb rice code (flac).
+- *
+- * @returns INT_MIN on error
 - */
 -static inline int get_sr_golomb_flac(GetBitContext *gb, int k, int limit,
 -                                     int esc_len)
@@ -444,7 +503,7 @@ index 7fd46a9..637111a 100644
  #ifdef TRACE
  
  static inline int get_ue(GetBitContext *s, const char *file, const char *func,
-@@ -614,134 +475,4 @@ static inline int get_te(GetBitContext *s, int r, char *file, const char *func,
+@@ -621,134 +475,4 @@ static inline int get_te(GetBitContext *s, int r, char *file, const char *func,
  
  #endif /* TRACE */
  
@@ -579,6 +638,159 @@ index 7fd46a9..637111a 100644
 -}
 -
  #endif /* AVCODEC_GOLOMB_H */
--- 
-2.32.0
-
+diff --git a/libavcodec/vlc.h b/libavcodec/vlc.h
+index 6879c3ca6a..42ccddf3fc 100644
+--- a/libavcodec/vlc.h
++++ b/libavcodec/vlc.h
+@@ -49,73 +49,28 @@ int ff_init_vlc_sparse(VLC *vlc, int nb_bits, int nb_codes,
+                        const void *codes, int codes_wrap, int codes_size,
+                        const void *symbols, int symbols_wrap, int symbols_size,
+                        int flags);
+-
+-/**
+- * Build VLC decoding tables suitable for use with get_vlc2()
+- *
+- * This function takes lengths and symbols and calculates the codes from them.
+- * For this the input lengths and symbols have to be sorted according to "left
+- * nodes in the corresponding tree first".
+- *
+- * @param[in,out] vlc      The VLC to be initialized; table and table_allocated
+- *                         must have been set when initializing a static VLC,
+- *                         otherwise this will be treated as uninitialized.
+- * @param[in] nb_bits      The number of bits to use for the VLC table;
+- *                         higher values take up more memory and cache, but
+- *                         allow to read codes with fewer reads.
+- * @param[in] nb_codes     The number of provided length and (if supplied) symbol
+- *                         entries.
+- * @param[in] lens         The lengths of the codes. Entries > 0 correspond to
+- *                         valid codes; entries == 0 will be skipped and entries
+- *                         with len < 0 indicate that the tree is incomplete and
+- *                         has an open end of length -len at this position.
+- * @param[in] lens_wrap    Stride (in bytes) of the lengths.
+- * @param[in] symbols      The symbols, i.e. what is returned from get_vlc2()
+- *                         when the corresponding code is encountered.
+- *                         May be NULL, then 0, 1, 2, 3, 4,... will be used.
+- * @param[in] symbols_wrap Stride (in bytes) of the symbols.
+- * @param[in] symbols_size Size of the symbols. 1 and 2 are supported.
+- * @param[in] offset       An offset to apply to all the valid symbols.
+- * @param[in] flags        A combination of the INIT_VLC_* flags; notice that
+- *                         INIT_VLC_INPUT_LE is pointless and ignored.
+- */
+-int ff_init_vlc_from_lengths(VLC *vlc, int nb_bits, int nb_codes,
+-                             const int8_t *lens, int lens_wrap,
+-                             const void *symbols, int symbols_wrap, int symbols_size,
+-                             int offset, int flags, void *logctx);
+-
+ void ff_free_vlc(VLC *vlc);
+ 
+-/* If INIT_VLC_INPUT_LE is set, the LSB bit of the codes used to
+- * initialize the VLC table is the first bit to be read. */
+-#define INIT_VLC_INPUT_LE       2
+-/* If set the VLC is intended for a little endian bitstream reader. */
+-#define INIT_VLC_OUTPUT_LE      8
+-#define INIT_VLC_LE             (INIT_VLC_INPUT_LE | INIT_VLC_OUTPUT_LE)
++#define INIT_VLC_LE             2
+ #define INIT_VLC_USE_NEW_STATIC 4
+-#define INIT_VLC_STATIC_OVERLONG (1 | INIT_VLC_USE_NEW_STATIC)
+ 
+-#define INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,      \
+-                                      h, i, j, flags, static_size)         \
++#define INIT_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, h, i, j, static_size) \
+     do {                                                                   \
+         static VLC_TYPE table[static_size][2];                             \
+         (vlc)->table           = table;                                    \
+         (vlc)->table_allocated = static_size;                              \
+         ff_init_vlc_sparse(vlc, bits, a, b, c, d, e, f, g, h, i, j,        \
+-                           flags | INIT_VLC_USE_NEW_STATIC);               \
++            INIT_VLC_USE_NEW_STATIC);                                      \
+     } while (0)
+ 
+-#define INIT_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, h, i, j, static_size) \
+-    INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
+-                                  h, i, j, 0, static_size)
+-
+ #define INIT_LE_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, h, i, j, static_size) \
+-    INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
+-                                  h, i, j, INIT_VLC_LE, static_size)
+-
+-#define INIT_CUSTOM_VLC_STATIC(vlc, bits, a, b, c, d, e, f, g, flags, static_size) \
+-    INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
+-                                  NULL, 0, 0, flags, static_size)
++    do {                                                                   \
++        static VLC_TYPE table[static_size][2];                             \
++        (vlc)->table           = table;                                    \
++        (vlc)->table_allocated = static_size;                              \
++        ff_init_vlc_sparse(vlc, bits, a, b, c, d, e, f, g, h, i, j,        \
++            INIT_VLC_USE_NEW_STATIC | INIT_VLC_LE);                        \
++    } while (0)
+ 
+ #define INIT_VLC_STATIC(vlc, bits, a, b, c, d, e, f, g, static_size)       \
+     INIT_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, NULL, 0, 0, static_size)
+@@ -123,17 +78,4 @@ void ff_free_vlc(VLC *vlc);
+ #define INIT_LE_VLC_STATIC(vlc, bits, a, b, c, d, e, f, g, static_size) \
+     INIT_LE_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, NULL, 0, 0, static_size)
+ 
+-#define INIT_VLC_STATIC_FROM_LENGTHS(vlc, bits, nb_codes, lens, len_wrap,  \
+-                                     symbols, symbols_wrap, symbols_size,  \
+-                                     offset, flags, static_size)           \
+-    do {                                                                   \
+-        static VLC_TYPE table[static_size][2];                             \
+-        (vlc)->table           = table;                                    \
+-        (vlc)->table_allocated = static_size;                              \
+-        ff_init_vlc_from_lengths(vlc, bits, nb_codes, lens, len_wrap,      \
+-                                 symbols, symbols_wrap, symbols_size,      \
+-                                 offset, flags | INIT_VLC_USE_NEW_STATIC,  \
+-                                 NULL);                                    \
+-    } while (0)
+-
+ #endif /* AVCODEC_VLC_H */
+diff --git a/libavformat/isom.h b/libavformat/isom.h
+index 5a6d504090..8c20cada66 100644
+--- a/libavformat/isom.h
++++ b/libavformat/isom.h
+@@ -244,7 +244,7 @@ typedef struct MOVStreamContext {
+ } MOVStreamContext;
+ 
+ typedef struct MOVContext {
+-    const AVClass *class; ///< class for private options
++    const AVClass *clazz; ///< class for private options
+     AVFormatContext *fc;
+     int time_scale;
+     int64_t duration;     ///< duration of the longest track
+@@ -286,17 +286,11 @@ typedef struct MOVContext {
+     int activation_bytes_size;
+     void *audible_fixed_key;
+     int audible_fixed_key_size;
+-    void *audible_key;
+-    int audible_key_size;
+-    void *audible_iv;
+-    int audible_iv_size;
+     struct AVAES *aes_decrypt;
+     uint8_t *decryption_key;
+     int decryption_key_len;
+     int enable_drefs;
+     int32_t movie_display_matrix[3][3]; ///< display matrix from mvhd
+-    int have_read_mfra_size;
+-    uint32_t mfra_size;
+ } MOVContext;
+ 
+ int ff_mp4_read_descr_len(AVIOContext *pb);
+@@ -372,18 +366,4 @@ void ff_mov_write_chan(AVIOContext *pb, int64_t channel_layout);
+ #define FF_MOV_FLAG_MFRA_DTS 1
+ #define FF_MOV_FLAG_MFRA_PTS 2
+ 
+-/**
+- * Compute codec id for 'lpcm' tag.
+- * See CoreAudioTypes and AudioStreamBasicDescription at Apple.
+- */
+-static inline enum AVCodecID ff_mov_get_lpcm_codec_id(int bps, int flags)
+-{
+-    /* lpcm flags:
+-     * 0x1 = float
+-     * 0x2 = big-endian
+-     * 0x4 = signed
+-     */
+-    return ff_get_pcm_codec_id(bps, flags & 1, flags & 2, flags & 4 ? -1 : 0);
+-}
+-
+ #endif /* AVFORMAT_ISOM_H */

@@ -115,7 +115,7 @@ function build {
 	for arg in "$@"; do
 		case "${arg}" in
 			x86_64)
-				ANDROID_API=21
+				ANDROID_API=23
 
 				ARCH=x86_64
 				ARCH_NAME=x86_64
@@ -134,7 +134,7 @@ function build {
 				build_one
 			;;
 			arm64)
-				ANDROID_API=21
+				ANDROID_API=23
 
 				ARCH=arm64
 				ARCH_NAME=aarch64
@@ -154,7 +154,7 @@ function build {
 				build_one
 			;;
 			arm)
-				ANDROID_API=16
+				ANDROID_API=23
 
 				ARCH=arm
 				ARCH_NAME=arm
@@ -174,7 +174,7 @@ function build {
 				build_one
 			;;
 			x86)
-				ANDROID_API=16
+				ANDROID_API=23
 
 				ARCH=x86
 				ARCH_NAME=i686
