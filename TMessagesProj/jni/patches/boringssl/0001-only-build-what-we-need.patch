@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 82b19fc8b..755344d3d 100644
+index 82b19fc8b..17d896ce4 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -476,34 +476,6 @@ if(USE_CUSTOM_LIBCXX)
@@ -37,7 +37,7 @@ index 82b19fc8b..755344d3d 100644
  if(OPENSSL_ASM)
    set(CRYPTO_SOURCES_ASM_USED ${CRYPTO_SOURCES_ASM})
    set(BCM_SOURCES_ASM_USED ${BCM_SOURCES_ASM})
-@@ -655,67 +627,10 @@ add_library(ssl ${SSL_SOURCES})
+@@ -655,67 +627,6 @@ add_library(ssl ${SSL_SOURCES})
  set_property(TARGET ssl PROPERTY EXPORT_NAME SSL)
  target_link_libraries(ssl crypto)
  
@@ -75,10 +75,10 @@ index 82b19fc8b..755344d3d 100644
 -                      decrepit ssl crypto)
 -add_dependencies(all_tests decrepit_test)
 -
- if(APPLE)
-   set(PKI_CXX_FLAGS "-fno-aligned-new")
- endif()
- 
+-if(APPLE)
+-  set(PKI_CXX_FLAGS "-fno-aligned-new")
+-endif()
+-
 -add_library(pki ${PKI_SOURCES})
 -target_link_libraries(pki crypto)
 -
@@ -105,7 +105,7 @@ index 82b19fc8b..755344d3d 100644
  if(FUZZ)
    if(LIBFUZZER_FROM_DEPS)
      file(GLOB LIBFUZZER_SOURCES "util/bot/libFuzzer/*.cpp")
-@@ -744,61 +659,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+@@ -744,61 +655,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
    set(HANDSHAKER_ARGS "-handshaker-path" $<TARGET_FILE:handshaker>)
  endif()
  
@@ -133,10 +133,10 @@ index 82b19fc8b..755344d3d 100644
 -  add_custom_target(fips_specific_tests_if_any)
 -endif()
 -
- file(STRINGS util/go_tests.txt GO_TESTS)
- set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-              util/go_tests.txt)
- 
+-file(STRINGS util/go_tests.txt GO_TESTS)
+-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+-             util/go_tests.txt)
+-
 -if(GO_EXECUTABLE)
 -  add_custom_target(
 -      run_tests
@@ -168,7 +168,7 @@ index 82b19fc8b..755344d3d 100644
    install(EXPORT OpenSSLTargets
            FILE OpenSSLTargets.cmake
 diff --git a/gen/sources.cmake b/gen/sources.cmake
-index ae0edd5a5..a04f20709 100644
+index 5ae6e0fa1..93f18df79 100644
 --- a/gen/sources.cmake
 +++ b/gen/sources.cmake
 @@ -242,35 +242,6 @@ set(
@@ -207,7 +207,7 @@ index ae0edd5a5..a04f20709 100644
  set(
    CRYPTO_SOURCES
  
-@@ -721,390 +692,6 @@ set(
+@@ -723,400 +694,6 @@ set(
    gen/crypto/md5-x86_64-win.asm
  )
  
@@ -224,6 +224,7 @@ index ae0edd5a5..a04f20709 100644
 -  crypto/chacha/chacha_test.cc
 -  crypto/cipher/aead_test.cc
 -  crypto/cipher/cipher_test.cc
+-  crypto/cms/cms_test.cc
 -  crypto/compiler_test.cc
 -  crypto/conf/conf_test.cc
 -  crypto/constant_time_test.cc
@@ -368,6 +369,15 @@ index ae0edd5a5..a04f20709 100644
 -  crypto/mlkem/mlkem768_keygen_tests.txt
 -  crypto/mlkem/mlkem768_nist_decap_tests.txt
 -  crypto/mlkem/mlkem768_nist_keygen_tests.txt
+-  crypto/pkcs7/test/nss.p7c
+-  crypto/pkcs7/test/openssl_crl.p7c
+-  crypto/pkcs7/test/sign_cert.pem
+-  crypto/pkcs7/test/sign_key.pem
+-  crypto/pkcs7/test/sign_sha1.p7s
+-  crypto/pkcs7/test/sign_sha1_key_id.p7s
+-  crypto/pkcs7/test/sign_sha256.p7s
+-  crypto/pkcs7/test/sign_sha256_key_id.p7s
+-  crypto/pkcs7/test/windows.p7c
 -  crypto/pkcs8/test/bad1.p12
 -  crypto/pkcs8/test/bad2.p12
 -  crypto/pkcs8/test/bad3.p12
@@ -598,7 +608,7 @@ index ae0edd5a5..a04f20709 100644
  set(
    FUZZ_SOURCES
  
-@@ -1144,1605 +731,6 @@ set(
+@@ -1156,1617 +733,6 @@ set(
    fuzz/verify_name_match_verifynameinsubtree_fuzzer.cc
  )
  
@@ -1710,6 +1720,18 @@ index ae0edd5a5..a04f20709 100644
 -  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-any-and-clientauth/serverauth-strict-leaf.test
 -  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-any-and-clientauth/serverauth-strict.test
 -  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-any-and-clientauth/serverauth.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2pamanifest/any.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2pamanifest/c2pamanifest.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2pamanifest/c2patimestamp.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2pamanifest/chain.pem
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2pamanifest/clientauth.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2pamanifest/serverauth.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2patimestamping/any.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2patimestamping/c2pamanifest.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2patimestamping/c2patimestamp.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2patimestamping/chain.pem
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2patimestamping/clientauth.test
+-  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-c2patimestamping/serverauth.test
 -  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-clientauth/any.test
 -  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-clientauth/chain.pem
 -  pki/testdata/verify_certificate_chain_unittest/intermediate-eku-clientauth/clientauth-strict-leaf.test
@@ -2204,7 +2226,7 @@ index ae0edd5a5..a04f20709 100644
  set(
    SSL_SOURCES
  
-@@ -2801,72 +789,3 @@ set(
+@@ -2825,72 +791,3 @@ set(
  
    ssl/internal.h
  )
