@@ -21,3 +21,5 @@ TMessagesProj_App/afat/
 TMessagesProj_AppHockeyApp/afat/
 TMessagesProj_AppStandalone/afat/
 TMessagesProj_AppHuawei/afat/
+TMessagesProj/jni/tde2e/x86*
+TMessagesProj/jni/tde2e/arm*

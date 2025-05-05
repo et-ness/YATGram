@@ -10,3 +10,6 @@
 [submodule "TMessagesProj/jni/ffmpeg"]
 	path = TMessagesProj/jni/ffmpeg
 	url = https://github.com/FFmpeg/FFmpeg
+[submodule "TMessagesProj/jni/tdlib"]
+	path = TMessagesProj/jni/tdlib
+	url = https://github.com/tdlib/td

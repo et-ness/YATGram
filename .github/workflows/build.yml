@@ -41,6 +41,12 @@ jobs:
         with:
           submodules: true
 
+      - name: Remove useless tools
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: false
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -52,14 +58,14 @@ jobs:
 
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
-        id: setup-ndk
+        id: setup-ndk-r21e
         with:
           ndk-version: r21e
           link-to-sdk: true
 
       - name: Setup NDK for tdlib
         uses: nttld/setup-ndk@v1
-        id: setup-ndk
+        id: setup-ndk-r23c
         with:
           ndk-version: r23c
           link-to-sdk: true
