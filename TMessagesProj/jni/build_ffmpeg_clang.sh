@@ -17,6 +17,7 @@ function build_one {
 
 	CC=${CC_PREFIX}clang
 	CXX=${CC_PREFIX}clang++
+	PKG_CONFIG=/usr/bin/pkg-config
 
 	if which ccache > /dev/null; then
 		sed -i 's/`dirname/ccache `dirname/' $CC
@@ -25,8 +26,9 @@ function build_one {
 
 	CROSS_PREFIX=${PREBUILT}/bin/${ARCH_NAME}-linux-${BIN_MIDDLE}-
 
-	INCLUDES=" -I${LIBVPXPREFIX}/include -I${LIBDAV1DPREFIX}/include"
-	LIBS=" -L${LIBVPXPREFIX}/lib -L${LIBDAV1DPREFIX}/lib"
+	INCLUDES=" -I${LIBVPXPREFIX}/include"
+	LIBS=" -L${LIBVPXPREFIX}/lib"
+	export PKG_CONFIG_PATH
 
 	echo "Cleaning..."
 	rm -f config.h
@@ -35,6 +37,7 @@ function build_one {
 	echo "Configuring..."
 
 	./configure \
+	--pkg-config=${PKG_CONFIG} \
 	--nm=${NM} \
 	--ar=${AR} \
 	--strip=${STRIP} \
@@ -95,17 +98,20 @@ function build_one {
 	--enable-decoder=opus \
 	--enable-decoder=mp3 \
 	--enable-decoder=h264 \
+	--enable-decoder=h265 \
 	--enable-decoder=mpeg4 \
 	--enable-decoder=mjpeg \
 	--enable-decoder=gif \
 	--enable-decoder=alac \
 	--enable-decoder=libdav1d \
 	--enable-decoder=av1 \
+	--enable-decoder=aac \
 	--enable-demuxer=mov \
 	--enable-demuxer=gif \
 	--enable-demuxer=ogg \
 	--enable-demuxer=matroska \
 	--enable-demuxer=mp3 \
+	--enable-demuxer=aac \
 	--enable-hwaccels \
 	$ADDITIONAL_CONFIGURE_FLAG
 
@@ -186,7 +192,7 @@ function build {
 				CPU=x86_64
 				PREFIX=./build/$CPU
 				LIBVPXPREFIX=../libvpx/build/$ARCH_NAME
-				LIBDAV1DPREFIX=../dav1d/build/$ARCH_NAME
+				PKG_CONFIG_PATH=../dav1d/build/$ARCH_NAME/lib/pkgconfig/
 				ADDITIONAL_CONFIGURE_FLAG="--disable-asm"
 				build_one
 			;;
@@ -203,7 +209,7 @@ function build {
 				OPTIMIZE_CFLAGS=
 				PREFIX=./build/$CPU
 				LIBVPXPREFIX=../libvpx/build/$CPU
-				LIBDAV1DPREFIX=../dav1d/build/$CPU
+				PKG_CONFIG_PATH=../dav1d/build/$CPU/lib/pkgconfig/
 				ADDITIONAL_CONFIGURE_FLAG="--enable-neon --enable-optimizations"
 				build_one
 			;;
@@ -220,7 +226,7 @@ function build {
 				OPTIMIZE_CFLAGS="-marm -march=$CPU"
 				PREFIX=./build/armeabi-v7a
 				LIBVPXPREFIX=../libvpx/build/armeabi-v7a
-				LIBDAV1DPREFIX=../dav1d/build/armeabi-v7a
+				PKG_CONFIG_PATH=../dav1d/build/armeabi-v7a/lib/pkgconfig/
 				ADDITIONAL_CONFIGURE_FLAG="--enable-neon"
 				build_one
 			;;
@@ -237,7 +243,7 @@ function build {
 				OPTIMIZE_CFLAGS="-march=$CPU"
 				PREFIX=./build/$ARCH
 				LIBVPXPREFIX=../libvpx/build/$ARCH
-				LIBDAV1DPREFIX=../dav1d/build/$ARCH
+				PKG_CONFIG_PATH=../dav1d/build/$ARCH/lib/pkgconfig/
 				ADDITIONAL_CONFIGURE_FLAG="--disable-x86asm --disable-inline-asm --disable-asm"
 				build_one
 			;;

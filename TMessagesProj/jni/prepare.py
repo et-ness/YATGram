@@ -414,7 +414,6 @@ stage('ffmpeg', """
     git submodule init && git submodule update
     cd ffmpeg && git reset --hard HEAD && cd ..
     export NDK={ndk}
-    ./patch_before_ffmpeg.sh
     ./build_ffmpeg_clang.sh {archesStr}
     ./patch_ffmpeg.sh
     echo "Built archs: {archesStr}"

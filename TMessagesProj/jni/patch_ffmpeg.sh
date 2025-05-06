@@ -2,9 +2,7 @@
 
 set -e
 
-#patch -d ffmpeg -p1 < patches/ffmpeg/0001-compilation-magic.patch
-#patch -d ffmpeg -p1 < patches/ffmpeg/0002-compilation-magic-2.patch
-patch -d ffmpeg -p1 < patches/ffmpeg/0001-telegram.patch
+patch -d ffmpeg -p1 < patches/ffmpeg/0001-fromtelegram.patch
 
 function cp {
 	CURRENT_PLATFORM="$(uname -s)"
