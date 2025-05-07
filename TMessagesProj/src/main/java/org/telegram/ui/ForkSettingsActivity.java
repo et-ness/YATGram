@@ -214,8 +214,6 @@ public class ForkSettingsActivity extends BaseFragment {
         showNotificationContent = rowCount++;
         hideBottomButton = SharedConfig.isUserOwner() ? rowCount++ : -1;
         lockPremium = rowCount++;
-        hideAds = rowCount++; // YATGram
-        byPassRestrictedContent = rowCount++; // YATGram
 
         emptyRows.add(rowCount++);
         sectionRows.add(rowCount++);
@@ -247,6 +245,10 @@ public class ForkSettingsActivity extends BaseFragment {
         emptyRows.add(rowCount++);
         botSkipShare = rowCount++;
         botSkipFullscreen = rowCount++;
+
+        emptyRows.add(rowCount++);
+        hideAds = rowCount++; // YATGram
+        byPassRestrictedContent = rowCount++; // YATGram
     
         emptyRows.add(rowCount++);
         sectionRows.add(rowCount++);
