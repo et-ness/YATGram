@@ -176,7 +176,7 @@ stages = []
 def removeDir(folder):
     if win:
         return 'if exist ' + folder + ' rmdir /Q /S ' + folder + '\nif exist ' + folder + ' exit /b 1'
-    return 'rm -rf ' + folder + '/*'
+    return 'shopt -s dotglob; rm -rf ' + folder + '/*'
 
 def filterByPlatform(commands):
     commands = commands.split('\n')

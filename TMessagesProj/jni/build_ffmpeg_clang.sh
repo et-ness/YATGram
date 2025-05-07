@@ -20,8 +20,8 @@ function build_one {
 	PKG_CONFIG=/usr/bin/pkg-config
 
 	if which ccache > /dev/null; then
-		sed -i 's/`dirname/ccache `dirname/' $CC
-		sed -i 's/`dirname/ccache `dirname/' $CXX
+		CC="$(which ccache) $CC"
+		CXX="$(which ccache) $CXX"
 	fi
 
 	CROSS_PREFIX=${PREBUILT}/bin/${ARCH_NAME}-linux-${BIN_MIDDLE}-
@@ -41,8 +41,8 @@ function build_one {
 	--nm=${NM} \
 	--ar=${AR} \
 	--strip=${STRIP} \
-	--cc=${CC} \
-	--cxx=${CXX} \
+	--cc="${CC}" \
+	--cxx="${CXX}" \
 	--enable-stripping \
 	--arch=$ARCH \
 	--target-os=linux \
@@ -98,7 +98,7 @@ function build_one {
 	--enable-decoder=opus \
 	--enable-decoder=mp3 \
 	--enable-decoder=h264 \
-	--enable-decoder=h265 \
+	--enable-decoder=hevc \
 	--enable-decoder=mpeg4 \
 	--enable-decoder=mjpeg \
 	--enable-decoder=gif \
@@ -119,11 +119,6 @@ function build_one {
 	#read
 	make -j$COMPILATION_PROC_COUNT
 	make install
-
-	if which ccache > /dev/null; then
-		sed -i 's/ccache//' $CC
-		sed -i 's/ccache//' $CXX
-	fi
 }
 
 function setCurrentPlatform {

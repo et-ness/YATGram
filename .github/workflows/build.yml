@@ -18,6 +18,8 @@ jobs:
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
       CCACHE_BASEDIR: "${{ github.workspace }}"
+      CMAKE_CXX_COMPILER_LAUNCHER: "/usr/bin/ccache"
+      CMAKE_C_COMPILER_LAUNCHER: "/usr/bin/ccache"
 
     strategy:
       matrix:
