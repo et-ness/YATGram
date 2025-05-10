@@ -8,10 +8,11 @@ function build_one {
 
 	TOOLS_PREFIX="${LLVM_BIN}/${ARCH_NAME}-linux-${BIN_MIDDLE}-"
 
-	LD=${TOOLS_PREFIX}ld
-	AR=${TOOLS_PREFIX}ar
-	STRIP=${TOOLS_PREFIX}strip
-	NM=${TOOLS_PREFIX}nm
+	LD=${LLVM_BIN}/ld
+	AR=${LLVM_BIN}/llvm-ar
+	STRIP=${LLVM_BIN}/llvm-strip
+	NM=${LLVM_BIN}/llvm-nm
+	RANLIB=${LLVM_BIN}/llvm-ranlib
 
 	CC_PREFIX="${LLVM_BIN}/${CLANG_PREFIX}-linux-${BIN_MIDDLE}${ANDROID_API}-"
 
@@ -41,6 +42,7 @@ function build_one {
 	--nm=${NM} \
 	--ar=${AR} \
 	--strip=${STRIP} \
+	--ranlib=${RANLIB} \
 	--cc="${CC}" \
 	--cxx="${CXX}" \
 	--enable-stripping \

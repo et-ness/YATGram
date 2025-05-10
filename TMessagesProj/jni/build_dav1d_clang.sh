@@ -56,10 +56,10 @@ function build_one {
 		TOOLS_PREFIX="${LLVM_BIN}/${ARCH_NAME}-linux-${BIN_MIDDLE}-"
 	fi
 
-	LD=${TOOLS_PREFIX}ld
-	AR=${TOOLS_PREFIX}ar
-	STRIP=${TOOLS_PREFIX}strip
-	NM=${TOOLS_PREFIX}nm
+	LD=${LLVM_BIN}/ld
+	AR=${LLVM_BIN}/llvm-ar
+	STRIP=${LLVM_BIN}/llvm-strip
+	NM=${LLVM_BIN}/llvm-nm
 
 	if [[ "${CURRENT_PLATFORM}" == "Darwin"* ]]; then
 		CC_PREFIX="${PREBUILT}/bin/${CLANG_PREFIX}-linux-${BIN_MIDDLE}${ANDROID_API}-"
